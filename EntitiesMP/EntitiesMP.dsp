@@ -162,11 +162,6 @@ SOURCE=.\AirShockwave.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\AirWave.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\AmmoItem.cpp
 # End Source File
 # Begin Source File
@@ -247,11 +242,6 @@ SOURCE=.\CannonStatic.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Catman.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\ChainsawFreak.cpp
 # End Source File
 # Begin Source File
@@ -273,16 +263,6 @@ SOURCE=.\CrateRider.cpp
 # Begin Source File
 
 SOURCE=.\CreditsHolder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Cyborg.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\CyborgBike.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -319,11 +299,6 @@ SOURCE=.\DevilProjectile.cpp
 # Begin Source File
 
 SOURCE=.\DoorController.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Dragonman.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -407,21 +382,11 @@ SOURCE=.\Fish.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Fishman.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\Flame.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\FogMarker.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\GhostBusterRay.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -469,11 +434,6 @@ SOURCE=.\HealthItem.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Huanman.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\HudPicHolder.cpp
 # End Source File
 # Begin Source File
@@ -495,21 +455,6 @@ SOURCE=.\Light.cpp
 # Begin Source File
 
 SOURCE=.\Lightning.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Mamut.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\Mamutman.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\Mantaman.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -581,11 +526,6 @@ SOURCE=.\PhotoAlbum.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Pipebomb.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\Player.cpp
 # End Source File
 # Begin Source File
@@ -631,16 +571,6 @@ SOURCE=.\PyramidSpaceShipMarker.cpp
 # Begin Source File
 
 SOURCE=.\Reminder.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\RobotDriving.cpp
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\RobotFlying.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -1641,10 +1571,7 @@ SOURCE=.\NavigationMarker_tables.h
 
 SOURCE=.\ParticlesHolder.h
 # End Source File
-# Begin Source File
-
-
-
+# Begin Source File
 
 SOURCE=.\ParticlesHolder_tables.h
 # End Source File
@@ -1999,7 +1926,6 @@ SOURCE=.\WatchPlayers.h
 # Begin Source File
 
 SOURCE=.\WatchPlayers_tables.h
-
 # End Source File
 # Begin Source File
 
@@ -2075,7 +2001,7 @@ InputPath=.\NavigationMarker.es
 InputName=NavigationMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                  ..\  
+	cd                                                                                                                   ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2087,7 +2013,7 @@ InputPath=.\NavigationMarker.es
 InputName=NavigationMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                  ..\  
+	cd                                                                                                                   ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2106,7 +2032,7 @@ InputPath=.\Reminder.es
 InputName=Reminder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                  ..\  
+	cd                                                                                                                   ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2118,7 +2044,7 @@ InputPath=.\Reminder.es
 InputName=Reminder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                  ..\  
+	cd                                                                                                                   ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2137,7 +2063,7 @@ InputPath=.\Spinner.es
 InputName=Spinner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                  ..\  
+	cd                                                                                                                   ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2149,7 +2075,7 @@ InputPath=.\Spinner.es
 InputName=Spinner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2168,7 +2094,7 @@ InputPath=.\TacticsChanger.es
 InputName=TacticsChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2180,7 +2106,7 @@ InputPath=.\TacticsChanger.es
 InputName=TacticsChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2199,7 +2125,7 @@ InputPath=.\TacticsHolder.es
 InputName=TacticsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2211,7 +2137,7 @@ InputPath=.\TacticsHolder.es
 InputName=TacticsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2230,7 +2156,7 @@ InputPath=.\Watcher.es
 InputName=Watcher
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2242,7 +2168,7 @@ InputPath=.\Watcher.es
 InputName=Watcher
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2261,7 +2187,7 @@ InputPath=.\WatchPlayers.es
 InputName=WatchPlayers
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2273,7 +2199,7 @@ InputPath=.\WatchPlayers.es
 InputName=WatchPlayers
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2296,7 +2222,7 @@ InputPath=.\Bouncer.es
 InputName=Bouncer
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2308,7 +2234,7 @@ InputPath=.\Bouncer.es
 InputName=Bouncer
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2327,7 +2253,7 @@ InputPath=.\DestroyableArchitecture.es
 InputName=DestroyableArchitecture
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2339,7 +2265,7 @@ InputPath=.\DestroyableArchitecture.es
 InputName=DestroyableArchitecture
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2358,7 +2284,7 @@ InputPath=.\MovingBrush.es
 InputName=MovingBrush
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2370,7 +2296,7 @@ InputPath=.\MovingBrush.es
 InputName=MovingBrush
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2389,7 +2315,7 @@ InputPath=.\MovingBrushMarker.es
 InputName=MovingBrushMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2401,7 +2327,7 @@ InputPath=.\MovingBrushMarker.es
 InputName=MovingBrushMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2420,7 +2346,7 @@ InputPath=.\Pendulum.es
 InputName=Pendulum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2432,7 +2358,7 @@ InputPath=.\Pendulum.es
 InputName=Pendulum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2451,7 +2377,7 @@ InputPath=.\Ship.es
 InputName=Ship
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2463,7 +2389,7 @@ InputPath=.\Ship.es
 InputName=Ship
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2482,7 +2408,7 @@ InputPath=.\ShipMarker.es
 InputName=ShipMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2494,7 +2420,7 @@ InputPath=.\ShipMarker.es
 InputName=ShipMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2513,7 +2439,7 @@ InputPath=.\WorldBase.es
 InputName=WorldBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2525,7 +2451,7 @@ InputPath=.\WorldBase.es
 InputName=WorldBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2548,7 +2474,7 @@ InputPath=.\BasicEffects.es
 InputName=BasicEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2560,7 +2486,7 @@ InputPath=.\BasicEffects.es
 InputName=BasicEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2579,7 +2505,7 @@ InputPath=.\BlendController.es
 InputName=BlendController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2591,7 +2517,7 @@ InputPath=.\BlendController.es
 InputName=BlendController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2610,7 +2536,7 @@ InputPath=.\BloodSpray.es
 InputName=BloodSpray
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2622,7 +2548,7 @@ InputPath=.\BloodSpray.es
 InputName=BloodSpray
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2641,7 +2567,7 @@ InputPath=.\Debris.es
 InputName=Debris
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2653,7 +2579,7 @@ InputPath=.\Debris.es
 InputName=Debris
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2672,7 +2598,7 @@ InputPath=.\EffectMarker.es
 InputName=EffectMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2684,9 +2610,9 @@ InputPath=.\EffectMarker.es
 InputName=EffectMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
-	
+	
 # End Custom Build
 
 !ENDIF 
@@ -2703,7 +2629,7 @@ InputPath=.\Effector.es
 InputName=Effector
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2715,7 +2641,7 @@ InputPath=.\Effector.es
 InputName=Effector
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2734,7 +2660,7 @@ InputPath=.\Fireworks.es
 InputName=Fireworks
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2746,7 +2672,7 @@ InputPath=.\Fireworks.es
 InputName=Fireworks
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2765,7 +2691,7 @@ InputPath=.\Lightning.es
 InputName=Lightning
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2777,7 +2703,7 @@ InputPath=.\Lightning.es
 InputName=Lightning
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2796,7 +2722,7 @@ InputPath=.\MeteorShower.es
 InputName=MeteorShower
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2808,7 +2734,7 @@ InputPath=.\MeteorShower.es
 InputName=MeteorShower
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                   ..\  
+	cd                                                                                                                    ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2827,7 +2753,7 @@ InputPath=.\PhotoAlbum.es
 InputName=PhotoAlbum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2839,7 +2765,7 @@ InputPath=.\PhotoAlbum.es
 InputName=PhotoAlbum
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2858,7 +2784,7 @@ InputPath=.\PyramidSpaceShip.es
 InputName=PyramidSpaceShip
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2870,7 +2796,7 @@ InputPath=.\PyramidSpaceShip.es
 InputName=PyramidSpaceShip
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2889,7 +2815,7 @@ InputPath=.\PyramidSpaceShipMarker.es
 InputName=PyramidSpaceShipMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2901,7 +2827,7 @@ InputPath=.\PyramidSpaceShipMarker.es
 InputName=PyramidSpaceShipMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2920,7 +2846,7 @@ InputPath=.\RollingStone.es
 InputName=RollingStone
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2932,7 +2858,7 @@ InputPath=.\RollingStone.es
 InputName=RollingStone
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2951,7 +2877,7 @@ InputPath=.\StormController.es
 InputName=StormController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2963,7 +2889,7 @@ InputPath=.\StormController.es
 InputName=StormController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2982,7 +2908,7 @@ InputPath=.\TimeController.es
 InputName=TimeController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -2994,7 +2920,7 @@ InputPath=.\TimeController.es
 InputName=TimeController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3013,7 +2939,7 @@ InputPath=.\WorldSettingsController.es
 InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3025,7 +2951,7 @@ InputPath=.\WorldSettingsController.es
 InputName=WorldSettingsController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3048,7 +2974,7 @@ InputPath=.\AirElemental.es
 InputName=AirElemental
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3060,7 +2986,7 @@ InputPath=.\AirElemental.es
 InputName=AirElemental
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3079,7 +3005,7 @@ InputPath=.\Beast.es
 InputName=Beast
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3091,7 +3017,7 @@ InputPath=.\Beast.es
 InputName=Beast
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3110,7 +3036,7 @@ InputPath=.\BigHead.es
 InputName=BigHead
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3122,7 +3048,7 @@ InputPath=.\BigHead.es
 InputName=BigHead
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3141,7 +3067,7 @@ InputPath=.\Boneman.es
 InputName=Boneman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3153,7 +3079,7 @@ InputPath=.\Boneman.es
 InputName=Boneman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3172,7 +3098,7 @@ InputPath=.\CannonRotating.es
 InputName=CannonRotating
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3184,7 +3110,7 @@ InputPath=.\CannonRotating.es
 InputName=CannonRotating
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3203,7 +3129,7 @@ InputPath=.\CannonStatic.es
 InputName=CannonStatic
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3215,7 +3141,7 @@ InputPath=.\CannonStatic.es
 InputName=CannonStatic
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3239,7 +3165,7 @@ InputPath=.\ChainsawFreak.es
 InputName=ChainsawFreak
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3251,7 +3177,7 @@ InputPath=.\ChainsawFreak.es
 InputName=ChainsawFreak
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3270,7 +3196,7 @@ InputPath=.\CrateBus.es
 InputName=CrateBus
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3282,7 +3208,7 @@ InputPath=.\CrateBus.es
 InputName=CrateBus
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3301,7 +3227,7 @@ InputPath=.\CrateRider.es
 InputName=CrateRider
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3313,7 +3239,7 @@ InputPath=.\CrateRider.es
 InputName=CrateRider
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3342,7 +3268,7 @@ InputPath=.\Demon.es
 InputName=Demon
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3354,7 +3280,7 @@ InputPath=.\Demon.es
 InputName=Demon
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3373,7 +3299,7 @@ InputPath=.\Devil.es
 InputName=Devil
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3385,7 +3311,7 @@ InputPath=.\Devil.es
 InputName=Devil
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3404,7 +3330,7 @@ InputPath=.\DevilMarker.es
 InputName=DevilMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3416,7 +3342,7 @@ InputPath=.\DevilMarker.es
 InputName=DevilMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3440,7 +3366,7 @@ InputPath=.\Elemental.es
 InputName=Elemental
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3452,7 +3378,7 @@ InputPath=.\Elemental.es
 InputName=Elemental
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3471,7 +3397,7 @@ InputPath=.\EnemyBase.es
 InputName=EnemyBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3483,7 +3409,7 @@ InputPath=.\EnemyBase.es
 InputName=EnemyBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3502,11 +3428,11 @@ InputPath=.\EnemyCounter.es
 InputName=EnemyCounter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
-
+
 !ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
@@ -3514,7 +3440,7 @@ InputPath=.\EnemyCounter.es
 InputName=EnemyCounter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3533,7 +3459,7 @@ InputPath=.\EnemyDive.es
 InputName=EnemyDive
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3545,7 +3471,7 @@ InputPath=.\EnemyDive.es
 InputName=EnemyDive
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3564,7 +3490,7 @@ InputPath=.\EnemyFly.es
 InputName=EnemyFly
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3576,7 +3502,7 @@ InputPath=.\EnemyFly.es
 InputName=EnemyFly
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3595,7 +3521,7 @@ InputPath=.\EnemyMarker.es
 InputName=EnemyMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3607,7 +3533,7 @@ InputPath=.\EnemyMarker.es
 InputName=EnemyMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3626,7 +3552,7 @@ InputPath=.\EnemyRunInto.es
 InputName=EnemyRunInto
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3638,7 +3564,7 @@ InputPath=.\EnemyRunInto.es
 InputName=EnemyRunInto
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3657,7 +3583,7 @@ InputPath=.\EnemySpawner.es
 InputName=EnemySpawner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3669,7 +3595,7 @@ InputPath=.\EnemySpawner.es
 InputName=EnemySpawner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3688,7 +3614,7 @@ InputPath=.\ExotechLarva.es
 InputName=ExotechLarva
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3700,7 +3626,7 @@ InputPath=.\ExotechLarva.es
 InputName=ExotechLarva
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3719,7 +3645,7 @@ InputPath=.\ExotechLarvaBattery.es
 InputName=ExotechLarvaBattery
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3731,7 +3657,7 @@ InputPath=.\ExotechLarvaBattery.es
 InputName=ExotechLarvaBattery
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3750,7 +3676,7 @@ InputPath=.\ExotechLarvaCharger.es
 InputName=ExotechLarvaCharger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3762,7 +3688,7 @@ InputPath=.\ExotechLarvaCharger.es
 InputName=ExotechLarvaCharger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3781,7 +3707,7 @@ InputPath=.\Eyeman.es
 InputName=Eyeman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3793,7 +3719,7 @@ InputPath=.\Eyeman.es
 InputName=Eyeman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3812,7 +3738,7 @@ InputPath=.\Fish.es
 InputName=Fish
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3824,7 +3750,7 @@ InputPath=.\Fish.es
 InputName=Fish
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3848,7 +3774,7 @@ InputPath=.\Gizmo.es
 InputName=Gizmo
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3860,7 +3786,7 @@ InputPath=.\Gizmo.es
 InputName=Gizmo
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3879,7 +3805,7 @@ InputPath=.\Grunt.es
 InputName=Grunt
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3891,7 +3817,7 @@ InputPath=.\Grunt.es
 InputName=Grunt
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3910,7 +3836,7 @@ InputPath=.\GruntSka.es
 InputName=GruntSka
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3922,7 +3848,7 @@ InputPath=.\GruntSka.es
 InputName=GruntSka
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3941,7 +3867,7 @@ InputPath=.\Guffy.es
 InputName=Guffy
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3953,7 +3879,7 @@ InputPath=.\Guffy.es
 InputName=Guffy
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3972,7 +3898,7 @@ InputPath=.\Headman.es
 InputName=Headman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -3984,7 +3910,7 @@ InputPath=.\Headman.es
 InputName=Headman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4038,7 +3964,7 @@ InputPath=.\Santa.es
 InputName=Santa
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4050,7 +3976,7 @@ InputPath=.\Santa.es
 InputName=Santa
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                 ..\  
+	cd                                                                                                                  ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4069,7 +3995,7 @@ InputPath=.\Scorpman.es
 InputName=Scorpman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4081,7 +4007,7 @@ InputPath=.\Scorpman.es
 InputName=Scorpman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4100,7 +4026,7 @@ InputPath=.\Shooter.es
 InputName=Shooter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4112,7 +4038,7 @@ InputPath=.\Shooter.es
 InputName=Shooter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4131,7 +4057,7 @@ InputPath=.\Summoner.es
 InputName=Summoner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4143,7 +4069,7 @@ InputPath=.\Summoner.es
 InputName=Summoner
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4162,7 +4088,7 @@ InputPath=.\SummonerMarker.es
 InputName=SummonerMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4174,7 +4100,7 @@ InputPath=.\SummonerMarker.es
 InputName=SummonerMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4193,7 +4119,7 @@ InputPath=.\Walker.es
 InputName=Walker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4205,7 +4131,7 @@ InputPath=.\Walker.es
 InputName=Walker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4224,7 +4150,7 @@ InputPath=.\Werebull.es
 InputName=Werebull
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4236,7 +4162,7 @@ InputPath=.\Werebull.es
 InputName=Werebull
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4255,7 +4181,7 @@ InputPath=.\Woman.es
 InputName=Woman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4267,7 +4193,7 @@ InputPath=.\Woman.es
 InputName=Woman
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4290,7 +4216,7 @@ InputPath=.\EnvironmentBase.es
 InputName=EnvironmentBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4302,7 +4228,7 @@ InputPath=.\EnvironmentBase.es
 InputName=EnvironmentBase
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4321,7 +4247,7 @@ InputPath=.\EnvironmentMarker.es
 InputName=EnvironmentMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4333,7 +4259,7 @@ InputPath=.\EnvironmentMarker.es
 InputName=EnvironmentMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4352,7 +4278,7 @@ InputPath=.\EnvironmentParticlesHolder.es
 InputName=EnvironmentParticlesHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4364,7 +4290,7 @@ InputPath=.\EnvironmentParticlesHolder.es
 InputName=EnvironmentParticlesHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4387,7 +4313,7 @@ InputPath=.\AmmoItem.es
 InputName=AmmoItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4399,7 +4325,7 @@ InputPath=.\AmmoItem.es
 InputName=AmmoItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4418,7 +4344,7 @@ InputPath=.\AmmoPack.es
 InputName=AmmoPack
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4430,7 +4356,7 @@ InputPath=.\AmmoPack.es
 InputName=AmmoPack
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4449,7 +4375,7 @@ InputPath=.\ArmorItem.es
 InputName=ArmorItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4461,7 +4387,7 @@ InputPath=.\ArmorItem.es
 InputName=ArmorItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4480,7 +4406,7 @@ InputPath=.\HealthItem.es
 InputName=HealthItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4492,7 +4418,7 @@ InputPath=.\HealthItem.es
 InputName=HealthItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4511,7 +4437,7 @@ InputPath=.\Item.es
 InputName=Item
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4523,7 +4449,7 @@ InputPath=.\Item.es
 InputName=Item
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4542,7 +4468,7 @@ InputPath=.\KeyItem.es
 InputName=KeyItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4554,7 +4480,7 @@ InputPath=.\KeyItem.es
 InputName=KeyItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4573,7 +4499,7 @@ InputPath=.\MessageItem.es
 InputName=MessageItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4585,7 +4511,7 @@ InputPath=.\MessageItem.es
 InputName=MessageItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4604,7 +4530,7 @@ InputPath=.\PowerUpItem.es
 InputName=PowerUpItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4616,7 +4542,7 @@ InputPath=.\PowerUpItem.es
 InputName=PowerUpItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                ..\  
+	cd                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4635,7 +4561,7 @@ InputPath=.\WeaponItem.es
 InputName=WeaponItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4647,7 +4573,7 @@ InputPath=.\WeaponItem.es
 InputName=WeaponItem
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4670,7 +4596,7 @@ InputPath=.\Player.es
 InputName=Player
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4682,7 +4608,7 @@ InputPath=.\Player.es
 InputName=Player
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4701,7 +4627,7 @@ InputPath=.\PlayerActionMarker.es
 InputName=PlayerActionMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4713,7 +4639,7 @@ InputPath=.\PlayerActionMarker.es
 InputName=PlayerActionMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4732,7 +4658,7 @@ InputPath=.\PlayerAnimator.es
 InputName=PlayerAnimator
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4744,7 +4670,7 @@ InputPath=.\PlayerAnimator.es
 InputName=PlayerAnimator
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4763,7 +4689,7 @@ InputPath=.\PlayerMarker.es
 InputName=PlayerMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4775,7 +4701,7 @@ InputPath=.\PlayerMarker.es
 InputName=PlayerMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4794,7 +4720,7 @@ InputPath=.\PlayerView.es
 InputName=PlayerView
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4806,7 +4732,7 @@ InputPath=.\PlayerView.es
 InputName=PlayerView
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4825,7 +4751,7 @@ InputPath=.\PlayerWeapons.es
 InputName=PlayerWeapons
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4837,7 +4763,7 @@ InputPath=.\PlayerWeapons.es
 InputName=PlayerWeapons
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4856,7 +4782,7 @@ InputPath=.\PlayerWeaponsEffects.es
 InputName=PlayerWeaponsEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4868,7 +4794,7 @@ InputPath=.\PlayerWeaponsEffects.es
 InputName=PlayerWeaponsEffects
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4891,7 +4817,7 @@ InputPath=.\AnimationChanger.es
 InputName=AnimationChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4903,7 +4829,7 @@ InputPath=.\AnimationChanger.es
 InputName=AnimationChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4922,7 +4848,7 @@ InputPath=.\AnimationHub.es
 InputName=AnimationHub
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4934,7 +4860,7 @@ InputPath=.\AnimationHub.es
 InputName=AnimationHub
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4953,7 +4879,7 @@ InputPath=.\AreaMarker.es
 InputName=AreaMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4965,7 +4891,7 @@ InputPath=.\AreaMarker.es
 InputName=AreaMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4984,7 +4910,7 @@ InputPath=.\BackgroundViewer.es
 InputName=BackgroundViewer
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -4996,7 +4922,7 @@ InputPath=.\BackgroundViewer.es
 InputName=BackgroundViewer
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5015,7 +4941,7 @@ InputPath=.\Camera.es
 InputName=Camera
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5027,7 +4953,7 @@ InputPath=.\Camera.es
 InputName=Camera
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5046,7 +4972,7 @@ InputPath=.\CameraMarker.es
 InputName=CameraMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5058,7 +4984,7 @@ InputPath=.\CameraMarker.es
 InputName=CameraMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5077,7 +5003,7 @@ InputPath=.\Copier.es
 InputName=Copier
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5089,7 +5015,7 @@ InputPath=.\Copier.es
 InputName=Copier
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5108,7 +5034,7 @@ InputPath=.\Counter.es
 InputName=Counter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5120,7 +5046,7 @@ InputPath=.\Counter.es
 InputName=Counter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5139,7 +5065,7 @@ InputPath=.\CreditsHolder.es
 InputName=CreditsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                ..\  
+	cd                                                                                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5151,11 +5077,10 @@ InputPath=.\CreditsHolder.es
 InputName=CreditsHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                ..\  
+	cd                                                                                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
-
 
 !ENDIF 
 
@@ -5171,7 +5096,7 @@ InputPath=.\Damager.es
 InputName=Damager
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                ..\  
+	cd                                                                                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5183,7 +5108,7 @@ InputPath=.\Damager.es
 InputName=Damager
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                ..\  
+	cd                                                                                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5202,7 +5127,7 @@ InputPath=.\DebugEntityStatesDisplay.es
 InputName=DebugEntityStatesDisplay
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                ..\  
+	cd                                                                                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5214,7 +5139,7 @@ InputPath=.\DebugEntityStatesDisplay.es
 InputName=DebugEntityStatesDisplay
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                ..\  
+	cd                                                                                                                 ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5233,7 +5158,7 @@ InputPath=.\DoorController.es
 InputName=DoorController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5245,7 +5170,7 @@ InputPath=.\DoorController.es
 InputName=DoorController
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5264,7 +5189,7 @@ InputPath=.\Eruptor.es
 InputName=Eruptor
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5276,7 +5201,7 @@ InputPath=.\Eruptor.es
 InputName=Eruptor
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5295,7 +5220,7 @@ InputPath=.\FogMarker.es
 InputName=FogMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5307,7 +5232,7 @@ InputPath=.\FogMarker.es
 InputName=FogMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5326,7 +5251,7 @@ InputPath=.\GradientMarker.es
 InputName=GradientMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5338,7 +5263,7 @@ InputPath=.\GradientMarker.es
 InputName=GradientMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5357,7 +5282,7 @@ InputPath=.\GravityMarker.es
 InputName=GravityMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5369,7 +5294,7 @@ InputPath=.\GravityMarker.es
 InputName=GravityMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5388,7 +5313,7 @@ InputPath=.\GravityRouter.es
 InputName=GravityRouter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5400,7 +5325,7 @@ InputPath=.\GravityRouter.es
 InputName=GravityRouter
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5419,7 +5344,7 @@ InputPath=.\HazeMarker.es
 InputName=HazeMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5431,7 +5356,7 @@ InputPath=.\HazeMarker.es
 InputName=HazeMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5450,7 +5375,7 @@ InputPath=.\HudPicHolder.es
 InputName=HudPicHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5462,7 +5387,7 @@ InputPath=.\HudPicHolder.es
 InputName=HudPicHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5481,7 +5406,7 @@ InputPath=.\Light.es
 InputName=Light
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5493,7 +5418,7 @@ InputPath=.\Light.es
 InputName=Light
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5512,7 +5437,7 @@ InputPath=.\Marker.es
 InputName=Marker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5524,7 +5449,7 @@ InputPath=.\Marker.es
 InputName=Marker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5543,7 +5468,7 @@ InputPath=.\MessageHolder.es
 InputName=MessageHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5555,7 +5480,7 @@ InputPath=.\MessageHolder.es
 InputName=MessageHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5574,7 +5499,7 @@ InputPath=.\MirrorMarker.es
 InputName=MirrorMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5586,7 +5511,7 @@ InputPath=.\MirrorMarker.es
 InputName=MirrorMarker
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5602,11 +5527,10 @@ SOURCE=.\ModelDestruction.es
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
 InputPath=.\ModelDestruction.es
-
 InputName=ModelDestruction
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5618,7 +5542,7 @@ InputPath=.\ModelDestruction.es
 InputName=ModelDestruction
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5637,7 +5561,7 @@ InputPath=.\ModelHolder.es
 InputName=ModelHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5649,7 +5573,7 @@ InputPath=.\ModelHolder.es
 InputName=ModelHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5668,7 +5592,7 @@ InputPath=.\ModelHolder2.es
 InputName=ModelHolder2
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5680,7 +5604,7 @@ InputPath=.\ModelHolder2.es
 InputName=ModelHolder2
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5699,7 +5623,7 @@ InputPath=.\ModelHolder3.es
 InputName=ModelHolder3
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5711,7 +5635,7 @@ InputPath=.\ModelHolder3.es
 InputName=ModelHolder3
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5730,7 +5654,7 @@ InputPath=.\MusicChanger.es
 InputName=MusicChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5742,10 +5666,9 @@ InputPath=.\MusicChanger.es
 InputName=MusicChanger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
-
 # End Custom Build
 
 !ENDIF 
@@ -5762,7 +5685,7 @@ InputPath=.\MusicHolder.es
 InputName=MusicHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5774,7 +5697,7 @@ InputPath=.\MusicHolder.es
 InputName=MusicHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5793,7 +5716,7 @@ InputPath=.\ParticlesHolder.es
 InputName=ParticlesHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5805,7 +5728,7 @@ InputPath=.\ParticlesHolder.es
 InputName=ParticlesHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5824,7 +5747,7 @@ InputPath=.\ScrollHolder.es
 InputName=ScrollHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5836,7 +5759,7 @@ InputPath=.\ScrollHolder.es
 InputName=ScrollHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5855,7 +5778,7 @@ InputPath=.\SoundHolder.es
 InputName=SoundHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5867,7 +5790,7 @@ InputPath=.\SoundHolder.es
 InputName=SoundHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5886,7 +5809,7 @@ InputPath=.\Switch.es
 InputName=Switch
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5897,9 +5820,8 @@ InputName=Switch
 InputPath=.\Switch.es
 InputName=Switch
 
-
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5918,7 +5840,7 @@ InputPath=.\Teleport.es
 InputName=Teleport
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5930,7 +5852,7 @@ InputPath=.\Teleport.es
 InputName=Teleport
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5949,7 +5871,7 @@ InputPath=.\TextFXHolder.es
 InputName=TextFXHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5961,7 +5883,7 @@ InputPath=.\TextFXHolder.es
 InputName=TextFXHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5980,7 +5902,7 @@ InputPath=.\TouchField.es
 InputName=TouchField
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -5992,7 +5914,7 @@ InputPath=.\TouchField.es
 InputName=TouchField
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6011,7 +5933,7 @@ InputPath=.\Trigger.es
 InputName=Trigger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6023,7 +5945,7 @@ InputPath=.\Trigger.es
 InputName=Trigger
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6042,7 +5964,7 @@ InputPath=.\VoiceHolder.es
 InputName=VoiceHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6054,7 +5976,7 @@ InputPath=.\VoiceHolder.es
 InputName=VoiceHolder
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6073,7 +5995,7 @@ InputPath=.\WorldLink.es
 InputName=WorldLink
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6085,7 +6007,7 @@ InputPath=.\WorldLink.es
 InputName=WorldLink
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6108,7 +6030,7 @@ InputPath=.\AirShockwave.es
 InputName=AirShockwave
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6120,7 +6042,7 @@ InputPath=.\AirShockwave.es
 InputName=AirShockwave
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6144,7 +6066,7 @@ InputPath=.\Bullet.es
 InputName=Bullet
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6156,7 +6078,7 @@ InputPath=.\Bullet.es
 InputName=Bullet
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6175,7 +6097,7 @@ InputPath=.\CannonBall.es
 InputName=CannonBall
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6187,7 +6109,7 @@ InputPath=.\CannonBall.es
 InputName=CannonBall
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6206,7 +6128,7 @@ InputPath=.\DevilProjectile.es
 InputName=DevilProjectile
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6218,7 +6140,7 @@ InputPath=.\DevilProjectile.es
 InputName=DevilProjectile
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6237,7 +6159,7 @@ InputPath=.\Flame.es
 InputName=Flame
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6249,7 +6171,7 @@ InputPath=.\Flame.es
 InputName=Flame
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6273,7 +6195,7 @@ InputPath=.\LarvaOffspring.es
 InputName=LarvaOffspring
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6285,7 +6207,7 @@ InputPath=.\LarvaOffspring.es
 InputName=LarvaOffspring
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6309,7 +6231,7 @@ InputPath=.\Projectile.es
 InputName=Projectile
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6321,7 +6243,7 @@ InputPath=.\Projectile.es
 InputName=Projectile
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6340,7 +6262,7 @@ InputPath=.\SeriousBomb.es
 InputName=SeriousBomb
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6348,12 +6270,11 @@ InputName=SeriousBomb
 !ELSEIF  "$(CFG)" == "EntitiesMP - Win32 Debug"
 
 # Begin Custom Build - EntitiesMP/$(InputName).es
-
 InputPath=.\SeriousBomb.es
 InputName=SeriousBomb
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6372,7 +6293,7 @@ InputPath=.\SpawnerProjectile.es
 InputName=SpawnerProjectile
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6384,7 +6305,7 @@ InputPath=.\SpawnerProjectile.es
 InputName=SpawnerProjectile
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6403,7 +6324,7 @@ InputPath=.\Twister.es
 InputName=Twister
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6415,7 +6336,7 @@ InputPath=.\Twister.es
 InputName=Twister
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6434,7 +6355,7 @@ InputPath=.\Water.es
 InputName=Water
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6446,7 +6367,7 @@ InputPath=.\Water.es
 InputName=Water
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6466,7 +6387,7 @@ InputPath=.\Global.es
 InputName=Global
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                               ..\  
+	cd                                                                                                                ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6478,7 +6399,7 @@ InputPath=.\Global.es
 InputName=Global
 
 "$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cd                                                                                                                     ..\  
+	cd                                                                                                                      ..\  
 	ecc EntitiesMP/$(InputName).es 
 	
 # End Custom Build
@@ -6987,7 +6908,6 @@ SOURCE=..\..\Flesh\Classes\Werebull.ecl
 SOURCE=..\..\Flesh\Classes\Woman.ecl
 # End Source File
 # Begin Source File
-
 
 SOURCE=..\..\Flesh\Classes\WorldBase.ecl
 # End Source File

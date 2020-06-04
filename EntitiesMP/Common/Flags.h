@@ -14,6 +14,10 @@
 #define ECBI_MODEL_HOLDER       (1UL<<6)
 #define ECBI_CORPSE_SOLID       (1UL<<7)
 #define ECBI_PLAYER             (1UL<<8)
+#define ECBI_ENEMY              (1UL<<9) // last available flag :3
+
+#define IDENTIFY_AS_ENEMY (\
+  (ECBI_ENEMY) << ECB_IS )
 
 // standard flag combinations:
 

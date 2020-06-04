@@ -290,7 +290,7 @@ procedures:
     // declare yourself as a model
     InitAsModel();
     SetPhysicsFlags(EPF_MODEL_WALKING|EPF_HASLUNGS);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags()|ENF_ALIVE);
     en_tmMaxHoldBreath = 5.0f;
     en_fDensity = 2000.0f;

@@ -11,6 +11,9 @@
 #include "ModelsMP/Player/SeriousSam/Player.h"
 #include "ModelsMP/Player/SeriousSam/Body.h"
 #include "ModelsMP/Player/SeriousSam/Head.h"
+#include "ModelsMP/Player/Dio/Player.h"
+#include "ModelsMP/Player/Dio/Body.h"
+#include "ModelsMP/Player/Dio/Head.h"
 
 #include "EntitiesMP/PlayerMarker.h"
 #include "EntitiesMP/PlayerWeapons.h"
@@ -40,6 +43,12 @@
 #include "EntitiesMP/SeriousBomb.h"
 #include "EntitiesMP/CreditsHolder.h"
 #include "EntitiesMP/HudPicHolder.h"
+#include "EntitiesMP/ModelHolder.h"
+#include "EntitiesMP/ModelHolder2.h"
+#include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/graphics_exports.h"
+#include "EntitiesJoJo/RodaRollaDa.h"
+#include "EntitiesJoJo/entitycast.h"
 
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 // from game
@@ -253,9 +262,11 @@ static void KillAllEnemies(CEntity *penKiller)
 #define PLACT_USE_HELD            (1L<<9)
 #define PLACT_SNIPER_ZOOMIN       (1L<<10)
 #define PLACT_SNIPER_ZOOMOUT      (1L<<11)
-#define PLACT_SNIPER_USE          (1L<<12)
+#define PLACT_SECONDARY_FIRE      (1L<<12)
 #define PLACT_FIREBOMB            (1L<<13)
-#define PLACT_SELECT_WEAPON_SHIFT (14)
+#define PLACT_ULTIMATE            (1L<<14)
+#define PLACT_STAND_TOGGLE        (1L<<15)
+#define PLACT_SELECT_WEAPON_SHIFT (16)
 #define PLACT_SELECT_WEAPON_MASK  (0x1FL<<PLACT_SELECT_WEAPON_SHIFT)
                                      
 #define MAX_WEAPONS 30
@@ -302,6 +313,9 @@ struct PlayerControls {
   BOOL bWalk;
   BOOL bStrafe;
   BOOL bFire;
+  BOOL bSecondaryFire;
+  BOOL bUltimate;
+  BOOL bStandToggle;
   BOOL bReload;
   BOOL bUse;
   BOOL bComputer;
@@ -474,7 +488,30 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
   // accumulate local rotation
   penThis->m_aLocalRotation    +=paAction.pa_aRotation;
   penThis->m_aLocalViewRotation+=paAction.pa_aViewRotation;
-  penThis->m_vLocalTranslation +=paAction.pa_vTranslation;
+
+  BOOL ignore_movement = FALSE;
+  FLOAT dio_jump_multiplier = 1.0f;
+  FLOAT dio_move_multiplier = 1.0f;
+  if (penThis->m_penMainMusicHolder != NULL &&
+      ((CMusicHolder*)&*penThis->m_penMainMusicHolder)->IsZaWarudo())
+  {
+    if (((CMusicHolder*)&*penThis->m_penMainMusicHolder)->m_penDioPlayer.ep_pen != penThis->GetPredictionTail())
+    {
+      ignore_movement = TRUE;
+      paAction.pa_aRotation     = penThis->m_aLocalRotation;
+      paAction.pa_aViewRotation = penThis->m_aLocalViewRotation;
+    } else {
+      dio_jump_multiplier = 5.0f;
+      dio_move_multiplier = 2.0f;
+    }
+  }
+  paAction.pa_vTranslation(1) *= dio_move_multiplier;
+  paAction.pa_vTranslation(2) *= dio_jump_multiplier;
+  paAction.pa_vTranslation(3) *= dio_move_multiplier;
+
+  if (!ignore_movement) {
+    penThis->m_vLocalTranslation +=paAction.pa_vTranslation;
+  }
 
   // if prescanning
   if (bPreScan) {
@@ -482,43 +519,54 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
     return;
   }
 
-  // add button movement/rotation/look actions to the axis actions
-  if(pctlCurrent.bMoveForward  ) paAction.pa_vTranslation(3) -= plr_fSpeedForward;
-  if(pctlCurrent.bMoveBackward ) paAction.pa_vTranslation(3) += plr_fSpeedBackward;
-  if(pctlCurrent.bMoveLeft  || pctlCurrent.bStrafe&&pctlCurrent.bTurnLeft) paAction.pa_vTranslation(1) -= plr_fSpeedSide;
-  if(pctlCurrent.bMoveRight || pctlCurrent.bStrafe&&pctlCurrent.bTurnRight) paAction.pa_vTranslation(1) += plr_fSpeedSide;
-  if(pctlCurrent.bMoveUp       ) paAction.pa_vTranslation(2) += plr_fSpeedUp;
-  if(pctlCurrent.bMoveDown     ) paAction.pa_vTranslation(2) -= plr_fSpeedUp;
+  if (!ignore_movement)
+  {
+    // add button movement/rotation/look actions to the axis actions
+    if(pctlCurrent.bMoveForward  ) paAction.pa_vTranslation(3) -= plr_fSpeedForward*dio_move_multiplier;
+    if(pctlCurrent.bMoveBackward ) paAction.pa_vTranslation(3) += plr_fSpeedBackward*dio_move_multiplier;
+    if(pctlCurrent.bMoveLeft  || pctlCurrent.bStrafe&&pctlCurrent.bTurnLeft) paAction.pa_vTranslation(1) -= plr_fSpeedSide*dio_move_multiplier;
+    if(pctlCurrent.bMoveRight || pctlCurrent.bStrafe&&pctlCurrent.bTurnRight) paAction.pa_vTranslation(1) += plr_fSpeedSide*dio_move_multiplier;
+    if(pctlCurrent.bMoveUp       ) paAction.pa_vTranslation(2) += plr_fSpeedUp*dio_jump_multiplier;
+    if(pctlCurrent.bMoveDown     ) paAction.pa_vTranslation(2) -= plr_fSpeedUp;
 
-  const FLOAT fQuantum = _pTimer->TickQuantum;
-  if(pctlCurrent.bTurnLeft  && !pctlCurrent.bStrafe) penThis->m_aLocalRotation(1) += ctl_fButtonRotationSpeedH*fQuantum;
-  if(pctlCurrent.bTurnRight && !pctlCurrent.bStrafe) penThis->m_aLocalRotation(1) -= ctl_fButtonRotationSpeedH*fQuantum;
-  if(pctlCurrent.bTurnUp           ) penThis->m_aLocalRotation(2) += ctl_fButtonRotationSpeedP*fQuantum;
-  if(pctlCurrent.bTurnDown         ) penThis->m_aLocalRotation(2) -= ctl_fButtonRotationSpeedP*fQuantum;
-  if(pctlCurrent.bTurnBankingLeft  ) penThis->m_aLocalRotation(3) += ctl_fButtonRotationSpeedB*fQuantum;
-  if(pctlCurrent.bTurnBankingRight ) penThis->m_aLocalRotation(3) -= ctl_fButtonRotationSpeedB*fQuantum;
+    const FLOAT fQuantum = _pTimer->TickQuantum;
+    if(pctlCurrent.bTurnLeft  && !pctlCurrent.bStrafe) penThis->m_aLocalRotation(1) += ctl_fButtonRotationSpeedH*fQuantum;
+    if(pctlCurrent.bTurnRight && !pctlCurrent.bStrafe) penThis->m_aLocalRotation(1) -= ctl_fButtonRotationSpeedH*fQuantum;
+    if(pctlCurrent.bTurnUp           ) penThis->m_aLocalRotation(2) += ctl_fButtonRotationSpeedP*fQuantum;
+    if(pctlCurrent.bTurnDown         ) penThis->m_aLocalRotation(2) -= ctl_fButtonRotationSpeedP*fQuantum;
+    if(pctlCurrent.bTurnBankingLeft  ) penThis->m_aLocalRotation(3) += ctl_fButtonRotationSpeedB*fQuantum;
+    if(pctlCurrent.bTurnBankingRight ) penThis->m_aLocalRotation(3) -= ctl_fButtonRotationSpeedB*fQuantum;
 
-  if(pctlCurrent.bLookLeft         ) penThis->m_aLocalViewRotation(1) += ctl_fButtonRotationSpeedH*fQuantum;
-  if(pctlCurrent.bLookRight        ) penThis->m_aLocalViewRotation(1) -= ctl_fButtonRotationSpeedH*fQuantum;
-  if(pctlCurrent.bLookUp           ) penThis->m_aLocalViewRotation(2) += ctl_fButtonRotationSpeedP*fQuantum;
-  if(pctlCurrent.bLookDown         ) penThis->m_aLocalViewRotation(2) -= ctl_fButtonRotationSpeedP*fQuantum;
-  if(pctlCurrent.bLookBankingLeft  ) penThis->m_aLocalViewRotation(3) += ctl_fButtonRotationSpeedB*fQuantum;
-  if(pctlCurrent.bLookBankingRight ) penThis->m_aLocalViewRotation(3) -= ctl_fButtonRotationSpeedB*fQuantum;
+    if(pctlCurrent.bLookLeft         ) penThis->m_aLocalViewRotation(1) += ctl_fButtonRotationSpeedH*fQuantum;
+    if(pctlCurrent.bLookRight        ) penThis->m_aLocalViewRotation(1) -= ctl_fButtonRotationSpeedH*fQuantum;
+    if(pctlCurrent.bLookUp           ) penThis->m_aLocalViewRotation(2) += ctl_fButtonRotationSpeedP*fQuantum;
+    if(pctlCurrent.bLookDown         ) penThis->m_aLocalViewRotation(2) -= ctl_fButtonRotationSpeedP*fQuantum;
+    if(pctlCurrent.bLookBankingLeft  ) penThis->m_aLocalViewRotation(3) += ctl_fButtonRotationSpeedB*fQuantum;
+    if(pctlCurrent.bLookBankingRight ) penThis->m_aLocalViewRotation(3) -= ctl_fButtonRotationSpeedB*fQuantum;
 
-  // use current accumulated rotation
-  paAction.pa_aRotation     = penThis->m_aLocalRotation;
-  paAction.pa_aViewRotation = penThis->m_aLocalViewRotation;
-  //paAction.pa_vTranslation  = penThis->m_vLocalTranslation;
+  }
 
-  // if walking
-  if(pctlCurrent.bWalk) {
-    // make forward/backward and sidestep speeds slower
-    paAction.pa_vTranslation(3) /= 2.0f;
-    paAction.pa_vTranslation(1) /= 2.0f;
+  if (!ignore_movement) {
+    // use current accumulated rotation
+    paAction.pa_aRotation     = penThis->m_aLocalRotation;
+    paAction.pa_aViewRotation = penThis->m_aLocalViewRotation;
+    // if walking
+    if(pctlCurrent.bWalk) {
+      // make forward/backward and sidestep speeds slower
+      paAction.pa_vTranslation(3) /= 2.0f;
+      paAction.pa_vTranslation(1) /= 2.0f;
+    }
   }
   
   // reset all button actions
   paAction.pa_ulButtons = 0;
+
+  if(pctlCurrent.b3rdPersonView) paAction.pa_ulButtons |= PLACT_3RD_PERSON_VIEW;
+  if(pctlCurrent.bCenterView)    paAction.pa_ulButtons |= PLACT_CENTER_VIEW;
+
+  if (ignore_movement) {
+    return; // everything we need is done
+  }
 
   // set weapon selection bits
   for(INDEX i=1; i<MAX_WEAPONS; i++) {
@@ -532,13 +580,14 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
   if(pctlCurrent.bWeaponPrev) paAction.pa_ulButtons |= PLACT_WEAPON_PREV;
   if(pctlCurrent.bWeaponFlip) paAction.pa_ulButtons |= PLACT_WEAPON_FLIP;
   if(pctlCurrent.bFire)       paAction.pa_ulButtons |= PLACT_FIRE;
+  if(pctlCurrent.bSecondaryFire) paAction.pa_ulButtons |= PLACT_SECONDARY_FIRE|PLACT_USE_HELD;
+  if(pctlCurrent.bUltimate)      paAction.pa_ulButtons |= PLACT_ULTIMATE;
+  if(pctlCurrent.bStandToggle)   paAction.pa_ulButtons |= PLACT_STAND_TOGGLE;
   if(pctlCurrent.bReload)     paAction.pa_ulButtons |= PLACT_RELOAD;
-  if(pctlCurrent.bUse)        paAction.pa_ulButtons |= PLACT_USE|PLACT_USE_HELD|PLACT_SNIPER_USE;
+  if(pctlCurrent.bUse)        paAction.pa_ulButtons |= PLACT_USE|PLACT_USE_HELD;
   if(pctlCurrent.bComputer)      paAction.pa_ulButtons |= PLACT_COMPUTER;
-  if(pctlCurrent.b3rdPersonView) paAction.pa_ulButtons |= PLACT_3RD_PERSON_VIEW;
-  if(pctlCurrent.bCenterView)    paAction.pa_ulButtons |= PLACT_CENTER_VIEW;
   // is 'use' being held?
-  if(pctlCurrent.bUseOrComputer) paAction.pa_ulButtons |= PLACT_USE_HELD|PLACT_SNIPER_USE;
+  if(pctlCurrent.bUseOrComputer) paAction.pa_ulButtons |= PLACT_USE_HELD;
   if(pctlCurrent.bSniperZoomIn)  paAction.pa_ulButtons |= PLACT_SNIPER_ZOOMIN;
   if(pctlCurrent.bSniperZoomOut) paAction.pa_ulButtons |= PLACT_SNIPER_ZOOMOUT;
   if(pctlCurrent.bFireBomb)      paAction.pa_ulButtons |= PLACT_FIREBOMB;
@@ -567,6 +616,331 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
   pctlCurrent.bUseOrComputerLast = pctlCurrent.bUseOrComputer;
 };
 
+extern BOOL g_shouldInverse = FALSE;
+
+void ZaWarudoEffect(CDrawPort* pdp, TIME zaWarudoStartTime)
+{
+  const INDEX width = pdp->GetWidth();
+  const INDEX height = pdp->GetHeight();
+
+  static const INDEX NUM_SIDES_ZAWARUDO = 32;
+  static HINSTANCE g_prevOGLInstance = NULL;
+  static FLOAT2D circle_points[NUM_SIDES_ZAWARUDO];
+#define LOG_TABLE_MULT 10000
+//sqrt(2)*0.5 * LOG_TABLE_MULT ~~ 0.7071f * 10000 ~~ 7100 (a bit more just to be on the safe side, sqrt(2)*0.5 is length of diagonal of square btw)
+#define LOG_TABLE_SIZE 7100 
+  static struct _DataCache
+  {
+    _DataCache(FLOAT2D* circle_points, INDEX NUM_SIDES_ZAWARUDO)
+      : prev_width(-1)
+      , prev_height(-1)
+      , refraction_remap_x(NULL)
+      , refraction_remap_y(NULL)
+    {
+      for (INDEX i = 0; i < NUM_SIDES_ZAWARUDO; ++i) {
+        FLOAT angleDelta = i * (2.0f * 3.14159265f) / NUM_SIDES_ZAWARUDO;
+        circle_points[i] = FLOAT2D(cos(angleDelta), -sin(angleDelta));
+      }
+      for (INDEX log_index = 0; log_index < LOG_TABLE_SIZE; ++log_index) {
+        log_table[log_index] = log(FLOAT(log_index) / LOG_TABLE_MULT);
+      }
+    }
+    ~_DataCache()
+    {
+      ClearRefractionRemap();
+    }
+    void ClearRefractionRemap()
+    {
+      if (refraction_remap_x)
+        delete[] refraction_remap_x;
+      refraction_remap_x = NULL;
+      if (refraction_remap_y)
+        delete[] refraction_remap_y;
+      refraction_remap_y = NULL;
+    }
+    void UpdateRefractionRemap(INDEX width, INDEX height)
+    {
+      if (prev_width == width && prev_height == height)
+        return;
+
+      ClearRefractionRemap();
+      prev_width = width;
+      prev_height = height;
+      refraction_remap_x = new INDEX[width*height];
+      refraction_remap_y = new INDEX[width*height];
+      
+      for (INDEX y = 0; y < height; ++y)
+      for (INDEX x = 0; x < width; ++x)
+      {
+        FLOAT to_center_x = 0.5f - FLOAT(x) / (width-1);
+        FLOAT to_center_y = 0.5f - FLOAT(y) / (height-1);
+        FLOAT to_center_dist = ClampDn(Sqrt(to_center_x*to_center_x + to_center_y*to_center_y), 0.01f);
+        FLOAT log_dist = log_table[INDEX(to_center_dist * LOG_TABLE_MULT)];
+        FLOAT rel_shift_x = 0.07f * log_dist * to_center_x / to_center_dist;
+        FLOAT rel_shift_y = 0.07f * log_dist * to_center_y / to_center_dist;
+
+        refraction_remap_x[width*y + x] = Clamp(INDEX(x + rel_shift_x*(width-1)), INDEX(0), INDEX(width-1)) - x;
+        refraction_remap_y[width*y + x] = Clamp(INDEX(y + rel_shift_y*(height-1)), INDEX(0), INDEX(height-1)) - y;
+      }
+    }
+
+    INDEX prev_width;
+    INDEX prev_height;
+    INDEX* refraction_remap_x;
+    INDEX* refraction_remap_y;
+    FLOAT log_table[LOG_TABLE_SIZE];
+  } g_staticDataCache(circle_points, NUM_SIDES_ZAWARUDO);
+
+  TIME thisTime = _pTimer->GetLerpedCurrentTick();
+  FLOAT orig_factor = 2.0f * (thisTime - zaWarudoStartTime);
+  FLOAT factor = ClampUp(orig_factor*orig_factor*0.5f, 1.0f);
+  if (factor < 0.01f)
+    return;
+
+  FLOAT refraction_factor = 0.5f + 0.5f*sin(ClampUp(orig_factor*0.5f, 1.0f)*2.0f*3.14159265f - 3.14159265f*0.5f);//sin(ClampUp(orig_factor * 0.35f, 1.0f) * 3.14159265f);
+  if (!g_shouldInverse)
+    factor = refraction_factor;
+
+  g_staticDataCache.UpdateRefractionRemap(width, height);
+  FLOAT desiredRadius = Sqrt(FLOAT(width)*width + FLOAT(height)*height) * factor * 0.51f;
+
+  if (_pGfx->gl_eCurrentAPI == GAT_D3D)
+  {
+    if (refraction_factor > 0.001f && pdp->Lock())
+    {
+      LPDIRECT3DSURFACE8 pBackBuffer;
+      if (_pGfx->gl_ulFlags & GLF_FULLSCREEN)
+		    _pGfx->gl_pd3dDevice->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+      else
+		    pdp->dp_Raster->ra_pvpViewPort->vp_pSwapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+      D3DSURFACE_DESC surfDesc;
+      pBackBuffer->GetDesc(&surfDesc);
+
+      LPDIRECT3DBASETEXTURE8 prev_texture = NULL;
+      _pGfx->gl_pd3dDevice->GetTexture(0, &prev_texture);
+      DWORD prev_stage = 0;
+      _pGfx->gl_pd3dDevice->GetTextureStageState(0, D3DTSS_COLOROP, &prev_stage);
+
+      LPDIRECT3DTEXTURE8 overlay_texture;
+      _pGfx->gl_pd3dDevice->CreateTexture(width, height, 1, 0, surfDesc.Format, D3DPOOL_MANAGED, &overlay_texture);
+      _pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+      _pGfx->gl_pd3dDevice->SetTexture(0, overlay_texture);
+  
+      D3DLOCKED_RECT rectLockedOverlay;
+      overlay_texture->LockRect(0, &rectLockedOverlay, NULL, NONE);
+
+      D3DLOCKED_RECT rectLocked;
+      const RECT rectToLock = { pdp->dp_MinI, pdp->dp_MinJ, pdp->dp_MaxI+1, pdp->dp_MaxJ+1 };
+      pBackBuffer->LockRect(&rectLocked, &rectToLock, D3DLOCK_READONLY);
+
+      const INDEX pixel_size = PixelFormatSize(surfDesc.Format);
+
+      for (INDEX y = 0; y < height; ++y)
+      for (INDEX x = 0; x < width; ++x)
+      {
+        INDEX x_new = x + refraction_factor * g_staticDataCache.refraction_remap_x[width*y + x];
+        INDEX y_new = y + refraction_factor * g_staticDataCache.refraction_remap_y[width*y + x];
+        memcpy(
+          (UBYTE*)rectLockedOverlay.pBits + y*rectLockedOverlay.Pitch + x*pixel_size,
+          (UBYTE*)rectLocked.pBits        + y_new*rectLocked.Pitch    + x_new*pixel_size,
+          pixel_size);
+      }
+
+      overlay_texture->UnlockRect(0);
+      pBackBuffer->UnlockRect();
+      D3DRELEASE(pBackBuffer, TRUE);
+      pdp->Unlock();
+
+      shaDisableDepthTest();
+      shaDisableDepthWrite();
+      shaDisableBlend();
+      shaDisableAlphaTest();
+      graphicsResetArrays();
+      GFXVertex*   pvtx = p_avtxCommon->Push(4);
+      GFXTexCoord* ptex = p_atexCommon->Push(4);
+      GFXColor*    pcol = p_acolCommon->Push(4);
+      pvtx[0].x = 0.0f;  pvtx[0].y = 0.0f;  pvtx[0].z = 0.0f;
+      pvtx[1].x = 0.0f;  pvtx[1].y = height;  pvtx[1].z = 0.0f;
+      pvtx[2].x = width;  pvtx[2].y = height;  pvtx[2].z = 0.0f;
+      pvtx[3].x = width;  pvtx[3].y = 0.0f;  pvtx[3].z = 0.0f;
+      ptex[0].s = 0.0f;  ptex[0].t = 0.0f;
+      ptex[1].s = 0.0f;  ptex[1].t = 1.0f;
+      ptex[2].s = 1.0f;  ptex[2].t = 1.0f;
+      ptex[3].s = 1.0f;  ptex[3].t = 0.0f;
+      pcol[0] = ~ULONG(0);
+      pcol[1] = ~ULONG(0);
+      pcol[2] = ~ULONG(0);
+      pcol[3] = ~ULONG(0);
+      graphicsFlushQuads();
+    
+      _pGfx->gl_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, prev_stage);
+      _pGfx->gl_pd3dDevice->SetTexture(0, prev_texture);
+      prev_texture->Release();
+
+      D3DRELEASE(overlay_texture, TRUE);
+    }
+
+    g_prevOGLInstance = NULL;
+
+    shaDisableDepthTest();
+    shaDisableDepthWrite();
+    shaEnableBlend();
+    shaBlendFunc(GFX_ONE, GFX_ONE);
+    shaDisableAlphaTest();
+    shaSetTexture(-1); // gfxDisableTexture
+
+	  DWORD prevBlendOp_D3D;
+	  _pGfx->gl_pd3dDevice->GetRenderState(D3DRS_BLENDOP, &prevBlendOp_D3D);
+	  _pGfx->gl_pd3dDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_SUBTRACT);
+	  
+    static CTVERTEX avtxTris[NUM_SIDES_ZAWARUDO * 3];
+    memset(avtxTris, 0, sizeof(CTVERTEX) * NUM_SIDES_ZAWARUDO * 3);
+    for (INDEX triIndex = 0; triIndex < NUM_SIDES_ZAWARUDO; ++triIndex)
+    {
+      CTVERTEX& vert1 = avtxTris[triIndex*3 + 0];
+      CTVERTEX& vert2 = avtxTris[triIndex*3 + 1];
+      CTVERTEX& vert3 = avtxTris[triIndex*3 + 2];
+      const FLOAT2D& circ_vert1 = circle_points[triIndex];
+      const FLOAT2D& circ_vert2 = circle_points[(triIndex + 1)%NUM_SIDES_ZAWARUDO];
+      vert1.fX = circ_vert1(1) * desiredRadius + width * 0.5f;
+      vert1.fY = circ_vert1(2) * desiredRadius + height * 0.5f;
+      vert2.fX = circ_vert2(1) * desiredRadius + width * 0.5f;
+      vert2.fY = circ_vert2(2) * desiredRadius + height * 0.5f;
+      vert1.ulColor = ~ULONG(0);
+      vert2.ulColor = ~ULONG(0);
+      vert3.ulColor = ~ULONG(0);
+    }
+    if (_pGfx->gl_dwVertexShader!=D3DFVF_CTVERTEX)
+    {
+      _pGfx->gl_pd3dDevice->SetVertexShader(D3DFVF_CTVERTEX);
+      _pGfx->gl_dwVertexShader = D3DFVF_CTVERTEX;
+    }
+    _pGfx->gl_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLELIST, NUM_SIDES_ZAWARUDO, avtxTris, sizeof(CTVERTEX));
+
+	  _pGfx->gl_pd3dDevice->SetRenderState(D3DRS_BLENDOP, prevBlendOp_D3D);
+  }
+  else if (_pGfx->gl_eCurrentAPI == GAT_OGL)
+  {
+    if (g_prevOGLInstance != _pGfx->gl_hiDriver)
+    {
+      g_prevOGLInstance = _pGfx->gl_hiDriver;
+      glBlendEquation = (TBlendFuncType)wglGetProcAddress("glBlendEquation");
+      glGetIntegerv = (TGetIntegerFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glGetIntegerv");
+      glReadPixels = (TReadPixelsFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glReadPixels");
+      glEnable = (TEnableFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glEnable");
+      glActiveTexture = (TActiveTextureFuncType)wglGetProcAddress("glActiveTexture");
+      glGenTextures = (TGenTexturesFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glGenTextures");
+      glBindTexture = (TBindTextureFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glBindTexture");
+      glTexImage2D = (TTexImage2DFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glTexImage2D");
+      glDeleteTextures = (TDeleteTexturesFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glDeleteTextures");
+      glTexParameteri = (TTexParameteriFuncType)GetProcAddress(_pGfx->gl_hiDriver, "glTexParameteri");
+    }
+    
+    if (refraction_factor > 0.001f && pdp->Lock())
+    {
+      unsigned char* pixels = new unsigned char[width * height * 8];
+      unsigned char* refracted_pixels = pixels + width * height * 4;
+      glReadPixels(pdp->dp_MinI, pdp->dp_Raster->ra_Height-(pdp->dp_MinJ + height), width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+      pdp->Unlock();
+      
+      for (INDEX y = 0; y < height; ++y)
+      for (INDEX x = 0; x < width; ++x)
+      {
+        INDEX x_new = x + refraction_factor * g_staticDataCache.refraction_remap_x[width*y + x];
+        INDEX y_new = y + refraction_factor * g_staticDataCache.refraction_remap_y[width*y + x];
+        memcpy(
+          refracted_pixels + y*width*4     + x*4,
+          pixels           + y_new*width*4 + x_new*4,
+          4);
+      }
+
+      GLuint overlay_texture = 0;
+      glEnable(GL_TEXTURE_2D);
+      GLenum prev_active_texture = (GLenum)GL_TEXTURE0;
+      glGetIntegerv((GLenum)GL_ACTIVE_TEXTURE, (GLint*)&prev_active_texture);
+
+      glActiveTexture((GLenum)GL_TEXTURE0);
+
+      GLint prev_bound_texture = 0;
+      glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_bound_texture);
+
+      glGenTextures(1, &overlay_texture);
+      glBindTexture(GL_TEXTURE_2D, overlay_texture);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, refracted_pixels);
+      delete[] pixels;
+
+      shaDisableDepthTest();
+      shaDisableDepthWrite();
+      shaDisableBlend();
+      shaDisableAlphaTest();
+      graphicsResetArrays();
+
+      GFXVertex*   pvtx = p_avtxCommon->Push(4);
+      GFXTexCoord* ptex = p_atexCommon->Push(4);
+      GFXColor*    pcol = p_acolCommon->Push(4);
+      pvtx[0].x = 0.0f;  pvtx[0].y = 0.0f;  pvtx[0].z = 0.0f;
+      pvtx[1].x = 0.0f;  pvtx[1].y = height;  pvtx[1].z = 0.0f;
+      pvtx[2].x = width;  pvtx[2].y = height;  pvtx[2].z = 0.0f;
+      pvtx[3].x = width;  pvtx[3].y = 0.0f;  pvtx[3].z = 0.0f;
+      ptex[0].s = 0.0f;  ptex[0].t = 0.0f;
+      ptex[1].s = 0.0f;  ptex[1].t = -1.0f;
+      ptex[2].s = 1.0f;  ptex[2].t = -1.0f;
+      ptex[3].s = 1.0f;  ptex[3].t = 0.0f;
+      pcol[0] = ~ULONG(0);
+      pcol[1] = ~ULONG(0);
+      pcol[2] = ~ULONG(0);
+      pcol[3] = ~ULONG(0);
+      graphicsFlushQuads();
+
+      glBindTexture(GL_TEXTURE_2D, prev_bound_texture);
+      glDeleteTextures(1, &overlay_texture);
+      glActiveTexture(prev_active_texture);
+    }
+
+    shaDisableDepthTest();
+    shaDisableDepthWrite();
+    shaEnableBlend();
+    shaBlendFunc(GFX_ONE, GFX_ONE);
+    shaDisableAlphaTest();
+    shaSetTexture(-1); // gfxDisableTexture
+
+    GLenum prevBlendFunc_OGL;
+	  glGetIntegerv((GLenum)GL_BLEND_EQUATION_RGB, (GLint*)&prevBlendFunc_OGL);
+	  glBlendEquation((GLenum)GL_FUNC_SUBTRACT);
+	  
+    graphicsResetArrays();
+    GFXVertex*   pvtx = p_avtxCommon->Push(NUM_SIDES_ZAWARUDO * 2);
+    GFXTexCoord* ptex = p_atexCommon->Push(NUM_SIDES_ZAWARUDO * 2);
+    GFXColor*    pcol = p_acolCommon->Push(NUM_SIDES_ZAWARUDO * 2);
+    memset(pvtx, 0, sizeof(GFXVertex) * NUM_SIDES_ZAWARUDO * 2);
+    memset(ptex, 0, sizeof(GFXTexCoord) * NUM_SIDES_ZAWARUDO * 2);
+    memset(pcol, ~ULONG(0), sizeof(GFXColor) * NUM_SIDES_ZAWARUDO * 2);
+    for (INDEX quadIndex = 0; quadIndex < NUM_SIDES_ZAWARUDO / 2; ++quadIndex)
+    {
+      GFXVertex& vert1 = pvtx[quadIndex*4 + 1];
+      GFXVertex& vert2 = pvtx[quadIndex*4 + 2];
+      GFXVertex& vert3 = pvtx[quadIndex*4 + 3];
+      const FLOAT2D& circ_vert1 = circle_points[quadIndex*2 + 0];
+      const FLOAT2D& circ_vert2 = circle_points[quadIndex*2 + 1];
+      const FLOAT2D& circ_vert3 = circle_points[(quadIndex*2 + 2) % NUM_SIDES_ZAWARUDO];
+      vert1.x = circ_vert1(1) * desiredRadius + width * 0.5f;
+      vert1.y = circ_vert1(2) * desiredRadius + height * 0.5f;
+      vert2.x = circ_vert2(1) * desiredRadius + width * 0.5f;
+      vert2.y = circ_vert2(2) * desiredRadius + height * 0.5f;
+      vert3.x = circ_vert3(1) * desiredRadius + width * 0.5f;
+      vert3.y = circ_vert3(2) * desiredRadius + height * 0.5f;
+    }
+    graphicsFlushQuads();
+
+	  glBlendEquation((GLenum)prevBlendFunc_OGL);
+  }
+}
+
 void CPlayer_Precache(void)
 {
   CDLLEntityClass *pdec = &CPlayer_DLLClass;
@@ -574,6 +948,9 @@ void CPlayer_Precache(void)
   // precache view
   extern void CPlayerView_Precache(void);
   CPlayerView_Precache();
+
+  extern void CTheWorld_Precache();
+  CTheWorld_Precache();
 
   // precache all player sounds
   pdec->PrecacheSound(SOUND_WATER_ENTER        );
@@ -654,6 +1031,7 @@ void CPlayer_Precache(void)
 
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_TELEPORT);
   pdec->PrecacheClass(CLASS_SERIOUSBOMB);
+  pdec->PrecacheClass(CLASS_THE_WORLD);
 
   pdec->PrecacheModel(MODEL_FLESH);
   pdec->PrecacheModel(MODEL_FLESH_APPLE);
@@ -700,6 +1078,9 @@ void CPlayer_OnInitClass(void)
   _pShell->DeclareSymbol("user INDEX ctl_bWalk;",           &pctlCurrent.bWalk);
   _pShell->DeclareSymbol("user INDEX ctl_bStrafe;",         &pctlCurrent.bStrafe);
   _pShell->DeclareSymbol("user INDEX ctl_bFire;",           &pctlCurrent.bFire);
+  _pShell->DeclareSymbol("user INDEX ctl_bSecondaryFire;",  &pctlCurrent.bSecondaryFire);
+  _pShell->DeclareSymbol("user INDEX ctl_bUltimate;",       &pctlCurrent.bUltimate);
+  _pShell->DeclareSymbol("user INDEX ctl_bStandToggle;",    &pctlCurrent.bStandToggle);
   _pShell->DeclareSymbol("user INDEX ctl_bReload;",         &pctlCurrent.bReload);
   _pShell->DeclareSymbol("user INDEX ctl_bUse;",            &pctlCurrent.bUse);
   _pShell->DeclareSymbol("user INDEX ctl_bComputer;",       &pctlCurrent.bComputer);
@@ -1134,6 +1515,9 @@ properties:
  190 INDEX m_iSeriousBombCount = 0,      // ammount of serious bombs player owns
  191 INDEX m_iLastSeriousBombCount = 0,  // ammount of serious bombs player had before firing
  192 FLOAT m_tmSeriousBombFired = -10.0f,  // when the bomb was last fired
+ 200 CEntityPointer m_penTheWorld,
+ 201 enum StandMode m_mode = STAND_PASSIVE,
+ 202 BOOL m_bSwitchViewAfterStand = FALSE,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1178,6 +1562,7 @@ components:
   4 class   CLASS_BASIC_EFFECT    "Classes\\BasicEffect.ecl",
   5 class   CLASS_BLOOD_SPRAY     "Classes\\BloodSpray.ecl", 
   6 class   CLASS_SERIOUSBOMB     "Classes\\SeriousBomb.ecl",
+  7 class   CLASS_THE_WORLD       "Classes\\TheWorld.ecl",
 
 // gender specific sounds - make sure that offset is exactly 100 
  50 sound SOUND_WATER_ENTER     "Sounds\\Player\\WaterEnter.wav",
@@ -1385,6 +1770,11 @@ functions:
   CPlayerSettings *GetSettings(void)
   {
     return (CPlayerSettings *)en_pcCharacter.pc_aubAppearance;
+  }
+  
+  BOOL CanPlayAnim()
+  {
+    return m_mode == STAND_PASSIVE;
   }
 
   export void Copy(CEntity &enOther, ULONG ulFlags)
@@ -2475,6 +2865,10 @@ functions:
         ListenFromEntity(this, plViewer);
       }
 
+      if (m_penMainMusicHolder != NULL && ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) {
+        ZaWarudoEffect(pdp, ((CMusicHolder*)&*m_penMainMusicHolder)->m_timeZaWarudoStart);
+      }
+
       RenderScroll(pdp);
       RenderTextFX(pdp);
       RenderCredits(pdp);
@@ -2780,7 +3174,7 @@ functions:
 
     StartModelAnim(PLAYER_ANIM_STAND, 0);
     GetPlayerAnimator()->BodyAnimationTemplate(
-      BODY_ANIM_NORMALWALK, BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
+      BODY_ANIM_NORMALWALK, BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, BODY_ANIM_HANDS_STAND,
       AOF_LOOPING|AOF_NORESTART);
   }
 
@@ -3018,6 +3412,16 @@ functions:
         ((dmtType==DMT_EXPLOSION||dmtType==DMT_CANNONBALL_EXPLOSION||dmtType==DMT_PROJECTILE) &&
           GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY)) ) {
       return;
+    }
+
+    if (dmtType == DMT_IMPACT && m_penTheWorld) {
+      if (penInflictor->GetRenderType() == RT_BRUSH ||
+          entity_cast(penInflictor, CModelHolder) ||
+          entity_cast(penInflictor, CModelHolder2) ||
+          entity_cast(penInflictor, CRodaRollaDa))
+      {
+        return;
+      }
     }
 
     // if not connected
@@ -3399,6 +3803,9 @@ functions:
   // Change Player view
   void ChangePlayerView()
   {
+    if (m_mode == STAND_ENGAGED) {
+      return;
+    }
     // change from eyes to 3rd person
     if (m_iViewState == PVT_PLAYEREYES) {
       // spawn 3rd person view camera
@@ -3615,10 +4022,20 @@ functions:
       CheckGameEnd();
     }
 
+    FLOAT dio_jump_multiplier = 1.0f;
+    FLOAT dio_move_multiplier = 1.0f;
+    if (m_penMainMusicHolder != NULL && ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo())
+    {
+      if (((CMusicHolder*)&*m_penMainMusicHolder)->m_penDioPlayer.ep_pen == GetPredictionTail())
+      {
+        dio_jump_multiplier = 5.0f;
+        dio_move_multiplier = 2.0f;
+      }
+    }
     // limit speeds against abusing
-    paAction.pa_vTranslation(1) = Clamp( paAction.pa_vTranslation(1), -plr_fSpeedSide,    plr_fSpeedSide);
-    paAction.pa_vTranslation(2) = Clamp( paAction.pa_vTranslation(2), -plr_fSpeedUp,      plr_fSpeedUp);
-    paAction.pa_vTranslation(3) = Clamp( paAction.pa_vTranslation(3), -plr_fSpeedForward, plr_fSpeedBackward);
+    paAction.pa_vTranslation(1) = Clamp( paAction.pa_vTranslation(1), -plr_fSpeedSide*dio_move_multiplier,    plr_fSpeedSide*dio_move_multiplier);
+    paAction.pa_vTranslation(2) = Clamp( paAction.pa_vTranslation(2), -plr_fSpeedUp,                          plr_fSpeedUp*dio_jump_multiplier);
+    paAction.pa_vTranslation(3) = Clamp( paAction.pa_vTranslation(3), -plr_fSpeedForward*dio_move_multiplier, plr_fSpeedBackward*dio_move_multiplier);
 
     // if speeds are like walking
     if (Abs(paAction.pa_vTranslation(3))< plr_fSpeedForward/1.99f
@@ -3636,7 +4053,7 @@ functions:
     FLOAT3D &v = paAction.pa_vTranslation;
     FLOAT fDiag = Sqrt(v(1)*v(1)+v(3)*v(3));
     if (fDiag>0.01f) {
-      FLOAT fDiagLimited = Min(fDiag, plr_fSpeedForward);
+      FLOAT fDiagLimited = Min(fDiag, plr_fSpeedForward*dio_move_multiplier);
       FLOAT fFactor = fDiagLimited/fDiag;
       v(1)*=fFactor;
       v(3)*=fFactor;
@@ -4037,7 +4454,9 @@ functions:
     // flying mode - rotate whole player
     if (!(GetPhysicsFlags()&EPF_TRANSLATEDBYGRAVITY)) {
       SetDesiredRotation(paAction.pa_aRotation);
-      StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+      if (CanPlayAnim()) {
+        StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+      }
       SetDesiredTranslation(vTranslation);
     // normal mode
     } else {
@@ -4150,6 +4569,7 @@ functions:
         // play jump sound
         SetDefaultMouthPitch();
         PlaySound(m_soMouth, GenderSound(SOUND_JUMP), SOF_3D);
+
         if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Jump");}
         // disallow jumping
         m_ulFlags&=~PLF_JUMPALLOWED;
@@ -4182,6 +4602,15 @@ functions:
         vTranslation /= 2.5f;
         // don't go down
         vTranslation(2) = 0.0f;
+
+
+        if (!m_penTheWorld)
+        {
+          ESpawnStand ess;
+          ess.penOwner = this;
+          m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
+          m_penTheWorld->Initialize(ess);
+        }
       }
 
       // if diving
@@ -4479,14 +4908,111 @@ functions:
 
     // if fire is pressed
     if (ulNewButtons&PLACT_FIRE) {
-      ((CPlayerWeapons&)*m_penWeapons).SendEvent(EFireWeapon());
+      EFireWeapon eFire;
+      eFire.bSecondary = FALSE;
+      ((CPlayerWeapons&)*m_penWeapons).SendEvent(eFire);
     }
     // if fire is released
     if (ulReleasedButtons&PLACT_FIRE) {
       ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseWeapon());
     }
+
+    CPlayerWeapons *penWeapon = GetPlayerWeapons();
+
+    if (ulNewButtons&PLACT_SECONDARY_FIRE) {
+      if (penWeapon->m_iCurrentWeapon != WEAPON_SNIPER) {
+        EFireWeapon eFire;
+        eFire.bSecondary = TRUE;
+        penWeapon->SendEvent(eFire);
+      } else {
+        UsePressed(FALSE);
+      }
+    }
+    if (ulReleasedButtons&PLACT_SECONDARY_FIRE) {
+      penWeapon->SendEvent(EReleaseWeapon());
+    }
+
+    if (ulNewButtons&PLACT_ULTIMATE) {
+      if (m_mode == STAND_PASSIVE &&
+        m_penMainMusicHolder != NULL &&
+        ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
+        ((CMusicHolder*)&*m_penMainMusicHolder)->m_penDioPlayer.ep_pen == GetPredictionTail())
+      {
+        // RODA ROLLA DA
+        penWeapon->FireRodaRollaDa();
+        /*
+        CPlacement3D plView = en_plViewpoint;
+        plView.RelativeToAbsolute(GetPlacement());
+        FLOATmatrix3D m;
+        MakeRotationMatrixFast(m, plView.pl_OrientationAngle);
+        FLOAT3D vZ(m(1,2), m(2,2), m(3,2));
+        */
+      }
+
+      if (m_penTheWorld) {
+        m_penTheWorld->SendEvent(EStart());
+      }
+    }
+
+    if (ulNewButtons&PLACT_STAND_TOGGLE) {
+      if (m_penTheWorld) {
+        if (CanPlayAnim()) {
+          // make old Warudo disappear (and move to player)
+          m_penTheWorld->SendEvent(EStop());
+
+          // new Warudo is set as child to follow player
+          ESpawnStand ess;
+          ess.penOwner = this;
+          m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
+          m_penTheWorld->Initialize(ess);
+          m_penTheWorld->SetParent(this);
+
+          CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
+          INDEX pose_anim = IRnd()%4;
+          INDEX body_anim = pose_anim + BODY_ANIM_POSE_01;
+          INDEX player_anim = pose_anim + PLAYER_ANIM_POSE_01;
+          GetModelObject()->PlayAnim(player_anim, 0);
+          moBody.PlayAnim(body_anim, 0);
+
+          ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+
+          // force switch to hands or knife
+          CPlayerWeapons& weapons = ((CPlayerWeapons&)*m_penWeapons);
+          if (weapons.m_iCurrentWeapon != WEAPON_KNIFE && weapons.m_iCurrentWeapon != WEAPON_HANDS) {
+            ESelectWeapon eSelect;
+            eSelect.iWeapon = weapons.GetSelectedWeapon(WEAPON_HANDS);
+            weapons.SendEvent(eSelect);
+          }
+
+          // force switch to 3rd person
+          m_bSwitchViewAfterStand = (m_iViewState == PVT_PLAYEREYES);
+          if (m_bSwitchViewAfterStand) {
+            ChangePlayerView();
+          }
+
+          m_mode = STAND_ENGAGED;
+        } else {
+          m_mode = STAND_PASSIVE;
+
+          // free Warudo and let it follow player freely
+          m_penTheWorld->SetParent(NULL);
+
+          ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+
+          // restore previous view
+          if (m_bSwitchViewAfterStand) {
+            ChangePlayerView();
+          }
+        }
+      }
+    }
+
     // if reload is pressed
     if (ulReleasedButtons&PLACT_RELOAD) {
+      if (m_penTheWorld) {
+        m_penTheWorld->SendEvent(EStop());
+        m_penTheWorld = NULL;
+      }
       ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReloadWeapon());
     }
     // if fire bomb is pressed
@@ -4512,9 +5038,6 @@ functions:
       } else {
         UsePressed(ulNewButtons&PLACT_COMPUTER);
       }
-    // if USE is not detected due to doubleclick and player is holding sniper
-    } else if (ulNewButtons&PLACT_SNIPER_USE && ((CPlayerWeapons&)*m_penWeapons).m_iCurrentWeapon==WEAPON_SNIPER) {
-      UsePressed(FALSE);
     // if computer is pressed
     } else if (ulNewButtons&PLACT_COMPUTER) {
       ComputerPressed();
@@ -4860,6 +5383,7 @@ functions:
         pdp->dp_ulBlendingA  += ULONG(ubA);
       }
     }
+
 
     // do all queued screen blendings
     pdp->BlendScreen();
@@ -5534,6 +6058,12 @@ procedures:
 
   Death(EDeath eDeath)
   {
+    if (m_penTheWorld) {
+        m_penTheWorld->SendEvent(EStop());
+        m_penTheWorld = NULL;
+      }
+    m_mode = STAND_PASSIVE;
+
     // stop firing when dead
     ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseWeapon());
     // stop all looping ifeel effects
@@ -5642,7 +6172,9 @@ procedures:
     SetDesiredRotation(ANGLE3D(0.0f, 0.0f, 0.0f));
 
     // remove weapon from hand
-    ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+    CPlayerAnimator &plan = (CPlayerAnimator&)*m_penAnimator;
+    plan.m_bDisableAnimating = FALSE;
+    plan.RemoveWeapon();
     // kill weapon animations
     GetPlayerWeapons()->SendEvent(EStop());
 
@@ -5816,9 +6348,11 @@ procedures:
     SetDesiredRotation(ANGLE3D(0.0f, 0.0f, 0.0f));
 
     // look straight
-    StartModelAnim(PLAYER_ANIM_STAND, 0);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_STAND, 0);
+    }
     ((CPlayerAnimator&)*m_penAnimator).BodyAnimationTemplate(
-      BODY_ANIM_NORMALWALK, BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
+      BODY_ANIM_NORMALWALK, BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, BODY_ANIM_HANDS_STAND, 
       AOF_LOOPING|AOF_NORESTART);
 
     en_plViewpoint.pl_OrientationAngle = ANGLE3D(0,0,0);
@@ -5926,9 +6460,13 @@ procedures:
     plan.m_bAttacking = FALSE;
     plan.BodyWalkAnimation();
     if (m_fAutoSpeed>plr_fSpeedForward/2) {
-      StartModelAnim(PLAYER_ANIM_RUN, ulFlags);
+      if (CanPlayAnim()) {
+        StartModelAnim(PLAYER_ANIM_RUN, ulFlags);
+      }
     } else {
-      StartModelAnim(PLAYER_ANIM_NORMALWALK, ulFlags);
+      if (CanPlayAnim()) {
+        StartModelAnim(PLAYER_ANIM_NORMALWALK, ulFlags);
+      }
     }
 
     // while not at marker
@@ -5957,9 +6495,13 @@ procedures:
     CPlayerAnimator &plan = (CPlayerAnimator&)*m_penAnimator;
     plan.BodyWalkAnimation();
     if (m_fAutoSpeed>plr_fSpeedForward/2) {
-      StartModelAnim(PLAYER_ANIM_RUN, ulFlags);
+      if (CanPlayAnim()) {
+        StartModelAnim(PLAYER_ANIM_RUN, ulFlags);
+      }
     } else {
-      StartModelAnim(PLAYER_ANIM_NORMALWALK, ulFlags);
+      if (CanPlayAnim()) {
+        StartModelAnim(PLAYER_ANIM_NORMALWALK, ulFlags);
+      }
     }
 
     // while not at marker
@@ -5974,7 +6516,9 @@ procedures:
 
     CPlayerAnimator &plan = (CPlayerAnimator&)*m_penAnimator;
     plan.BodyStillAnimation();
-    StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+    }
 
     // stop moving
     ForceFullStop();
@@ -6035,7 +6579,9 @@ procedures:
     // start pulling the item
     CPlayerAnimator &plan = (CPlayerAnimator&)*m_penAnimator;
     plan.BodyPickItemAnimation();
-    StartModelAnim(PLAYER_ANIM_KEYLIFT, 0);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_KEYLIFT, 0);
+    }
 
     autowait(1.2f);
 
@@ -6066,9 +6612,13 @@ procedures:
 
   AutoFallDown(EVoid)
   {
-    StartModelAnim(PLAYER_ANIM_BRIDGEFALLPOSE, 0);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_BRIDGEFALLPOSE, 0);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_BRIDGEFALLPOSE, 0);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_BRIDGEFALLPOSE, 0);
+    }
 
     autowait(GetActionMarker()->m_tmWait);
 
@@ -6078,9 +6628,13 @@ procedures:
 
   AutoFallToAbys(EVoid)
   {
-    StartModelAnim(PLAYER_ANIM_ABYSSFALL, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_ABYSSFALL, AOF_LOOPING);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_ABYSSFALL, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_ABYSSFALL, AOF_LOOPING);
+    }
 
     autowait(GetActionMarker()->m_tmWait);
 
@@ -6091,19 +6645,27 @@ procedures:
   // auto action - look around
   AutoLookAround(EVoid)
   {
-    StartModelAnim(PLAYER_ANIM_BACKPEDAL, 0);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_BACKPEDAL, 0);
+    }
     m_vAutoSpeed = FLOAT3D(0,0,plr_fSpeedForward/4/0.75f);
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_NORMALWALK, 0);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_NORMALWALK, 0);
+    }
 
     autowait(GetModelObject()->GetCurrentAnimLength()/2);
 
     m_vAutoSpeed = FLOAT3D(0,0,0);
  
     // start looking around
-    StartModelAnim(PLAYER_ANIM_STAND, 0);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_STAND, 0);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_LOOKAROUND, 0);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_LOOKAROUND, 0);
+    }
     CPlayerAnimator &plan = (CPlayerAnimator&)*m_penAnimator;
 
     // wait given time
@@ -6133,9 +6695,13 @@ procedures:
     SetPhysicsFlags(GetPhysicsFlags() & ~(EPF_TRANSLATEDBYGRAVITY|EPF_ORIENTEDBYGRAVITY));
     m_ulFlags|=PLF_AUTOMOVEMENTS;
     SetDesiredRotation(ANGLE3D(60,0,0));
-    StartModelAnim(PLAYER_ANIM_SPAWNPOSE, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_SPAWNPOSE, AOF_LOOPING);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_SPAWNPOSE, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_SPAWNPOSE, AOF_LOOPING);
+    }
 
     // start stardust appearing
     m_tmSpiritStart = _pTimer->CurrentTick();
@@ -6157,16 +6723,24 @@ procedures:
     m_ulFlags&=~PLF_AUTOMOVEMENTS;
 
     // play animation to fall down
-    StartModelAnim(PLAYER_ANIM_SPAWN_FALLDOWN, 0);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_SPAWN_FALLDOWN, 0);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_SPAWN_FALLDOWN, 0);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_SPAWN_FALLDOWN, 0);
+    }
 
     autowait(GetModelObject()->GetCurrentAnimLength());
 
     // play animation to get up
-    StartModelAnim(PLAYER_ANIM_SPAWN_GETUP, AOF_SMOOTHCHANGE);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_SPAWN_GETUP, AOF_SMOOTHCHANGE);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_SPAWN_GETUP, AOF_SMOOTHCHANGE);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_SPAWN_GETUP, AOF_SMOOTHCHANGE);
+    }
 
     autowait(GetModelObject()->GetCurrentAnimLength());
 
@@ -6183,9 +6757,13 @@ procedures:
     m_ulFlags|=PLF_AUTOMOVEMENTS;
     SetDesiredRotation(ANGLE3D(60,0,0));
     SetDesiredTranslation(ANGLE3D(0,20.0f,0));
-    StartModelAnim(PLAYER_ANIM_SPAWNPOSE, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_SPAWNPOSE, AOF_LOOPING);
+    }
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_SPAWNPOSE, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_SPAWNPOSE, AOF_LOOPING);
+    }
     // wait till it appears
     autowait(8.0f);
     // switch to model
@@ -6204,7 +6782,9 @@ procedures:
     en_plLastViewpoint.pl_OrientationAngle = en_plViewpoint.pl_OrientationAngle;
 
     // stand in pose
-    StartModelAnim(PLAYER_ANIM_INTRO, AOF_LOOPING);
+    if (CanPlayAnim()) {
+      StartModelAnim(PLAYER_ANIM_INTRO, AOF_LOOPING);
+    }
     // remember time for rotating view start
     m_tmMinigunAutoFireStart = _pTimer->CurrentTick();
     // wait some time for fade in and to look from left to right with out firing
@@ -6215,7 +6795,9 @@ procedures:
 
     // stop minigun shaking
     CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(BODY_ANIM_MINIGUN_STAND, 0);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(BODY_ANIM_MINIGUN_STAND, 0);
+    }
 
     autowait(0.5f);
 
@@ -6260,7 +6842,7 @@ procedures:
     // store current weapon slowly
     CPlayerAnimator &plan = (CPlayerAnimator&)*m_penAnimator;
     plan.BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_REDRAWSLOW, BODY_ANIM_SHOTGUN_REDRAWSLOW, BODY_ANIM_MINIGUN_REDRAWSLOW, 
+      BODY_ANIM_COLT_REDRAWSLOW, BODY_ANIM_SHOTGUN_REDRAWSLOW, BODY_ANIM_MINIGUN_REDRAWSLOW, BODY_ANIM_HANDS_DEACTIVATE,
       0);
     autowait(plan.m_fBodyAnimTime);
 
@@ -6279,7 +6861,7 @@ procedures:
 
     ((CPlayerWeapons&)*m_penWeapons).m_iCurrentWeapon = (WeaponType) m_iAutoOrgWeapon;
     plan.BodyAnimationTemplate(BODY_ANIM_WAIT, BODY_ANIM_COLT_DEACTIVATETOWALK,
-      BODY_ANIM_SHOTGUN_DEACTIVATETOWALK, BODY_ANIM_MINIGUN_DEACTIVATETOWALK, AOF_SMOOTHCHANGE);
+      BODY_ANIM_SHOTGUN_DEACTIVATETOWALK, BODY_ANIM_MINIGUN_DEACTIVATETOWALK, BODY_ANIM_WAIT, AOF_SMOOTHCHANGE);
     ((CPlayerWeapons&)*m_penWeapons).m_iCurrentWeapon = WEAPON_NONE;
 
     autowait(plan.m_fBodyAnimTime);
@@ -6304,14 +6886,20 @@ procedures:
       if (GetActionMarker()->m_paaAction==PAA_WAIT) {
         // play still anim
         CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-        moBody.PlayAnim(BODY_ANIM_WAIT, AOF_NORESTART|AOF_LOOPING);
+        if (CanPlayAnim()) {
+          moBody.PlayAnim(BODY_ANIM_WAIT, AOF_NORESTART|AOF_LOOPING);
+        }
         // wait given time
         autowait(GetActionMarker()->m_tmWait);
       } else if (GetActionMarker()->m_paaAction==PAA_STOPANDWAIT) {
         // play still anim
-        StartModelAnim(PLAYER_ANIM_STAND, 0);
+        if (CanPlayAnim()) {
+          StartModelAnim(PLAYER_ANIM_STAND, 0);
+        }
         CModelObject &moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-        moBody.PlayAnim(BODY_ANIM_WAIT, AOF_NORESTART|AOF_LOOPING);
+        if (CanPlayAnim()) {
+          moBody.PlayAnim(BODY_ANIM_WAIT, AOF_NORESTART|AOF_LOOPING);
+        }
         // wait given time
         autowait(GetActionMarker()->m_tmWait);
 
@@ -6502,6 +7090,7 @@ procedures:
  ************************************************************/
   Main(EVoid evoid)
   {
+    g_shouldInverse = FALSE;
     // remember start time
     time(&m_iStartTime);
 
@@ -6532,6 +7121,10 @@ procedures:
       on (EBegin) : { resume; }
       on (ETimer) : { stop; }
       on (EDisconnected) : { 
+        if (m_penTheWorld) {
+          m_penTheWorld->SendEvent(EDisconnected());
+          m_penTheWorld = NULL;
+        }
         Destroy(); 
         return;
       }
@@ -6686,6 +7279,10 @@ procedures:
       // if player is disconnected
       on (EDisconnected) : {
         // exit the loop
+        if (m_penTheWorld) {
+          m_penTheWorld->SendEvent(EDisconnected());
+          m_penTheWorld = NULL;
+        }
         stop;
       }
       // support for jumping using bouncers

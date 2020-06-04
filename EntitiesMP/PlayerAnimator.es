@@ -2,9 +2,14 @@
 %{
 #include "StdH.h"
 
+#include "EntitiesJoJo/TheWorld.h"
+
 #include "ModelsMP/Player/SeriousSam/Player.h"
 #include "ModelsMP/Player/SeriousSam/Body.h"
 #include "ModelsMP/Player/SeriousSam/Head.h"
+#include "ModelsMP/Player/Dio/Player.h"
+#include "ModelsMP/Player/Dio/Body.h"
+#include "ModelsMP/Player/Dio/Head.h"
 
 #include "Models/Weapons/Knife/KnifeItem.h"
 #include "Models/Weapons/Colt/ColtItem.h"
@@ -445,6 +450,11 @@ functions:
     INDEX iAvailableWeapons = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iAvailableWeapons;
     CPlayerAnimator_Precache(iAvailableWeapons);
   }
+
+  BOOL CanPlayAnim()
+  {
+    return GetPlayer()->CanPlayAnim();
+  }
   
   CPlayer *GetPlayer(void)
   {
@@ -552,10 +562,15 @@ functions:
   // set weapon
   void SetWeapon(void) {
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
+    if (!CanPlayAnim()) {
+      iWeapon = WEAPON_HANDS;
+    }
     m_iWeaponLast = iWeapon;
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
     switch (iWeapon) {
+    case WEAPON_HANDS:
+      break;
     // *********** KNIFE ***********
       case WEAPON_KNIFE:
         AddWeaponAttachment(BODY_ATTACHMENT_KNIFE, MODEL_KNIFE,
@@ -781,7 +796,9 @@ functions:
     // play body anim
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     CModelObject &moBody = pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
-    moBody.PlayAnim(iAnimation, ulFlags);
+    if (CanPlayAnim()) {
+      moBody.PlayAnim(iAnimation, ulFlags);
+    }
     m_fBodyAnimTime = moBody.GetAnimLength(iAnimation);     // anim length
   };
 
@@ -1051,9 +1068,13 @@ functions:
     // swimming
     if (m_bSwim) {
       if (vDesiredTranslation.Length()>1.0f && vCurrentTranslation.Length()>1.0f) {
-        pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
+        if (CanPlayAnim()) {
+          pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
+        }
       } else {
-        pl.StartModelAnim(PLAYER_ANIM_SWIMIDLE, AOF_LOOPING|AOF_NORESTART);
+        if (CanPlayAnim()) {
+          pl.StartModelAnim(PLAYER_ANIM_SWIMIDLE, AOF_LOOPING|AOF_NORESTART);
+        }
       }
       BodyStillAnimation();
 
@@ -1065,7 +1086,9 @@ functions:
         if (pl.en_tmJumped+_pTimer->TickQuantum>=_pTimer->CurrentTick() &&
             pl.en_tmJumped<=_pTimer->CurrentTick()) {
           m_bReference = FALSE;
-          pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
+          if (CanPlayAnim()) {
+            pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
+          }
           BodyStillAnimation();
           m_fLastActionTime = _pTimer->CurrentTick();
 
@@ -1076,34 +1099,48 @@ functions:
             // running anim
             if (vDesiredTranslation.Length()>5.0f && vCurrentTranslation.Length()>5.0f) {
               if (vCurrentTranslation(3)<0) {
-                pl.StartModelAnim(PLAYER_ANIM_RUN, AOF_LOOPING|AOF_NORESTART);
+                if (CanPlayAnim()) {
+                  pl.StartModelAnim(PLAYER_ANIM_RUN, AOF_LOOPING|AOF_NORESTART);
+                }
               } else {
-                pl.StartModelAnim(PLAYER_ANIM_BACKPEDALRUN, AOF_LOOPING|AOF_NORESTART);
+                if (CanPlayAnim()) {
+                  pl.StartModelAnim(PLAYER_ANIM_BACKPEDALRUN, AOF_LOOPING|AOF_NORESTART);
+                }
               }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // walking anim
             } else if (vDesiredTranslation.Length()>2.0f && vCurrentTranslation.Length()>2.0f) {
               if (vCurrentTranslation(3)<0) {
-                pl.StartModelAnim(PLAYER_ANIM_NORMALWALK, AOF_LOOPING|AOF_NORESTART);
+                if (CanPlayAnim()) {
+                  pl.StartModelAnim(PLAYER_ANIM_NORMALWALK, AOF_LOOPING|AOF_NORESTART);
+                }
               } else {
-                pl.StartModelAnim(PLAYER_ANIM_BACKPEDAL, AOF_LOOPING|AOF_NORESTART);
+                if (CanPlayAnim()) {
+                  pl.StartModelAnim(PLAYER_ANIM_BACKPEDAL, AOF_LOOPING|AOF_NORESTART);
+                }
               }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // left rotation anim
             } else if (aDesiredRotation(1)>0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
+              if (CanPlayAnim()) {
+                pl.StartModelAnim(PLAYER_ANIM_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
+              }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // right rotation anim
             } else if (aDesiredRotation(1)<-0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
+              if (CanPlayAnim()) {
+                pl.StartModelAnim(PLAYER_ANIM_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
+              }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // standing anim
             } else {
-              pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+              if (CanPlayAnim()) {
+                pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+              }
               BodyStillAnimation();
             }
           // crouch
@@ -1111,25 +1148,35 @@ functions:
             // walking anim
             if (vDesiredTranslation.Length()>2.0f && vCurrentTranslation.Length()>2.0f) {
               if (vCurrentTranslation(3)<0) {
-                pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALK, AOF_LOOPING|AOF_NORESTART);
+                if (CanPlayAnim()) {
+                  pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALK, AOF_LOOPING|AOF_NORESTART);
+                }
               } else {
-                pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALKBACK, AOF_LOOPING|AOF_NORESTART);
+                if (CanPlayAnim()) {
+                  pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALKBACK, AOF_LOOPING|AOF_NORESTART);
+                }
               }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // left rotation anim
             } else if (aDesiredRotation(1)>0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
+              if (CanPlayAnim()) {
+                pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
+              }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // right rotation anim
             } else if (aDesiredRotation(1)<-0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
+              if (CanPlayAnim()) {
+                pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
+              }
               BodyStillAnimation();
               m_fLastActionTime = _pTimer->CurrentTick();
             // standing anim
             } else {
-              pl.StartModelAnim(PLAYER_ANIM_CROUCH_IDLE, AOF_LOOPING|AOF_NORESTART);
+              if (CanPlayAnim()) {
+                pl.StartModelAnim(PLAYER_ANIM_CROUCH_IDLE, AOF_LOOPING|AOF_NORESTART);
+              }
               BodyStillAnimation();
             }
           }
@@ -1141,7 +1188,9 @@ functions:
         // touched reference
         if (pl.en_penReference!=NULL) {
           m_bReference = TRUE;
-          pl.StartModelAnim(PLAYER_ANIM_JUMPEND, AOF_NORESTART);
+          if (CanPlayAnim()) {
+            pl.StartModelAnim(PLAYER_ANIM_JUMPEND, AOF_NORESTART);
+          }
           BodyStillAnimation();
           SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_JUMPEND), (INDEX) AA_JUMPDOWN);
           m_bWaitJumpAnim = TRUE;
@@ -1189,7 +1238,9 @@ functions:
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_CROUCH, AOF_NORESTART);
+    if (CanPlayAnim()) {
+      pl.StartModelAnim(PLAYER_ANIM_CROUCH, AOF_NORESTART);
+    }
     SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_CROUCH), (INDEX) AA_CROUCH);
     m_iCrouchDownWait++;
     m_bCrouch = TRUE;
@@ -1201,7 +1252,9 @@ functions:
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_RISE, AOF_NORESTART);
+    if (CanPlayAnim()) {
+      pl.StartModelAnim(PLAYER_ANIM_RISE, AOF_NORESTART);
+    }
     SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_RISE), (INDEX) AA_RISE);
     m_iRiseUpWait++;
     m_bCrouch = FALSE;
@@ -1213,7 +1266,9 @@ functions:
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
+    if (CanPlayAnim()) {
+      pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
+    }
     if (_pNetwork->ga_ulDemoMinorVersion>6) { m_bCrouch = FALSE; }
     m_bReference = FALSE;
   };
@@ -1224,7 +1279,9 @@ functions:
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
+    if (CanPlayAnim()) {
+      pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
+    }
     if (_pNetwork->ga_ulDemoMinorVersion>2) { m_bCrouch = FALSE; }
     m_bSwim = TRUE;
   };
@@ -1235,7 +1292,9 @@ functions:
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+    if (CanPlayAnim()) {
+      pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+    }
     if (_pNetwork->ga_ulDemoMinorVersion>2) { m_bCrouch = FALSE; }
     m_bSwim = FALSE;
   };
@@ -1246,6 +1305,9 @@ functions:
       INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
       switch (iWeapon) {
         case WEAPON_NONE:
+          break;
+        case WEAPON_HANDS:
+          iAnim += BODY_ANIM_HANDS_SWIM_STAND-BODY_ANIM_HANDS_STAND;
           break;
         case WEAPON_KNIFE: case WEAPON_COLT: case WEAPON_DOUBLECOLT: //case WEAPON_PIPEBOMB:
           iAnim += BODY_ANIM_COLT_SWIM_STAND-BODY_ANIM_COLT_STAND;
@@ -1279,11 +1341,15 @@ functions:
  *                  CHANGE BODY ANIMATION                   *
  ************************************************************/
   // body animation template
-  void BodyAnimationTemplate(INDEX iNone, INDEX iColt, INDEX iShotgun, INDEX iMinigun, ULONG ulFlags) {
+  void BodyAnimationTemplate(INDEX iNone, INDEX iColt, INDEX iShotgun, INDEX iMinigun, INDEX iHands, ULONG ulFlags) {
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
     switch (iWeapon) {
       case WEAPON_NONE:
         SetBodyAnimation(iNone, ulFlags);
+        break;
+      case WEAPON_HANDS:
+        if (m_bSwim) { iHands += BODY_ANIM_HANDS_SWIM_STAND-BODY_ANIM_HANDS_STAND; }
+        SetBodyAnimation(iHands, ulFlags);
         break;
       case WEAPON_KNIFE: case WEAPON_COLT: case WEAPON_DOUBLECOLT: // case WEAPON_PIPEBOMB:
         if (m_bSwim) { iColt += BODY_ANIM_COLT_SWIM_STAND-BODY_ANIM_COLT_STAND; }
@@ -1306,14 +1372,14 @@ functions:
   // walk
   void BodyWalkAnimation() {
     BodyAnimationTemplate(BODY_ANIM_NORMALWALK, 
-      BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
+      BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, BODY_ANIM_HANDS_STAND,
       AOF_LOOPING|AOF_NORESTART);
   };
 
   // stand
   void BodyStillAnimation() {
     BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
+      BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, BODY_ANIM_HANDS_STAND,
       AOF_LOOPING|AOF_NORESTART);
   };
 
@@ -1322,7 +1388,7 @@ functions:
     m_bAttacking = FALSE;
     m_bChangeWeapon = FALSE;
     BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_REDRAW, BODY_ANIM_SHOTGUN_REDRAW, BODY_ANIM_MINIGUN_REDRAW, 0);
+      BODY_ANIM_COLT_REDRAW, BODY_ANIM_SHOTGUN_REDRAW, BODY_ANIM_MINIGUN_REDRAW, BODY_ANIM_HANDS_DEACTIVATE, 0);
     m_bChangeWeapon = TRUE;
   };
 
@@ -1335,6 +1401,8 @@ functions:
       case WEAPON_NONE:
       case WEAPON_KNIFE:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_KNIFE);
+        break;
+      case WEAPON_HANDS:
         break;
       case WEAPON_DOUBLECOLT:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_COLT_LEFT);
@@ -1404,7 +1472,7 @@ functions:
     // pull weapon
     m_bChangeWeapon = FALSE;
     BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_DRAW, BODY_ANIM_SHOTGUN_DRAW, BODY_ANIM_MINIGUN_DRAW, 0);
+      BODY_ANIM_COLT_DRAW, BODY_ANIM_SHOTGUN_DRAW, BODY_ANIM_MINIGUN_DRAW, BODY_ANIM_HANDS_ACTIVATE, 0);
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
     if (iWeapon!=WEAPON_NONE) {
       m_bChangeWeapon = TRUE;

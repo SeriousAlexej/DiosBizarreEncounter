@@ -485,7 +485,7 @@ procedures:
     // declare yourself as a model
     InitAsModel();
     SetPhysicsFlags(EPF_MODEL_WALKING);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags()|ENF_ALIVE);
 
     en_fDensity = 1100.0f;

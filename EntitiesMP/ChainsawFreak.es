@@ -141,7 +141,7 @@ functions:
 
   void DeathNotify() {
     ChangeCollisionBoxIndexWhenPossible(FREAK_COLLISION_BOX_DEATH);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
   };
 
   // virtual anim functions
@@ -349,7 +349,7 @@ procedures:
     // declare yourself as a model
     InitAsModel();
     SetPhysicsFlags(EPF_MODEL_WALKING);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags()|ENF_ALIVE);
     SetHealth(175.0f);
     m_fMaxHealth = 175.0f;

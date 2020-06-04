@@ -297,7 +297,7 @@ procedures:
     // declare yourself as a model
     InitAsModel();
     SetPhysicsFlags(EPF_MODEL_WALKING);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags()|ENF_ALIVE);
     SetHealth(210.0f);
     m_fMaxHealth = 210.0f;

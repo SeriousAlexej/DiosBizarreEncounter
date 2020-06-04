@@ -392,11 +392,12 @@ procedures:
   Death(EVoid) : CEnemyBase::Death {
     // stop moving
     StopMoving();
+    ApplyDioKick();
     DeathSound();     // death sound
     DeactivateWalkingSound();
 
     // set physic flags
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags() | ENF_SEETHROUGH);
 
     // death notify (change collision box)
@@ -454,7 +455,7 @@ procedures:
     // declare yourself as a model
     InitAsModel();
     SetPhysicsFlags(EPF_MODEL_WALKING);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags()|ENF_ALIVE);
     if (m_EwcChar==WLC_SERGEANT) {
       SetHealth(750.0f);

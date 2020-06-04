@@ -1388,7 +1388,7 @@ procedures:
       SetCollisionFlags(ECF_AIR);
     // solid elemental
     } else {
-      SetCollisionFlags(ECF_MODEL);
+      SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     }
     SetFlags(GetFlags()|ENF_ALIVE);
     en_fDensity = m_fDensity;

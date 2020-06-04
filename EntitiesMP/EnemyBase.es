@@ -4,6 +4,7 @@
 #include "EntitiesMP/Common/PathFinding.h"
 #include "EntitiesMP/NavigationMarker.h"
 #include "EntitiesMP/TacticsHolder.h"
+#include "EntitiesMP/PlayerWeapons.h"
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 extern INDEX ent_bReportBrokenChains;
 %}
@@ -168,6 +169,9 @@ properties:
 180 COLOR m_colBurning = COLOR(C_WHITE|CT_OPAQUE), // color applied when burning
 
 181 BOOL  m_bResizeAttachments "Stretch attachments" = FALSE, // for small enemies with big guns
+
+200 FLOAT3D m_vDioKickVector = FLOAT3D(0.0f, 0.0f, 0.0f),
+201 BOOL m_isBeingHit = FALSE,
 
 //171 INDEX m_iTacticsRetried = 0,
 
@@ -1034,6 +1038,18 @@ functions:
       return 0.5f;
     } else {
       return 0.25f;
+    }
+  }
+
+  void ApplyDioKick()
+  {
+    if (m_vDioKickVector.Length() > 0.1f) {
+      if (m_vDioKickVector.Length() > 15.0f) {
+        m_vDioKickVector.Normalize();
+        m_vDioKickVector *= 15.0f;
+      }
+      GiveImpulseTranslationAbsolute(m_vDioKickVector * 10.0f);
+      m_vDioKickVector = FLOAT3D(0.0f, 0.0f, 0.0f);
     }
   }
 
@@ -2841,6 +2857,7 @@ procedures:
   Death(EVoid) 
   {
     StopMoving();     // stop moving
+    ApplyDioKick();
     DeathSound();     // death sound
     LeaveStain(FALSE);
 
@@ -2993,6 +3010,12 @@ procedures:
           // react to it
           call NewEnemySpotted();
         }
+        resume;
+      }
+      on (EZaWarudoKick eDioKick) : {
+        m_vDioKickVector += eDioKick.dioKickDir;
+        m_isBeingHit = TRUE;
+        call BeHitByDio();
         resume;
       }
       // if you get damaged by someone
@@ -3255,5 +3278,34 @@ procedures:
   // dummy main - never called
   Main(EVoid) {
     return;
+  };
+
+  
+  BeHitByDio()
+  {
+    while (m_isBeingHit)
+    {
+      wait (0.2f)
+      {
+        on (EBegin) : {
+          m_isBeingHit = FALSE;
+          StopMoving();
+          WoundSound();
+          AnimForDamage(1000.0f);
+          resume;
+        }
+        on (EZaWarudoKick eKick) : {
+          m_isBeingHit = TRUE;
+          m_vDioKickVector += eKick.dioKickDir;
+          resume;
+        }
+        on (ETimer) : {
+          stop;
+        }
+      }
+    }
+    
+    ApplyDioKick();
+    return EReturn();
   };
 };

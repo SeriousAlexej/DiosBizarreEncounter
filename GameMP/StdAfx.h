@@ -11,6 +11,7 @@
 #define DECL_DLL 
 #endif
 
+#include <EntitiesJoJo/event_factory.h>
 #include <EntitiesMP/Global.h>
 #include <EntitiesMP/Common/Common.h>
 #include <EntitiesMP/Common/GameInterface.h>

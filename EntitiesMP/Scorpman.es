@@ -253,7 +253,7 @@ functions:
 
   void DeathNotify(void) {
     ChangeCollisionBoxIndexWhenPossible(SCORPMAN_COLLISION_BOX_DEATH);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
   };
 
   // virtual anim functions
@@ -540,7 +540,7 @@ procedures:
     // declare yourself as a model
     InitAsModel();
     SetPhysicsFlags(EPF_MODEL_WALKING|EPF_HASLUNGS);
-    SetCollisionFlags(ECF_MODEL);
+    SetCollisionFlags(ECF_MODEL | IDENTIFY_AS_ENEMY);
     SetFlags(GetFlags()|ENF_ALIVE);
     en_tmMaxHoldBreath = 25.0f;
     en_fDensity = 3000.0f;

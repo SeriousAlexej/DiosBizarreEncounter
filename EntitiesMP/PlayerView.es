@@ -3,6 +3,8 @@
 #include "StdH.h"
 #include "EntitiesMP/Player.h"
 #include "EntitiesMP/PlayerWeapons.h"
+#include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/entitycast.h"
 %}
 
 
@@ -95,6 +97,10 @@ functions:
       pl.pl_OrientationAngle(2) -= 12.0f; //10.0f;
       pl.pl_PositionVector(2) += 1.0f;
       fDistance = 4.2f;//5.75f;
+      if (((CPlayer&)*m_penOwner).m_mode == STAND_ENGAGED) {
+        pl.pl_OrientationAngle(2) -= 5.0f;
+        fDistance += 2.0f;
+      }
       bFollowCrossHair = TRUE;
     // death
     } else if (m_iViewType == VT_PLAYERDEATH) {
@@ -133,6 +139,10 @@ functions:
       crRay.cr_bHitTranslucentPortals = FALSE;
       crRay.cr_ttHitModels = CCastRay::TT_COLLISIONBOX;
       GetWorld()->CastRay(crRay);
+
+      while (crRay.cr_penHit != NULL && entity_cast(crRay.cr_penHit, CTheWorld) != NULL) {
+        GetWorld()->ContinueCast(crRay);
+      }
 
       // if hit something
       if (crRay.cr_penHit!=NULL) {

@@ -5,6 +5,27 @@
 #include "EntitiesMP/EnemySpawner.h"
 #include "EntitiesMP/Trigger.h"
 #include "EntitiesMP/Woman.h"
+#include "EntitiesMP/PlayerWeapons.h"
+#include "EntitiesMP/MovingBrush.h"
+#include "EntitiesMP/MovingBrushMarker.h"
+#include "EntitiesMP/Camera.h"
+#include "EntitiesMP/CameraMarker.h"
+#include "EntitiesMP/Reminder.h"
+#include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/jojo_events.h"
+#include "EntitiesJoJo/entitycast.h"
+#include "EntitiesJoJo/RodaRollaDa.h"
+#include <Engine/Templates/Stock_CTextureData.h>
+#include <vector>
+#include <utility>
+
+typedef std::pair<CBrushPolygonTexture*, UBYTE> TTextureScrollPair;
+typedef std::vector<TTextureScrollPair> TTexturesVector;
+static TTexturesVector all_textures;
+
+class CMusicHolder;
+extern CMusicHolder* g_musicHolder;
+extern TIME g_dioTime;
 %}
 
 
@@ -100,9 +121,13 @@ properties:
 133 INDEX m_iSubChannel3 = 1,
 134 INDEX m_iSubChannel4 = 1,
 
+230 CEntityPointer m_penDioPlayer,
+231 FLOAT m_timeZaWarudoStart = 0.0f,
+
   {
     // array of enemies that make fuss
     CDynamicContainer<CEntity> m_cenFussMakers;
+    BOOL m_visualsChanged;
   }
 
 components:
@@ -111,6 +136,72 @@ components:
 
 
 functions:
+
+  void CMusicHolder()
+  {
+    all_textures.clear();
+
+    m_visualsChanged = FALSE;
+    ClearBackupEvents();
+    ClearFrozenEntities();
+    if (g_musicHolder == NULL)
+    {
+      g_musicHolder = this;
+    }
+  }
+
+  void ~CMusicHolder()
+  {
+    all_textures.clear();
+    ClearBackupEvents();
+    ClearFrozenEntities();
+    g_musicHolder = NULL;
+    if (m_visualsChanged == TRUE)
+    {
+      EnableDioVisuals(FALSE);
+    }
+  }
+
+  void Read_t(CTStream* istr)
+  {
+    BOOL contains_events = FALSE;
+    if (istr->PeekID_t()==CChunkID("JOJO"))
+    {
+      istr->ExpectID_t("JOJO");
+      contains_events = TRUE;
+    }
+    CRationalEntity::Read_t(istr);
+    if (contains_events == TRUE)
+    {
+      ReadBackupEvents(istr);
+    }
+
+    if (m_penDioPlayer != NULL)
+    {
+      m_visualsChanged = TRUE;
+    } else {
+      m_visualsChanged = FALSE;
+    }
+
+    if (m_visualsChanged)
+    {
+      EnableDioVisuals(m_visualsChanged);
+    }
+  }
+
+  void Write_t(CTStream* ostr)
+  {
+    if (g_musicHolder == this)
+    {
+      ostr->WriteID_t("JOJO");
+    }
+    CRationalEntity::Write_t(ostr);
+    if (g_musicHolder == this)
+    {
+      WriteBackupEvents(ostr);
+    }
+  }
+
   // count enemies in current world
   void CountEnemies(void)
   {
@@ -289,7 +380,165 @@ functions:
       FadeOutChannel(mtType, 1);
     }
   }
+
+  void EnableDioVisuals(BOOL enable)
+  {
+    INDEX &iSubChannel = (&m_iSubChannel0)[m_mtCurrentMusic];
+    CSoundObject &soMusic = (&m_soMusic0a)[m_mtCurrentMusic*2+iSubChannel];
+    if (enable == TRUE)
+    {
+      g_dioTime = _pTimer->GetLerpedCurrentTick();
+      soMusic.Pause();
+    } else {
+      g_dioTime = 0.0f;
+      soMusic.Resume();
+    }
+  }
+
+  void SetBrushTexturesAnimated(BOOL animated)
+  {
+    if (all_textures.empty())
+    { 
+      {FOREACHINDYNAMICARRAY(GetWorld()->wo_baBrushes.ba_abrBrushes, CBrush3D, itbr)
+      {
+        {FOREACHINLIST(CBrushMip, bm_lnInBrush, itbr->br_lhBrushMips, itbm)
+        {
+          {FOREACHINDYNAMICARRAY(itbm->bm_abscSectors, CBrushSector, itbs)
+          {
+            { for (INDEX i = 0; i < itbs->bsc_abpoPolygons.Count(); i++)
+            {
+              CBrushPolygon& polygon = itbs->bsc_abpoPolygons[i];
+              { for (INDEX j = 0; j < 3; j++)
+              {
+                CBrushPolygonTexture& polygon_texture = polygon.bpo_abptTextures[j];
+                all_textures.push_back(TTextureScrollPair(&polygon_texture, polygon_texture.s.bpt_ubScroll));
+              }}
+            }}
+          }}
+        }}
+      }}
+    }
+
+    for (INDEX i = 0; i < all_textures.size(); i++)
+    {
+      if (animated == TRUE)
+      {
+        all_textures[i].first->s.bpt_ubScroll = all_textures[i].second;
+      } else {
+        all_textures[i].first->s.bpt_ubScroll = 0;
+      }
+    }
+  }
   
+  void TokiWoTomare(CEntityPointer penDio)
+  {
+    m_timeZaWarudoStart = _pTimer->CurrentTick();
+    SetDio(penDio);
+
+    SetBrushTexturesAnimated(FALSE);
+    // for each entity in the world
+    {FOREACHINDYNAMICCONTAINER(GetWorld()->wo_cenEntities, CEntity, iten)
+    {
+      CEntity* p_entity = iten;
+      p_entity = p_entity->GetPredictionTail();
+      if (IsDioOrRelated(p_entity))
+      {
+        continue;
+      }
+      CRationalEntity* p_rational = entity_cast(p_entity, CRationalEntity);
+      if (p_rational != NULL)
+      {
+        if (p_rational->en_timeTimer != THINKTIME_NEVER)
+        {
+          p_rational->SetTimerAt(p_rational->en_timeTimer += ZA_WARUDO_DURATION);
+        }
+      }
+
+      FreezeEntityInZaWarudo(p_entity);
+    }}
+  }
+  
+  void TokiWaUgokiDasu()
+  {
+    SetBrushTexturesAnimated(TRUE);
+    // for each entity in the world
+    {FOREACHINDYNAMICCONTAINER(GetWorld()->wo_cenEntities, CEntity, iten)
+    {
+      CEntity* p_entity = iten;
+      p_entity = p_entity->GetPredictionTail();
+      if (IsDioOrRelated(p_entity))
+      {
+        continue;
+      }
+      if (p_entity->en_RenderType == CEntity::RT_MODEL)
+      {
+        p_entity->en_pmoModelObject->ContinueAnim();
+      }
+    }}
+
+    ClearFrozenEntities();
+    SetDio(NULL);
+  }
+
+  void SetDio(CEntityPointer penDioPlayer)
+  {
+    if (m_penDioPlayer == penDioPlayer)
+    {
+      return;
+    }
+
+    BOOL prevVisuals = m_visualsChanged;
+    m_penDioPlayer = penDioPlayer;
+
+    if (m_penDioPlayer != NULL)
+    {
+      m_visualsChanged = TRUE;
+    } else {
+      m_visualsChanged = FALSE;
+    }
+
+    if (prevVisuals != m_visualsChanged)
+    {
+      EnableDioVisuals(m_visualsChanged);
+    }
+  }
+
+  BOOL IsDioOrRelated(CEntity* penSomething)
+  {
+    if (!m_penDioPlayer || !penSomething)
+    {
+      return FALSE;
+    }
+    penSomething = penSomething->GetPredictionTail();
+
+    CPlayer* pDio = (CPlayer*)&*m_penDioPlayer;
+    pDio = (CPlayer*)pDio->GetPredictionTail();
+    if (penSomething == GetPredictionTail() ||
+        penSomething == pDio ||
+        penSomething == pDio->m_penWeapons.ep_pen ||
+        penSomething == pDio->m_penAnimator.ep_pen ||
+        penSomething == pDio->m_penView.ep_pen ||
+        penSomething == pDio->m_pen3rdPersonView.ep_pen ||
+        entity_cast(penSomething, CMovingBrush) != NULL ||
+        entity_cast(penSomething, CMovingBrushMarker) != NULL ||
+        entity_cast(penSomething, CCamera) != NULL ||
+        entity_cast(penSomething, CCameraMarker) != NULL ||
+        (entity_cast(penSomething, CReminder) != NULL && IsDioOrRelated(((CReminder*)penSomething)->m_penOwner.ep_pen)) ||
+        (entity_cast(penSomething, CTheWorld) != NULL && IsDioOrRelated(((CTheWorld*)penSomething)->m_penOwner.ep_pen)) ||
+        (entity_cast(penSomething, CRodaRollaDa) != NULL && IsDioOrRelated(((CRodaRollaDa*)penSomething)->m_penOwner.ep_pen)) ||
+        (entity_cast(penSomething, CBasicEffect) != NULL && IsDioOrRelated(penSomething->GetParent())))
+    {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  BOOL IsZaWarudo()
+  {
+    return m_penDioPlayer != NULL ? TRUE : FALSE;
+  }
+
 procedures:
   // initialize music
   Main(EVoid) {
@@ -303,6 +552,8 @@ procedures:
     SetModel(MODEL_MARKER);
     SetModelMainTexture(TEXTURE_MARKER);
 
+    // reset Dio, just in case
+    SetDio(NULL);
     // wait for game to start
     autowait(_pTimer->TickQuantum);
 
@@ -318,10 +569,14 @@ procedures:
     m_fCurrentVolume0a = MUSIC_VOLUMEMAX*0.98f;
     m_tmFade = 0.01f;
     CrossFadeOneChannel(MT_LIGHT);
+    // reset Dio, just in case
+    SetDio(NULL);
 
     // must react after enemyspawner and all enemies, but before player for proper enemy counting
     // (total wait is two ticks so far)
     autowait(_pTimer->TickQuantum);
+    // reset Dio, just in case
+    SetDio(NULL);
 
     // count enemies in current world
     CountEnemies();
@@ -343,6 +598,16 @@ procedures:
             m_mtCurrentMusic = ecm.mtType;
           }
           // stop waiting
+          stop;
+        }
+        on (EZaWarudo za_warudo) :
+        {
+          TokiWoTomare(za_warudo.penDio->GetPredictionTail());
+          call StandoPowah();
+        }
+        on (EZaWarudoEnd) :
+        {
+          TokiWaUgokiDasu();
           stop;
         }
       }
@@ -408,5 +673,17 @@ procedures:
       CrossFadeOneChannel(MT_CONTINUOUS);
     }
     return;
+  }
+  
+  StandoPowah()
+  {
+    wait (ZA_WARUDO_DURATION)
+    {
+      on (EBegin) : { resume; }
+      on (ETimer) : { stop; }
+      on (EZaWarudo) : { resume; }
+      on (EZaWarudoEnd) : { resume; }
+    }
+    return EZaWarudoEnd();
   }
 };

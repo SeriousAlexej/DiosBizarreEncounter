@@ -18,14 +18,24 @@
 
 #include "EntitiesMP/PlayerWeapons.h"
 #include "EntitiesMP/Shooter.h"
+  
+#include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/jojo_events.h"
+#include "EntitiesJoJo/entitycast.h"
 
 #define DEVIL_LASER_SPEED 100.0f
 #define DEVIL_ROCKET_SPEED 60.0f
+  
+class CMusicHolder;
+extern CMusicHolder* g_musicHolder;
 %}
 
 uses "EntitiesMP/BasicEffects";
 uses "EntitiesMP/Light";
 uses "EntitiesMP/Flame";
+uses "EntitiesMP/MusicHolder";
+
+event EDummy {};
 
 enum ProjectileType {
   0 PRT_ROCKET                "Rocket",   // player rocket
@@ -87,6 +97,7 @@ enum ProjectileType {
  75 PRT_AIRELEMENTAL_WIND     "Air Elemental Wind Blast", //air elemental wind blast
  76 PRT_AFTERBURNER_DEBRIS    "Afterburner debris",
  77 PRT_METEOR                "Meteor",
+ 78 PRT_KNIFE                 "Knife"
 };
 
 enum ProjectileMovingType {
@@ -138,6 +149,24 @@ void CProjectile_OnPrecache(CDLLEntityClass *pdec, INDEX iUser)
   pdec->PrecacheTexture(TEX_SPEC_STRONG);
 
   switch ((ProjectileType)iUser) {
+  case PRT_KNIFE:
+    pdec->PrecacheModel(MODEL_KNIFE);
+    pdec->PrecacheModel(MODEL_KNIFE_ITEM);
+    pdec->PrecacheTexture(TEXTURE_KNIFE);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_WALL_01);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_WALL_02);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_WALL_03);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_WALL_04);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_01);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_02);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_03);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_04);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_05);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_06);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_07);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_08);
+    pdec->PrecacheSound(SOUND_KNIFE_HIT_FLESH_09);
+    break;
   case PRT_ROCKET                :
   case PRT_WALKER_ROCKET         :
   case PRT_DEVIL_ROCKET          :
@@ -578,9 +607,32 @@ components:
 212 texture TEX_SPEC_STRONG             "Models\\SpecularTextures\\Strong.tex",
 
 220 model   MODEL_MARKER     "Models\\Editor\\Axis.mdl",
-221 texture TEXTURE_MARKER   "Models\\Editor\\Vector.tex"
+221 texture TEXTURE_MARKER   "Models\\Editor\\Vector.tex",
+
+230 model   MODEL_KNIFE               "ModelsMP\\Projectiles\\Kniff\\Kniff.mdl",
+231 model   MODEL_KNIFE_ITEM          "Models\\Weapons\\Knife\\KnifeItem.mdl",
+232 texture TEXTURE_KNIFE             "Models\\Weapons\\Knife\\KnifeItem.tex",
+233 sound   SOUND_KNIFE_HIT_WALL_01   "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitWall01.wav",
+234 sound   SOUND_KNIFE_HIT_WALL_02   "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitWall02.wav",
+235 sound   SOUND_KNIFE_HIT_WALL_03   "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitWall03.wav",
+236 sound   SOUND_KNIFE_HIT_WALL_04   "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitWall04.wav",
+237 sound   SOUND_KNIFE_HIT_FLESH_01  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh01.wav",
+238 sound   SOUND_KNIFE_HIT_FLESH_02  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh02.wav",
+239 sound   SOUND_KNIFE_HIT_FLESH_03  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh03.wav",
+240 sound   SOUND_KNIFE_HIT_FLESH_04  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh04.wav",
+241 sound   SOUND_KNIFE_HIT_FLESH_05  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh05.wav",
+242 sound   SOUND_KNIFE_HIT_FLESH_06  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh06.wav",
+243 sound   SOUND_KNIFE_HIT_FLESH_07  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh07.wav",
+244 sound   SOUND_KNIFE_HIT_FLESH_08  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh08.wav",
+245 sound   SOUND_KNIFE_HIT_FLESH_09  "ModelsMP\\Projectiles\\Kniff\\Sounds\\HitFlesh09.wav",
+
 
 functions:
+
+ BOOL CollidesWithEntity(CEntity* entity) const {
+   return entity && entity_cast(entity, CTheWorld) == NULL;
+ }
+
   // premoving
   void PreMoving(void) {
     if (m_tmExpandBox>0) {
@@ -808,6 +860,7 @@ functions:
   // render particles
   void RenderParticles(void) {
     switch (m_prtType) {
+      case PRT_KNIFE: Particles_KnifeTrail(this); break;
       case PRT_ROCKET:
       case PRT_WALKER_ROCKET: Particles_RocketTrail(this, 1.0f); break;
       case PRT_DEVIL_ROCKET: Particles_RocketTrail(this, 8.0f); break;
@@ -941,7 +994,30 @@ functions:
   }
 
 
-
+void DioKnife(void) {
+  InitAsModel();
+  SetPhysicsFlags(EPF_PROJECTILE_FLYING);
+  SetCollisionFlags(ECF_PROJECTILE_SOLID);
+  SetModel(MODEL_KNIFE);
+  SetFlags(GetFlags() | ENF_SEETHROUGH);
+  if (GetModelObject()) {
+    AddAttachmentToModel(this, *GetModelObject(), 0, MODEL_KNIFE_ITEM, TEXTURE_KNIFE, 0, 0, 0);
+  }
+  // start moving
+  LaunchAsPropelledProjectile(FLOAT3D(0.0f, 0.0f, -30.0f), (CMovableEntity*)(CEntity*)m_penLauncher);
+  SetDesiredRotation(ANGLE3D(0, 0, 0));
+  m_fFlyTime = 3.0f;
+  m_fDamageAmount = 50.0f;
+  m_fSoundRange = 0.0f;
+  m_bExplode = FALSE;
+  m_bLightSource = FALSE;
+  m_bCanHitHimself = FALSE;
+  m_bCanBeDestroyed = FALSE;
+  m_fWaitAfterDeath = 5.0f;
+  m_tmExpandBox = 0.1f;
+  m_tmInvisibility = 0.025f;
+  m_pmtMove = PMT_FLYING;
+};
 
 /************************************************************
  *              PLAYER ROCKET / GRENADE                     *
@@ -2944,6 +3020,36 @@ void ProjectileTouch(CEntityPointer penHit)
   // explode if needed
   ProjectileHit();
 
+  if (m_prtType == PRT_KNIFE)
+  {
+    SLONG sound_component = 0;
+    if (entity_cast(penHit.ep_pen, CEnemyBase) || entity_cast(penHit.ep_pen, CPlayer)) {
+      switch (IRnd()%9) {
+        case 0: sound_component = SOUND_KNIFE_HIT_FLESH_01; break;
+        case 1: sound_component = SOUND_KNIFE_HIT_FLESH_02; break;
+        case 2: sound_component = SOUND_KNIFE_HIT_FLESH_03; break;
+        case 3: sound_component = SOUND_KNIFE_HIT_FLESH_04; break;
+        case 4: sound_component = SOUND_KNIFE_HIT_FLESH_05; break;
+        case 5: sound_component = SOUND_KNIFE_HIT_FLESH_06; break;
+        case 6: sound_component = SOUND_KNIFE_HIT_FLESH_07; break;
+        case 7: sound_component = SOUND_KNIFE_HIT_FLESH_08; break;
+        case 8: sound_component = SOUND_KNIFE_HIT_FLESH_09; break;
+      }
+    } else {
+      switch (IRnd()%4) {
+        case 0: sound_component = SOUND_KNIFE_HIT_WALL_01; break;
+        case 1: sound_component = SOUND_KNIFE_HIT_WALL_02; break;
+        case 2: sound_component = SOUND_KNIFE_HIT_WALL_03; break;
+        case 3: sound_component = SOUND_KNIFE_HIT_WALL_04; break;
+      }
+    }
+    if (!penHit || penHit->GetRenderType() != RT_BRUSH) {
+      SwitchToEditorModel();
+    }
+    m_soEffect.Set3DParameters(50.0f, 5.0f, 1.5f, 1.0f);
+    PlaySound(m_soEffect, sound_component, SOF_3D);
+  }
+
   // direct damage
   FLOAT3D vDirection;
   FLOAT fTransLen = en_vIntendedTranslation.Length();
@@ -3107,12 +3213,10 @@ procedures:
     CEntity *penObstacle;
     if (CheckForCollisionNow(0, &penObstacle)) {
       // explode now
-      ProjectileTouch(penObstacle);
-      // if flame, continue existing
-      /*if (m_prtType==PRT_FLAME && ((CEntity &)*&penObstacle).en_RenderType==RT_MODEL) {
-        resume;
-      }*/
-      return EEnd();
+      if (CollidesWithEntity(penObstacle)) {
+        ProjectileTouch(penObstacle);
+        return EEnd();
+      }
     }
     // fly loop
     wait(m_fFlyTime) {
@@ -3127,6 +3231,7 @@ procedures:
         // ignore twister
         bHit &= !IsOfClass(epass.penOther, "Twister");
         if (bHit) {
+          if (!CollidesWithEntity(epass.penOther)) { resume; }
           ProjectileTouch(epass.penOther);
           // player flame passes through enemies
           //if (m_prtType==PRT_FLAME && IsDerivedFromClass((CEntity *)&*(epass.penOther), "Enemy Base")) { resume; }
@@ -3143,6 +3248,7 @@ procedures:
                  ((CProjectile*)&*etouch.penOther)->m_prtType==m_prtType));     
         
         if (bHit) {
+          if (!CollidesWithEntity(etouch.penOther)) { resume; }
           ProjectileTouch(etouch.penOther);
           stop;
         }
@@ -3169,8 +3275,10 @@ procedures:
     CEntity *penObstacle;
     if (CheckForCollisionNow(0, &penObstacle)) {
       // explode now
-      ProjectileTouch(penObstacle);
-      return EEnd();
+      if (CollidesWithEntity(penObstacle)) {
+        ProjectileTouch(penObstacle);
+        return EEnd();
+      }
     }
     // fly loop
     while( _pTimer->CurrentTick()<(m_fStartTime+m_fFlyTime))
@@ -3247,6 +3355,7 @@ procedures:
           // ignore twister
           bHit &= !IsOfClass(epass.penOther, "Twister");
           if (bHit) {
+            if (!CollidesWithEntity(epass.penOther)) { resume; }
             ProjectileTouch(epass.penOther);
             return EEnd();
           }
@@ -3275,8 +3384,10 @@ procedures:
     CEntity *penObstacle;
     if (CheckForCollisionNow(0, &penObstacle)) {
       // explode now
-      ProjectileTouch(penObstacle);
-      return EEnd();
+      if (CollidesWithEntity(penObstacle)) {
+        ProjectileTouch(penObstacle);
+        return EEnd();
+      }
     }
     // fly loop
     while( _pTimer->CurrentTick()<(m_fStartTime+m_fFlyTime))
@@ -3359,6 +3470,7 @@ procedures:
           bHit &= Abs(vTrans.Normalize() % FLOAT3D(etouch.plCollision)) > 0.35;
 
           if (bHit) {
+            if (!CollidesWithEntity(etouch.penOther)) { resume; }
             ProjectileTouch(etouch.penOther);
             return EEnd();
           }
@@ -3379,6 +3491,7 @@ procedures:
           bHit &= !(m_prtType==PRT_BEAST_BIG_PROJECTILE && IsOfClass(epass.penOther, "Projectile"));
 
           if (bHit) {
+            if (!CollidesWithEntity(epass.penOther)) { resume; }
             ProjectileTouch(epass.penOther);
             return EEnd();
           }
@@ -3408,8 +3521,10 @@ procedures:
     CEntity *penObstacle;
     if (CheckForCollisionNow(0, &penObstacle)) {
       // explode now
-      ProjectileTouch(penObstacle);
-      return EEnd();
+      if (CollidesWithEntity(penObstacle)) {
+        ProjectileTouch(penObstacle);
+        return EEnd();
+      }
     }
     // fly loop
     while( _pTimer->CurrentTick()<(m_fStartTime+m_fFlyTime))
@@ -3471,6 +3586,7 @@ procedures:
           // ignore twister
           bHit &= !IsOfClass(epass.penOther, "Twister");
           if (bHit) {
+            if (!CollidesWithEntity(epass.penOther)) { resume; }
             ProjectileTouch(epass.penOther);
             return EEnd();
           }
@@ -3500,8 +3616,10 @@ procedures:
     CEntity *penObstacle;
     if (CheckForCollisionNow(0, &penObstacle)) {
       // explode now
-      ProjectileTouch(penObstacle);
-      return EEnd();
+      if (CollidesWithEntity(penObstacle)) {
+        ProjectileTouch(penObstacle);
+        return EEnd();
+      }
     }
     // fly loop
     wait(m_fFlyTime) {
@@ -3519,6 +3637,7 @@ procedures:
    bHit = bHit ;
         }
         if (bHit) {
+          if (!CollidesWithEntity(epass.penOther)) { resume; }
           ProjectileTouch(epass.penOther);
           // player flame passes through enemies
           if (m_prtType==PRT_FLAME && IsDerivedFromClass((CEntity *)&*(epass.penOther), "Enemy Base")) {
@@ -3549,6 +3668,7 @@ procedures:
         bHit &= !((!m_bCanHitHimself && IsOfClass(etouch.penOther, "Projectile") &&
                   ((CProjectile*)&*etouch.penOther)->m_prtType==m_prtType));
         if (bHit) {
+          if (!CollidesWithEntity(etouch.penOther)) { resume; }
           ProjectileTouch(etouch.penOther);
           stop;
         }
@@ -3580,8 +3700,10 @@ procedures:
     CEntity *penObstacle;
     if (CheckForCollisionNow(0, &penObstacle)) {
       // explode now
-      ProjectileTouch(penObstacle);
-      return EEnd();
+      if (CollidesWithEntity(penObstacle)) {
+        ProjectileTouch(penObstacle);
+        return EEnd();
+      }
     }
     // fly loop
     wait(m_fFlyTime) {
@@ -3596,6 +3718,7 @@ procedures:
         // ignore twister
         bHit &= !IsOfClass(epass.penOther, "Twister");
         if (bHit) {
+          if (!CollidesWithEntity(epass.penOther)) { resume; }
           ProjectileTouch(epass.penOther);
           stop;
         }
@@ -3621,6 +3744,7 @@ procedures:
                    ((CProjectile*)&*etouch.penOther)->m_prtType==m_prtType));     
         
           if (bHit) {
+            if (!CollidesWithEntity(etouch.penOther)) { resume; }
             ProjectileTouch(etouch.penOther);
             stop;
           }
@@ -3644,6 +3768,8 @@ procedures:
 
   // --->>> MAIN
   Main(ELaunchProjectile eLaunch) {
+
+
     // remember the initial parameters
     ASSERT(eLaunch.penLauncher!=NULL);
     m_penLauncher = eLaunch.penLauncher;
@@ -3656,6 +3782,7 @@ procedures:
     m_penLastDamaged = NULL;
 
     switch (m_prtType) {
+      case PRT_KNIFE:
       case PRT_DEVIL_ROCKET:
       case PRT_WALKER_ROCKET:
       case PRT_ROCKET:
@@ -3685,6 +3812,7 @@ procedures:
     // projectile initialization
     switch (m_prtType)
     {
+      case PRT_KNIFE: DioKnife(); break;
       case PRT_WALKER_ROCKET: WalkerRocket(); break;
       case PRT_ROCKET: PlayerRocket(); break;
       case PRT_GRENADE: PlayerGrenade(); break;
@@ -3735,11 +3863,19 @@ procedures:
       default: ASSERTALWAYS("Unknown projectile type");
     }
 
+    if (g_musicHolder != NULL && g_musicHolder->IsZaWarudo())
+    {
+      m_fFlyTime += ZA_WARUDO_DURATION;
+    }
+
     // setup light source
     if (m_bLightSource) { SetupLightSource(TRUE); }
 
+    SendEvent(EDummy());
+
     // fly
     m_fStartTime = _pTimer->CurrentTick();
+
     // if guided projectile
     if( m_pmtMove == PMT_GUIDED) {
       autocall ProjectileGuidedFly() EEnd;
@@ -3783,7 +3919,9 @@ procedures:
 
     // wait after death
     if (m_fWaitAfterDeath>0.0f) {
-      SwitchToEditorModel();
+      if (m_prtType != PRT_KNIFE) {
+        SwitchToEditorModel();
+      }
       ForceFullStop();
       SetCollisionFlags(ECF_IMMATERIAL);
       // kill light source

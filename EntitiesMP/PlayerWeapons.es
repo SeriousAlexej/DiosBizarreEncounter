@@ -7,6 +7,9 @@
 
 #include "EntitiesMP/Player.h"
 #include "EntitiesMP/Bullet.h"
+#include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/entitycast.h"
+#include "EntitiesJoJo/RodaRollaDa.h"
 #include "Models/Weapons/Knife/Knife.h"
 #include "Models/Weapons/Knife/KnifeItem.h"
 #include "Models/Weapons/Colt/Colt.h"
@@ -39,9 +42,18 @@
 #include "ModelsMP/Weapons/Chainsaw/Blade.h"
 #include "ModelsMP/Weapons/Chainsaw/Teeth.h"
 
+#include "ModelsMP/Weapons/Hands/OneHand.h"
+#include "ModelsMP/Weapons/Hands/HandsWeapon.h"
+#include "ModelsMP/Weapons/Hands/Root.h"
+#include "ModelsMP/Weapons/Hands/Leg.h"
+
 // Mission Pack player body instead of the old one
 #include "ModelsMP/Player/SeriousSam/Body.h"
 #include "ModelsMP/Player/SeriousSam/Player.h"
+
+#include "ModelsMP/Player/Dio/Player.h"
+#include "ModelsMP/Player/Dio/Body.h"
+#include "ModelsMP/Player/Dio/Head.h"
 
 #include "EntitiesMP/Switch.h"
 #include "EntitiesMP/PlayerView.h"
@@ -51,9 +63,10 @@
 #include "EntitiesMP/EnemyBase.h"
 extern INDEX hud_bShowWeapon;
 
+const int index_remap[12] = { 0, 3, 5, 1, 4, 2, 6, 9, 11, 8, 10, 7 };
 extern const INDEX aiWeaponsRemap[19] = { 0,  1,  10,  2,  3,  4,  5,  6,  7,
                                           8,  9,  11, 13, 12, 14, 15, 16, 17, 18 };
-
+static void ClearToDefault(FLOATmatrix3D& m) { m = FLOATmatrix3D(); }
 %}
 
 uses "EntitiesMP/Player";
@@ -69,6 +82,35 @@ uses "EntitiesMP/ModelHolder2";
 //uses "EntitiesMP/GhostBusterRay";
 uses "EntitiesMP/CannonBall";
 
+event EZaWarudo
+{
+  CEntityPointer penDio, // IT IS ME,
+};
+
+event EZaWarudoEnd
+{
+};
+
+event EZaWarudoRestore
+{
+  BOOL restore_mass,
+  FLOAT mass,
+  BOOL restore_movement,
+  FLOAT3D en_vDesiredTranslationRelative,
+  FLOAT3D en_vCurrentTranslationAbsolute,
+  FLOAT3D en_vAppliedTranslation,
+  ANGLE3D en_aDesiredRotationRelative,
+  ANGLE3D en_aCurrentRotationAbsolute,
+  FLOATmatrix3D en_mAppliedRotation,
+  BOOL restore_physics,
+  ULONG physics_flags,
+  ULONG collision_flags,
+};
+
+event EZaWarudoKick
+{
+  FLOAT3D dioKickDir,
+};
 
 // input parameter for weapons
 event EWeaponsInit {
@@ -84,7 +126,10 @@ event ESelectWeapon {
 event EBoringWeapon {};
 
 // fire weapon
-event EFireWeapon {};
+event EFireWeapon
+{
+  BOOL bSecondary,
+};
 // release weapon
 event EReleaseWeapon {};
 // reload weapon
@@ -109,12 +154,13 @@ enum WeaponType {
  12 WEAPON_LASER              "",
  13 WEAPON_SNIPER             "",
  14 WEAPON_IRONCANNON         "",
- 15 WEAPON_LAST               "",
-}; // see 'WEAPONS_ALLAVAILABLEMASK' -> (11111111111111 == 0x3FFF)
+ 15 WEAPON_HANDS              "",
+ 16 WEAPON_LAST               "",
+}; // see 'WEAPONS_ALLAVAILABLEMASK' -> (111111111111111 == 0x7FFF)
 
 %{
 // AVAILABLE WEAPON MASK
-#define WEAPONS_ALLAVAILABLEMASK 0x3FFF
+#define WEAPONS_ALLAVAILABLEMASK 0x7FFF
 
 /*
 #if BUILD_TEST
@@ -255,6 +301,7 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
   pdec->PrecacheModel(MODEL_FLARE01);
   pdec->PrecacheClass(CLASS_BULLET);
   pdec->PrecacheSound(SOUND_SILENCE);
+  pdec->PrecacheClass(CLASS_RODA_ROLLA_DA);
 
   // precache other weapons if available
   if ( ulAvailable&(1<<(WEAPON_KNIFE-1)) ) {
@@ -265,6 +312,19 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
     pdec->PrecacheSound(SOUND_KNIFE_HIGH            );
     pdec->PrecacheSound(SOUND_KNIFE_LONG            );
     pdec->PrecacheSound(SOUND_KNIFE_LOW             );
+    pdec->PrecacheSound(SOUND_KNIFE_THROW           );
+    pdec->PrecacheClass(CLASS_PROJECTILE, PRT_KNIFE );
+  }
+
+  if ( ulAvailable&(1<<(WEAPON_HANDS-1)) ) {
+    pdec->PrecacheModel(MODEL_HANDS_ROOT  );
+    pdec->PrecacheModel(MODEL_WEAPON_HANDS);
+    pdec->PrecacheModel(MODEL_ONE_HAND    );
+    pdec->PrecacheModel(MODEL_LEFT_HAND   );
+    pdec->PrecacheModel(MODEL_RIGHT_HAND  );
+    pdec->PrecacheModel(MODEL_DIO_LEG     );
+    pdec->PrecacheTexture(TEXTURE_DIO_HAND);
+    pdec->PrecacheTexture(TEXTURE_DIO_BODY);
   }
 
   if ( ulAvailable&(1<<(WEAPON_COLT-1)) ) {
@@ -462,7 +522,7 @@ void CPlayerWeapons_Init(void) {
   _pShell->DeclareSymbol("persistent user FLOAT plr_tmSnoopingDelay;", &plr_tmSnoopingDelay);
 
   // precache base weapons
-  CPlayerWeapons_Precache(0x03);
+  CPlayerWeapons_Precache(0x4003);
 }
 
 // weapons positions for raycasting and firing
@@ -529,7 +589,7 @@ properties:
   4 enum WeaponType m_iCurrentWeapon  = WEAPON_KNIFE,    // currently active weapon (internal)
   5 enum WeaponType m_iWantedWeapon   = WEAPON_KNIFE,     // wanted weapon (internal)
   6 enum WeaponType m_iPreviousWeapon = WEAPON_KNIFE,   // previous active weapon (internal)
- 11 INDEX m_iAvailableWeapons = 0x01,   // avaible weapons
+ 11 INDEX m_iAvailableWeapons = 0x4001,   // avaible weapons (1 << KNIFE-1) | (1 << HANDS-1)
  12 BOOL  m_bChangeWeapon = FALSE,      // change current weapon
  13 BOOL  m_bReloadWeapon = FALSE,      // reload weapon
  14 BOOL  m_bMirrorFire   = FALSE,      // fire with mirror model
@@ -619,6 +679,9 @@ properties:
 271 FLOAT m_tmFlamerStop=1e9,
 272 FLOAT m_tmLastChainsawSpray = 0.0f,
 
+280 BOOL m_bSecondaryFire = FALSE,
+281 INDEX m_iLastLeg = ROOT_ATTACHMENT_LEG01,
+
 {
   CEntity *penBullet;
   CPlacement3D plBullet;
@@ -634,6 +697,7 @@ components:
   6 class   CLASS_CANNONBALL        "Classes\\CannonBall.ecl",
   7 class   CLASS_WEAPONITEM        "Classes\\WeaponItem.ecl",
   8 class   CLASS_BASIC_EFFECT      "Classes\\BasicEffect.ecl",
+  9 class   CLASS_RODA_ROLLA_DA     "Classes\\RodaRollaDa.ecl",
 
 // ************** HAND **************
  10 texture TEXTURE_HAND                "Models\\Weapons\\Hand.tex",
@@ -646,6 +710,7 @@ components:
  24 sound   SOUND_KNIFE_HIGH            "Models\\Weapons\\Knife\\Sounds\\High.wav",
  25 sound   SOUND_KNIFE_LONG            "Models\\Weapons\\Knife\\Sounds\\Long.wav",
  26 sound   SOUND_KNIFE_LOW             "Models\\Weapons\\Knife\\Sounds\\Low.wav",
+ 27 sound   SOUND_KNIFE_THROW           "ModelsMP\\Projectiles\\Kniff\\Sounds\\Throw.wav",
  
 // ************** COLT **************
  30 model   MODEL_COLT                  "Models\\Weapons\\Colt\\Colt.mdl",
@@ -815,6 +880,16 @@ components:
 211 texture TEX_SPEC_MEDIUM             "Models\\SpecularTextures\\Medium.tex",
 212 texture TEX_SPEC_STRONG             "Models\\SpecularTextures\\Strong.tex",
 
+// ************** DIO HANDS *************
+220 model MODEL_WEAPON_HANDS "ModelsMP\\Weapons\\Hands\\HandsWeapon.mdl",
+221 model MODEL_ONE_HAND     "ModelsMP\\Weapons\\Hands\\OneHand.mdl",
+222 model MODEL_LEFT_HAND    "ModelsMP\\Weapons\\Hands\\LeftHand.mdl",
+223 model MODEL_RIGHT_HAND   "ModelsMP\\Weapons\\Hands\\RightHand.mdl",
+224 texture TEXTURE_DIO_HAND "ModelsMP\\Weapons\\Hands\\DioHand.tex",
+225 model MODEL_HANDS_ROOT   "ModelsMP\\Weapons\\Hands\\Root.mdl",
+226 model MODEL_DIO_LEG      "ModelsMP\\Weapons\\Hands\\Leg.mdl",
+227 texture TEXTURE_DIO_BODY "ModelsMP\\Player\\Dio\\Dio.tex",
+
 // ************** FLARES **************
 250 model   MODEL_FLARE01               "Models\\Effects\\Weapons\\Flare01\\Flare.mdl",
 251 texture TEXTURE_FLARE01             "Models\\Effects\\Weapons\\Flare01\\Flare.tex",
@@ -824,6 +899,10 @@ components:
 
 functions:
    
+ BOOL CollidesWithEntity(CEntity* entity) const {
+   return entity && entity_cast(entity, CTheWorld) == NULL;
+ }
+
  // add to prediction any entities that this entity depends on
   void AddDependentsToPrediction(void)
   {
@@ -871,10 +950,36 @@ functions:
 //    plan.m_fRecoilSpeed += wpn_fRecoilSpeed[m_iCurrentWeapon];
   }
 
+  BOOL CurrentWeaponSupportsCurrentFireMode()
+  {
+    if (!m_bSecondaryFire) {
+      return TRUE;
+    }
+
+    switch(m_iCurrentWeapon)
+    {
+    case WEAPON_HANDS:
+      {
+        CPlayer &pl = (CPlayer&)*m_penPlayer;
+        if (pl.m_pstState == PST_DIVE || pl.m_pstState == PST_SWIM) {
+          return FALSE;
+        }
+        return TRUE;
+      }
+
+    case WEAPON_KNIFE:
+      return TRUE;
+
+    default:
+      break;
+    }
+    return FALSE;
+  }
+
   // 
   BOOL HoldingFire(void)
   {
-    return m_bFireWeapon && !m_bChangeWeapon;
+    return m_bFireWeapon && !m_bChangeWeapon && CurrentWeaponSupportsCurrentFireMode();
   }
 
 
@@ -1160,6 +1265,9 @@ functions:
     FLOAT fFY = wpn_fFY[m_iCurrentWeapon];
     if (GetPlayer()->m_iViewState == PVT_3RDPERSONVIEW) {
       fFX = fFY = 0;
+      if (GetPlayer()->m_mode == STAND_ENGAGED) {
+        fFY = 1.0f;
+      }
     }
     CalcWeaponPosition(FLOAT3D(fFX, fFY, 0), plCrosshair, FALSE);
     // cast ray
@@ -1168,6 +1276,11 @@ functions:
     crRay.cr_bPhysical = FALSE;
     crRay.cr_ttHitModels = CCastRay::TT_COLLISIONBOX;
     GetWorld()->CastRay(crRay);
+
+    while (crRay.cr_penHit != NULL && entity_cast(crRay.cr_penHit, CTheWorld) != NULL) {
+      GetWorld()->ContinueCast(crRay);
+    }
+
     // store required cast ray results
     m_vRayHitLast = m_vRayHit;  // for lerping purposes
     m_vRayHit   = crRay.cr_vHit;
@@ -1535,6 +1648,37 @@ functions:
                              TEXTURE_KNIFEITEM, TEX_REFL_BWRIPLES02, TEX_SPEC_WEAK, 0);
         m_moWeapon.PlayAnim(KNIFE_ANIM_WAIT1, 0);
         break;
+
+      case WEAPON_HANDS: {
+        SetComponents(this, m_moWeapon, MODEL_HANDS_ROOT, 0, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, ROOT_ATTACHMENT_HANDS, MODEL_WEAPON_HANDS, 0, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, ROOT_ATTACHMENT_LEG01, MODEL_DIO_LEG, TEXTURE_DIO_BODY, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, ROOT_ATTACHMENT_LEG02, MODEL_DIO_LEG, TEXTURE_DIO_BODY, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, ROOT_ATTACHMENT_LEG03, MODEL_DIO_LEG, TEXTURE_DIO_BODY, 0, 0, 0);
+        CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+
+        {for (int j = 0; j < 6; ++j){
+          int i = index_remap[j];
+          AddAttachmentToModel(this, moHandsWeapon, i, MODEL_ONE_HAND, 0, 0, 0, 0);
+          CModelObject& mo = moHandsWeapon.GetAttachmentModel(i)->amo_moModelObject;
+          AddAttachmentToModel(this, mo, ONEHAND_ATTACHMENT_HAND, MODEL_LEFT_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
+          if (i != 0) {
+            mo.PlayAnim(ONEHAND_ANIM_ATTACK, AOF_LOOPING|AOF_NORESTART);
+            mo.OffsetPhase(j / 6.0f * 0.16f);
+          }
+        }}
+        {for (int j = 6; j < 12; ++j){
+          int i = index_remap[j];
+          AddAttachmentToModel(this, moHandsWeapon, i, MODEL_ONE_HAND, 0, 0, 0, 0);
+          CModelObject& mo = moHandsWeapon.GetAttachmentModel(i)->amo_moModelObject;
+          AddAttachmentToModel(this, mo, ONEHAND_ATTACHMENT_HAND, MODEL_RIGHT_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
+          if (i != 6) {
+            mo.PlayAnim(ONEHAND_ANIM_ATTACK, AOF_LOOPING|AOF_NORESTART);
+            mo.OffsetPhase((j - 6) / 6.0f * 0.16f);
+          }
+        }}
+        break;
+        }
       // colt
       case WEAPON_DOUBLECOLT: {
         SetComponents(this, m_moWeaponSecond, MODEL_COLT, TEXTURE_HAND, 0, 0, 0);
@@ -1723,9 +1867,8 @@ functions:
     plPos.RelativeToAbsoluteSmooth(m_penPlayer->GetPlacement());
   };
 
-  // calc weapon position
-  void CalcWeaponPosition(FLOAT3D vPos, CPlacement3D &plPos, BOOL bResetZ) {
-    plPos.pl_OrientationAngle = ANGLE3D(0, 0, 0);
+  void CalcWeaponPosition(const FLOAT3D& vPos, CPlacement3D &plPos, BOOL bResetZ, const ANGLE3D& i_rotation) {
+    plPos.pl_OrientationAngle = i_rotation;
     // weapon handle
     if (!m_bMirrorFire) {
       plPos.pl_PositionVector = FLOAT3D( wpn_fX[m_iCurrentWeapon], wpn_fY[m_iCurrentWeapon],
@@ -1757,6 +1900,10 @@ functions:
       m_fEyesYOffset;
     plPos.RelativeToAbsoluteSmooth(plView);
     plPos.RelativeToAbsoluteSmooth(m_penPlayer->GetPlacement());
+  }
+  // calc weapon position
+  void CalcWeaponPosition(const FLOAT3D& vPos, CPlacement3D &plPos, BOOL bResetZ) {
+    CalcWeaponPosition(vPos, plPos, bResetZ, ANGLE3D(0, 0, 0));
   };
 
   // calc lerped weapon position
@@ -1847,6 +1994,142 @@ functions:
    *  >>>---  FIRE FUNCTIONS  ---<<<
    */
 
+  BOOL DioPunch(FLOAT fDamage, FLOAT fKickForce, BOOL bDelayedKick) 
+  {
+    FLOAT fX = FRnd()*2.0f - 1.0f;
+    FLOAT fY = FRnd()*2.0f - 1.0f;
+    FLOAT fRange = 3.0f;
+    FLOAT fWide = 2.0f;
+    FLOAT fThickness = 0.5f;
+
+    BOOL zaWarudoActive = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+
+    if (zaWarudoActive) {
+      fDamage *= 2.0f;
+    }
+
+    // knife start position
+    CPlacement3D plKnife;
+    CalcWeaponPosition(FLOAT3D(fX, fY, 0), plKnife, TRUE);
+
+    // create a set of rays to test
+    const FLOAT3D &vBase = plKnife.pl_PositionVector;
+    FLOATmatrix3D m;
+    MakeRotationMatrixFast(m, plKnife.pl_OrientationAngle);
+    FLOAT3D vRight = m.GetColumn(1)*fWide;
+    FLOAT3D vUp    = m.GetColumn(2)*fWide;
+    FLOAT3D vFront = -m.GetColumn(3)*fRange;
+
+    FLOAT3D vDest[5];
+    vDest[0] = vBase+vFront;
+    vDest[1] = vBase+vFront+vUp;
+    vDest[2] = vBase+vFront-vUp;
+    vDest[3] = vBase+vFront+vRight;
+    vDest[4] = vBase+vFront-vRight;
+
+    CEntity *penClosest = NULL;
+    FLOAT fDistance = UpperLimit(0.0f);
+    FLOAT3D vHit;
+    FLOAT3D vDir;
+    // for each ray
+    for (INDEX i=0; i<5; i++) {
+      // cast a ray to find if any model
+      CCastRay crRay( m_penPlayer, vBase, vDest[i]);
+      crRay.cr_bHitTranslucentPortals = FALSE;
+      crRay.cr_fTestR = fThickness;
+      crRay.cr_ttHitModels = CCastRay::TT_COLLISIONBOX;
+      GetWorld()->CastRay(crRay);
+      
+      while (crRay.cr_penHit && !CollidesWithEntity(crRay.cr_penHit)) {
+        GetWorld()->ContinueCast(crRay);
+      }
+
+      // if hit something
+      if (crRay.cr_penHit!=NULL /*&& crRay.cr_penHit->GetRenderType()==RT_MODEL*/ && crRay.cr_fHitDistance<fDistance) {
+        penClosest = crRay.cr_penHit;
+        fDistance = crRay.cr_fHitDistance;
+        vDir = vDest[i]-vBase;
+        vHit = crRay.cr_vHit;
+        
+        if (i==0) {
+          if(crRay.cr_penHit->GetRenderType()==RT_BRUSH)
+          {
+            INDEX iSurfaceType=crRay.cr_pbpoBrushPolygon->bpo_bppProperties.bpp_ubSurfaceType;
+            EffectParticlesType eptType=GetParticleEffectTypeForSurface(iSurfaceType);
+            
+            FLOAT3D vNormal=crRay.cr_pbpoBrushPolygon->bpo_pbplPlane->bpl_plAbsolute;
+            FLOAT3D vReflected = vDir-vNormal*(2.0f*(vNormal%vDir));
+            ((CPlayer&)*m_penPlayer).AddBulletSpray( vBase+vFront, eptType, vReflected);
+          }
+          else if(crRay.cr_penHit->GetRenderType()==RT_MODEL)
+          {
+            BOOL bRender=TRUE;
+            FLOAT3D vSpillDir=-((CPlayer&)*m_penPlayer).en_vGravityDir*0.5f;
+            SprayParticlesType sptType=SPT_NONE;
+            COLOR colParticles=C_WHITE|CT_OPAQUE;
+            FLOAT fPower=4.0f;
+            if( IsOfClass(crRay.cr_penHit, "ModelHolder2"))
+            {
+              bRender=FALSE;
+              CModelDestruction *penDestruction = ((CModelHolder2&)*crRay.cr_penHit).GetDestruction();
+              if( penDestruction!=NULL)
+              {
+                bRender=TRUE;
+                sptType= penDestruction->m_sptType;
+              }
+              CModelHolder2 *pmh2=(CModelHolder2*)crRay.cr_penHit;
+              colParticles=pmh2->m_colBurning;
+            }
+            FLOATaabbox3D boxCutted=FLOATaabbox3D(FLOAT3D(0,0,0),FLOAT3D(1,1,1));
+            if(bRender)
+            {
+              crRay.cr_penHit->en_pmoModelObject->GetCurrentFrameBBox( boxCutted);
+              ((CPlayer&)*m_penPlayer).AddGoreSpray( vBase+vFront, vHit, sptType,
+                vSpillDir, boxCutted, fPower, colParticles);
+            }
+          }
+          // don't search any more
+          break;
+        }        
+      }
+    }
+    
+    BOOL result = FALSE;
+    // if any model hit
+    if (penClosest!=NULL) {
+      const FLOAT fDamageMul = GetSeriousDamageMultiplier(m_penPlayer);
+
+      BOOL isPlayer = IsDerivedFromClass(penClosest, "Player");
+      BOOL isEnemy = !isPlayer && IsDerivedFromClass(penClosest, "Enemy Base");
+      if (isPlayer || isEnemy)
+      {
+        CPlacement3D weaponPl;
+        CalcWeaponPosition(FLOAT3D(0.0f, 0.0f, 0.0f), weaponPl, TRUE);
+        CPlacement3D offsetZ(FLOAT3D(0.0f, 0.0f, -fKickForce), ANGLE3D(0.0f, 0.0f, 0.0f));
+        offsetZ.RelativeToAbsolute(weaponPl);
+        FLOAT3D dioKickDir = (offsetZ.pl_PositionVector - weaponPl.pl_PositionVector);
+
+        if (!zaWarudoActive && (!bDelayedKick || isPlayer)) {
+          if (dioKickDir.Length() > 0.1f) {
+            if (dioKickDir.Length() > 5.0f) {
+              dioKickDir.Normalize();
+              dioKickDir *= 5.0f;
+            }
+            ((CMovableEntity*)&*penClosest)->GiveImpulseTranslationAbsolute(dioKickDir * 10.0f);
+          }
+        } else {
+          EZaWarudoKick eDioKick;
+          eDioKick.dioKickDir = dioKickDir;
+          penClosest->SendEvent(eDioKick);
+        }
+        result = TRUE;
+      }
+      
+      InflictDirectDamage(penClosest, m_penPlayer, DMT_CLOSERANGE, fDamage*fDamageMul, vHit, vDir);
+    }
+    return result;
+  };
+
   // cut in front of you with knife
   BOOL CutWithKnife(FLOAT fX, FLOAT fY, FLOAT fRange, FLOAT fWide, FLOAT fThickness, FLOAT fDamage) 
   {
@@ -1882,6 +2165,10 @@ functions:
       crRay.cr_ttHitModels = CCastRay::TT_COLLISIONBOX;
       GetWorld()->CastRay(crRay);
       
+      while (crRay.cr_penHit && !CollidesWithEntity(crRay.cr_penHit)) {
+        GetWorld()->ContinueCast(crRay);
+      }
+
       // if hit something
       if (crRay.cr_penHit!=NULL /*&& crRay.cr_penHit->GetRenderType()==RT_MODEL*/ && crRay.cr_fHitDistance<fDistance) {
         penClosest = crRay.cr_penHit;
@@ -1984,6 +2271,10 @@ functions:
       crRay.cr_fTestR = fThickness;
       crRay.cr_ttHitModels = CCastRay::TT_COLLISIONBOX;
       GetWorld()->CastRay(crRay);
+
+      while (crRay.cr_penHit && !CollidesWithEntity(crRay.cr_penHit)) {
+        GetWorld()->ContinueCast(crRay);
+      }
 
       // if hit something
       if (crRay.cr_penHit!=NULL)
@@ -2218,6 +2509,28 @@ functions:
     penRocket->Initialize(eLaunch);
   };
 
+  void FireKnife(const ANGLE3D& i_rotation, const FLOAT3D& i_position) {
+    CPlacement3D plKnife;
+    CalcWeaponPosition(
+      FLOAT3D(wpn_fFX[WEAPON_ROCKETLAUNCHER],wpn_fFY[WEAPON_ROCKETLAUNCHER], 0) + i_position,
+      plKnife, TRUE, i_rotation);
+    CEntityPointer penKnife = CreateEntity(plKnife, CLASS_PROJECTILE);
+    ELaunchProjectile eLaunch;
+    eLaunch.penLauncher = m_penPlayer;
+    eLaunch.prtType = PRT_KNIFE;
+    penKnife->Initialize(eLaunch);
+  };
+
+  void FireRodaRollaDa()
+  {
+    CPlacement3D plRodaRolla;
+    CalcWeaponPosition(FLOAT3D(wpn_fFX[WEAPON_ROCKETLAUNCHER],wpn_fFY[WEAPON_ROCKETLAUNCHER], -10.0f), plRodaRolla, FALSE);
+    CEntityPointer penRodaRolla = CreateEntity(plRodaRolla, CLASS_RODA_ROLLA_DA);
+    ELaunchRodaRolla eLaunch;
+    eLaunch.penLauncher = m_penPlayer;
+    penRodaRolla->Initialize(eLaunch);
+  };
+
   /*
   // drop pipebomb
   void DropPipebomb(void) {
@@ -2380,7 +2693,7 @@ functions:
   // clear weapons
   void ClearWeapons(void) {
     // give/take weapons
-    m_iAvailableWeapons = 0x03;
+    m_iAvailableWeapons = 0x4003;
     m_iColtBullets = 6;
     m_iBullets = 0;
     m_iShells = 0;
@@ -2407,7 +2720,7 @@ functions:
     ULONG ulOldWeapons = m_iAvailableWeapons;
     // give/take weapons
     m_iAvailableWeapons &= ~iTakeWeapons;
-    m_iAvailableWeapons |= 0x03|iGiveWeapons;
+    m_iAvailableWeapons |= 0x4003|iGiveWeapons;
     m_iAvailableWeapons &= WEAPONS_ALLAVAILABLEMASK;
     // m_iAvailableWeapons &= ~WEAPONS_DISABLEDMASK;
     // find which weapons are new
@@ -2469,6 +2782,7 @@ functions:
   INDEX GetAmmo(void)
   {
     switch (m_iCurrentWeapon) {
+      case WEAPON_HANDS:
       case WEAPON_KNIFE:           return 0;
       case WEAPON_COLT:            return m_iColtBullets;
       case WEAPON_DOUBLECOLT:      return m_iColtBullets;
@@ -2491,6 +2805,7 @@ functions:
   INDEX GetMaxAmmo(void)
   {
     switch (m_iCurrentWeapon) {
+      case WEAPON_HANDS:
       case WEAPON_KNIFE:           return 0;
       case WEAPON_COLT:            return 6;
       case WEAPON_DOUBLECOLT:      return 6;
@@ -2542,6 +2857,11 @@ functions:
     ((CPlayer&)*m_penPlayer).m_fPickedMana += iMana;
   }
 
+  FLOAT FRndRange(FLOAT fMin, FLOAT fMax)
+  {
+    return FRnd()*(fMax - fMin) + fMin;
+  }
+
 
   /*
    *  >>>---  RECEIVE FUNCTIONS  ---<<<
@@ -2568,6 +2888,7 @@ functions:
     // add ammo
     switch (iWeapon) {
       // unlimited ammo
+      case WEAPON_HANDS:
       case WEAPON_KNIFE:
       case WEAPON_COLT:
       case WEAPON_DOUBLECOLT:
@@ -2673,6 +2994,7 @@ functions:
     switch (m_iCurrentWeapon) {
       default:
         ASSERT(FALSE);
+      case WEAPON_HANDS:
       case WEAPON_KNIFE:
       case WEAPON_COLT:
       case WEAPON_DOUBLECOLT:
@@ -3016,6 +3338,7 @@ functions:
       case 6: return WEAPON_FLAMER; 
       case 7: return WEAPON_LASER;
       case 8: return WEAPON_IRONCANNON;
+      case 9: return WEAPON_HANDS;
     }
     return WEAPON_NONE;
   };
@@ -3031,6 +3354,7 @@ functions:
       case WEAPON_FLAMER: case WEAPON_SNIPER: return 6;
       case WEAPON_LASER: return 7;
       case WEAPON_IRONCANNON: return 8;
+      case WEAPON_HANDS: return 9;
     }
     return 0;
   };
@@ -3052,6 +3376,7 @@ functions:
       case WEAPON_SNIPER: return WEAPON_FLAMER;
       case WEAPON_LASER: return WEAPON_LASER;
       case WEAPON_IRONCANNON: return WEAPON_IRONCANNON;
+      case WEAPON_HANDS: return WEAPON_HANDS;
     }
     return WEAPON_NONE;
   };
@@ -3082,6 +3407,7 @@ functions:
   {
     switch (m_iCurrentWeapon) {
       case WEAPON_NONE: 
+      case WEAPON_HANDS:
       case WEAPON_KNIFE: case WEAPON_COLT: case WEAPON_DOUBLECOLT: 
       case WEAPON_SINGLESHOTGUN: case WEAPON_DOUBLESHOTGUN:
       case WEAPON_TOMMYGUN: case WEAPON_MINIGUN: case WEAPON_SNIPER:
@@ -3135,7 +3461,17 @@ functions:
 
   // does weapon have ammo
   BOOL HasAmmo(WeaponType EwtWeapon) {
+
+    if (((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
+      switch(EwtWeapon) {
+      case WEAPON_HANDS:
+      case WEAPON_KNIFE:
+        return TRUE;
+      }
+      return FALSE;
+    }
     switch (EwtWeapon) {
+      case WEAPON_HANDS:
       case WEAPON_KNIFE: case WEAPON_COLT: case WEAPON_DOUBLECOLT: return TRUE;
       case WEAPON_SINGLESHOTGUN: return (m_iShells>0);
       case WEAPON_DOUBLESHOTGUN: return (m_iShells>1);
@@ -3159,6 +3495,17 @@ functions:
     switch(m_iCurrentWeapon) {
       case WEAPON_NONE:
         break;
+      case WEAPON_HANDS:
+        {
+          CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+          moHandsWeapon.PlayAnim(HANDSWEAPON_ANIM_IDLE, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
+          for (INDEX i = ROOT_ATTACHMENT_LEG01; i <= ROOT_ATTACHMENT_LEG03; ++i)
+          {
+            CModelObject& moLeg = m_moWeapon.GetAttachmentModel(i)->amo_moModelObject;
+            moLeg.PlayAnim(LEG_ANIM_DEFAULT, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
+          }
+          break;
+        }
       case WEAPON_KNIFE:
         switch (m_iKnifeStand) {
           case 1: m_moWeapon.PlayAnim(KNIFE_ANIM_WAIT1, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE); break;
@@ -3222,6 +3569,14 @@ functions:
     }
     m_moWeapon.PlayAnim(iAnim, AOF_SMOOTHCHANGE);
     return m_moWeapon.GetAnimLength(iAnim);
+  };
+
+  FLOAT HandsBoring(void) {
+    INDEX iAnim;
+    iAnim = HANDSWEAPON_ANIM_IDLE;
+    CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+    moHandsWeapon.PlayAnim(iAnim, AOF_SMOOTHCHANGE);
+    return moHandsWeapon.GetAnimLength(iAnim);
   };
 
   FLOAT ColtBoring(void) {
@@ -3496,9 +3851,9 @@ functions:
     FOREVER {
       (INDEX&)wti += iDir;
       if (wti<1) {
-        wti = WEAPON_IRONCANNON;
+        wti = WEAPON_HANDS;
       }
-      if (wti>14) {
+      if (wti>WEAPON_HANDS) {
         wti = WEAPON_KNIFE;
       }
       if (wti==wtOrg) {
@@ -3767,6 +4122,9 @@ procedures:
       case WEAPON_LASER:
         m_iAnim = LASER_ANIM_DEACTIVATE;
         break;
+      case WEAPON_HANDS:
+        m_iAnim = HANDSWEAPON_ANIM_DEACTIVATE;
+        break;
 /*
       case WEAPON_GHOSTBUSTER:
         m_iAnim = GHOSTBUSTER_ANIM_DEACTIVATE;
@@ -3810,6 +4168,12 @@ procedures:
       return EEnd();
     }
 */
+    if (m_iCurrentWeapon==WEAPON_HANDS) {
+      CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+      moHandsWeapon.PlayAnim(m_iAnim, 0);
+      autowait(moHandsWeapon.GetAnimLength(m_iAnim));
+      return EEnd();
+    }
 
     // reload colts automagicaly when puting them away
     BOOL bNowColt = m_iCurrentWeapon==WEAPON_COLT || m_iCurrentWeapon==WEAPON_DOUBLECOLT;
@@ -3883,6 +4247,9 @@ procedures:
       case WEAPON_LASER:
         m_iAnim = LASER_ANIM_ACTIVATE;
         break;
+      case WEAPON_HANDS:
+        m_iAnim = HANDSWEAPON_ANIM_ACTIVATE;
+        break;
 /*    case WEAPON_GHOSTBUSTER:
         m_iAnim = GHOSTBUSTER_ANIM_ACTIVATE;
         break;
@@ -3932,6 +4299,14 @@ procedures:
     }
     */
 
+    if (m_iCurrentWeapon==WEAPON_HANDS) {
+      CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+      moHandsWeapon.PlayAnim(m_iAnim, 0);
+      autowait(moHandsWeapon.GetAnimLength(m_iAnim));
+      m_tmWeaponChangeRequired -= hud_tmWeaponsOnScreen/2;
+      return EEnd();
+    }
+
     m_moWeapon.PlayAnim(m_iAnim, 0);
     autowait(m_moWeapon.GetAnimLength(m_iAnim));
 
@@ -3972,21 +4347,21 @@ procedures:
     Setup3DSoundParameters();
 
     // start weapon firing animation for continuous firing
+
     if (m_iCurrentWeapon==WEAPON_MINIGUN) {
       jump MiniGunSpinUp();
     } else if (m_iCurrentWeapon==WEAPON_FLAMER) {
       jump FlamerStart();
-  } else if (m_iCurrentWeapon==WEAPON_CHAINSAW) {
+    } else if (m_iCurrentWeapon==WEAPON_CHAINSAW) {
       jump ChainsawFire();
-/*  } else if (m_iCurrentWeapon==WEAPON_GHOSTBUSTER) {
-      autocall GhostBusterStart() EEnd;   */
     } else if (m_iCurrentWeapon==WEAPON_LASER) {
       GetAnimator()->FireAnimation(BODY_ANIM_SHOTGUN_FIRESHORT, AOF_LOOPING);
     } else if (m_iCurrentWeapon==WEAPON_TOMMYGUN) {
-      autocall TommyGunStart() EEnd;
-    } else if ((m_iCurrentWeapon==WEAPON_IRONCANNON) /*|| (m_iCurrentWeapon==WEAPON_NUKECANNON)*/) {
+      autocall TommyGunStart() EEnd; 
+    } else if (m_iCurrentWeapon==WEAPON_IRONCANNON) {
       jump CannonFireStart();
     }
+
 
     // clear last lerped bullet position
     m_iLastBulletPosition = FLOAT3D(32000.0f, 32000.0f, 32000.0f);
@@ -4001,7 +4376,42 @@ procedures:
         on (EBegin) : {
           // fire one shot
           switch (m_iCurrentWeapon) {
-            case WEAPON_KNIFE: call SwingKnife(); break;
+            case WEAPON_KNIFE:
+              {
+                if (m_bSecondaryFire || ((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
+                  call ThrowKnife();
+                } else {
+                  call SwingKnife();
+                }
+                break;
+              }
+            case WEAPON_HANDS:
+              {
+                if (m_bSecondaryFire) {
+                  CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+                  CModelObject& moLeg1 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
+                  CModelObject& moLeg2 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
+                  CModelObject& moLeg3 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
+                  moHandsWeapon.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+                  
+                  BOOL zaWarudoActive = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+
+                  if (zaWarudoActive) {
+                    moLeg1.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+                    moLeg2.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+                    moLeg3.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+                    call HitWithLegsFAST();
+                  } else {
+                    moLeg1.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+                    moLeg2.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+                    moLeg3.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+                    call HitWithLegs();
+                  }
+                } else {
+                  call HitWithHands();
+                }
+                break;
+              }
             case WEAPON_COLT: call FireColt(); break;
             case WEAPON_DOUBLECOLT: call FireDoubleColt(); break;
             case WEAPON_SINGLESHOTGUN: call FireSingleShotgun(); break;
@@ -4023,10 +4433,41 @@ procedures:
 
     // stop weapon firing animation for continuous firing
     switch (m_iCurrentWeapon) {
+    case WEAPON_KNIFE:
+      {
+        CPlayer &pl = (CPlayer&)*m_penPlayer;
+        if (pl.m_penTheWorld) {
+          ((CTheWorld&)*pl.m_penTheWorld).IdleAnim();
+        }
+        jump Idle();
+      }
+      case WEAPON_HANDS:
+        {
+          CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+          CModelObject& moLeg1 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
+          CModelObject& moLeg2 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
+          CModelObject& moLeg3 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
+          moHandsWeapon.PlayAnim(HANDSWEAPON_ANIM_IDLE, AOF_NORESTART);
+          moHandsWeapon.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+          moLeg1.PlayAnim(LEG_ANIM_DEFAULT, 0);
+          moLeg2.PlayAnim(LEG_ANIM_DEFAULT, 0);
+          moLeg3.PlayAnim(LEG_ANIM_DEFAULT, 0);
+          moLeg1.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+          moLeg2.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+          moLeg3.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+          GetAnimator()->m_bDisableAnimating = FALSE;
+          GetAnimator()->FireAnimationOff();
+          
+          CPlayer &pl = (CPlayer&)*m_penPlayer;
+          if (pl.m_penTheWorld) {
+            ((CTheWorld&)*pl.m_penTheWorld).IdleAnim();
+          }
+
+          jump Idle();
+        }
       case WEAPON_TOMMYGUN: { jump TommyGunStop(); break; }
       case WEAPON_MINIGUN: { jump MiniGunSpinDown(); break; }
       case WEAPON_FLAMER: { jump FlamerStop(); break; }
-//      case WEAPON_GHOSTBUSTER: { jump GhostBusterStop(); break; }
       case WEAPON_LASER: { 
         GetAnimator()->FireAnimationOff();
         jump Idle();
@@ -4035,6 +4476,137 @@ procedures:
     }
   };
 
+  HitWithHands()
+  {
+    GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK, AOF_LOOPING|AOF_NORESTART);
+    GetAnimator()->m_bDisableAnimating = FALSE;
+    CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
+    moHandsWeapon.PlayAnim(HANDSWEAPON_ANIM_ATTACK, AOF_LOOPING|AOF_NORESTART);
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      ((CTheWorld&)*pl.m_penTheWorld).HandsAnim();
+    }
+
+    autowait(0.1f);
+
+    FLOAT damage = 10.0f;
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 6.0f;
+    }
+    DioPunch(damage, 1.0f, TRUE);
+
+    return EEnd();
+  };
+
+  HitWithLegs()
+  {
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    if (pl.m_mode == STAND_PASSIVE) {
+      pl.StartModelAnim(PLAYER_ANIM_HIT_LEG, 0);
+    }
+    GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG, 0);
+    GetAnimator()->m_bDisableAnimating = TRUE;
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      ((CTheWorld&)*pl.m_penTheWorld).LegsAnim();
+    }
+
+    CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
+
+    m_iLastLeg = ROOT_ATTACHMENT_LEG01 + (IRnd()%3);
+    CModelObject& moLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    moLeg.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+    moLeg.PlayAnim(LEG_ANIM_KICK, 0);
+    moLeg.OffsetPhase(0.0f);
+    autowait(0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK));
+
+    FLOAT damage = 30.0f;
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 2.0f;
+    }
+    DioPunch(damage, 5.0f, FALSE);
+
+    CModelObject& moLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    autowait(0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK));
+    
+    CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
+
+    return EEnd();
+  };
+
+  HitWithLegsFAST()
+  {
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    if (pl.m_mode == STAND_PASSIVE) {
+      pl.StartModelAnim(PLAYER_ANIM_HIT_LEG_FAST, 0);
+    }
+    GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG_FAST, 0);
+    GetAnimator()->m_bDisableAnimating = TRUE;
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      ((CTheWorld&)*pl.m_penTheWorld).LegsAnim();
+    }
+
+    CModelObject& moLeg1 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
+    CModelObject& moLeg2 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
+    CModelObject& moLeg3 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
+
+    BOOL changeOffset = (moLeg2.GetAnim() != LEG_ANIM_KICKLOOP);
+
+    moLeg1.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
+    moLeg2.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
+    moLeg3.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
+    
+    if (changeOffset) {
+      moLeg2.OffsetPhase(moLeg1.GetAnimLength(LEG_ANIM_KICKLOOP) / 3.0f);
+      moLeg3.OffsetPhase(moLeg1.GetAnimLength(LEG_ANIM_KICKLOOP) / 3.0f * 2.0f);
+    }
+    autowait(0.1f);
+
+    FLOAT damage = 30.0f;
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 2.5f;
+    }
+    DioPunch(damage, 5.0f, TRUE);
+    
+    return EEnd();
+  }
+
+  ThrowKnife()
+  {
+    GetAnimator()->FireAnimation(BODY_ANIM_KNIFE_ATTACK, 0);
+
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    PlaySound(pl.m_soWeapon0, SOUND_KNIFE_THROW, SOF_3D|SOF_VOLUMETRIC);
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      ((CTheWorld&)*pl.m_penTheWorld).ThrowAnim();
+    }
+
+    m_moWeapon.PlayAnim(KNIFE_ANIM_PULL, 0);
+    autowait(m_moWeapon.GetAnimLength(KNIFE_ANIM_PULL) * 0.25f);
+    
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    BOOL zaWarudo = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+    if (zaWarudo || pl.m_mode == STAND_ENGAGED) {
+      FireKnife(
+        ANGLE3D(FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f)),
+        FLOAT3D(FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f)));
+    }
+
+    FireKnife(ANGLE3D(0.0f, 0.0f, 0.0f), FLOAT3D(0.0f, 0.0f, 0.0f));
+
+    if (zaWarudo || pl.m_mode == STAND_ENGAGED) {
+      FireKnife(
+        ANGLE3D(FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f)),
+        FLOAT3D(FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f)));
+    }
+    autowait(m_moWeapon.GetAnimLength(KNIFE_ANIM_PULL) * 0.75f);
+
+    return EEnd();
+  };
     
   // ***************** SWING KNIFE *****************
   SwingKnife() {
@@ -4958,84 +5530,6 @@ procedures:
     return EEnd();
   };
 
-/*
-  // ***************** FIRE PIPEBOMB *****************
-  FirePipeBomb() {
-    // drop one pipebomb
-    if (m_iGrenades>=0) {
-      // fire bomb
-      if (m_bPipeBombDropped) {
-        m_bPipeBombDropped = FALSE;
-        m_moWeaponSecond.PlayAnim(HANDWITHSTICK_ANIM_STICKFIRE, 0);
-        autowait(0.35f);
-        // activate pipebomb
-        SendToTarget(m_penPipebomb, EET_START);
-        m_penPipebomb = NULL;
-        // sound
-        CPlayer &pl = (CPlayer&)*m_penPlayer;
-        PlaySound(pl.m_soWeapon0, SOUND_PIPEBOMB_FIRE, SOF_3D|SOF_VOLUMETRIC);
-        // no ammo -> change weapon
-        if (m_iGrenades<=0) {
-          autowait(m_moWeaponSecond.GetAnimLength(HANDWITHSTICK_ANIM_STICKFIRE)-0.35f);
-          SelectNewWeapon();
-          return EEnd();
-        }
-        // get new bomb
-        AddAttachmentToModel(this, m_moWeapon, HANDWITHBOMB_ATTACHMENT_BOMB, MODEL_PB_BOMB,
-                             TEXTURE_PB_BOMB, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
-        m_moWeapon.PlayAnim(HANDWITHBOMB_ANIM_ACTIVATE, 0);
-        autowait(m_moWeapon.GetAnimLength(HANDWITHBOMB_ANIM_ACTIVATE));
-
-      // drop bomb
-      } else if (TRUE) {
-        m_bPipeBombDropped = TRUE;
-        // low drop
-        if (((CPlayer&)*m_penPlayer).en_plViewpoint.pl_OrientationAngle(2) < -20.0f) {
-          m_moWeapon.PlayAnim(HANDWITHBOMB_ANIM_BOMBTHROW1 ,0);
-        // high drop
-        } else {
-          m_moWeapon.PlayAnim(HANDWITHBOMB_ANIM_BOMBTHROW2 ,0);
-        }
-        autowait(0.5f);
-        // sound
-        CPlayer &pl = (CPlayer&)*m_penPlayer;
-        PlaySound(pl.m_soWeapon1, SOUND_PIPEBOMB_THROW, SOF_3D|SOF_VOLUMETRIC);
-        SpawnRangeSound(5.0f);
-        autowait(0.2f);
-        // drop bomb
-        DropPipebomb();
-        DecAmmo(m_iGrenades, 1);
-        RemoveAttachmentFromModel(m_moWeapon, HANDWITHBOMB_ATTACHMENT_BOMB);
-        autowait(0.2f);
-        // open stick shield
-        m_moWeaponSecond.PlayAnim(HANDWITHSTICK_ANIM_STICKTHROW ,0);
-        // sound
-        CPlayer &pl = (CPlayer&)*m_penPlayer;
-        PlaySound(pl.m_soWeapon2, SOUND_PIPEBOMB_OPEN, SOF_3D|SOF_VOLUMETRIC);
-        autowait(m_moWeaponSecond.GetAnimLength(HANDWITHSTICK_ANIM_STICKTHROW));
-      }
-    } else {
-      ASSERTALWAYS("Pipebomb - Auto weapon change not working.");
-      m_bFireWeapon = m_bHasAmmo = FALSE;
-    }
-    return EEnd();
-  };
-
-  ReloadPipeBomb() {
-    if (m_bPipeBombDropped) {
-      m_bPipeBombDropped = FALSE;
-      // close stick
-      m_moWeaponSecond.PlayAnim(HANDWITHSTICK_ANIM_STICKRETURN, 0);
-      // get new bomb
-      AddAttachmentToModel(this, m_moWeapon, HANDWITHBOMB_ATTACHMENT_BOMB, MODEL_PB_BOMB,
-                           TEXTURE_PB_BOMB, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
-      m_moWeapon.PlayAnim(HANDWITHBOMB_ANIM_ACTIVATE, 0);
-      autowait(m_moWeapon.GetAnimLength(HANDWITHBOMB_ANIM_ACTIVATE));
-    }
-
-    return EEnd();
-  };*/
-
   // ***************** FIRE FLAMER *****************
   FlamerStart() {
     m_tmFlamerStart=_pTimer->CurrentTick();
@@ -5462,6 +5956,7 @@ procedures:
     // select new mode change animation
     FLOAT fWait = 0.0f;
     switch (m_iCurrentWeapon) {
+      case WEAPON_HANDS: fWait = HandsBoring(); break;
       case WEAPON_KNIFE: fWait = KnifeBoring(); break;
       case WEAPON_COLT: fWait = ColtBoring(); break;
       case WEAPON_DOUBLECOLT: fWait = DoubleColtBoring(); break;
@@ -5500,8 +5995,8 @@ procedures:
           jump ChangeWeapon();
         }
         // fire pressed start firing
-        if (m_bFireWeapon) {
-          jump Fire();
+        if (m_bFireWeapon && CurrentWeaponSupportsCurrentFireMode()) {
+            jump Fire();
         }
         // reload pressed
         if (m_bReloadWeapon) {
@@ -5519,8 +6014,14 @@ procedures:
         resume;
       }
       // fire pressed
-      on (EFireWeapon) : {
-        jump Fire();
+      on (EFireWeapon eFire) : {
+        if (!m_bFireWeapon || m_bChangeWeapon) {
+          m_bSecondaryFire = eFire.bSecondary;
+        }
+
+        if (CurrentWeaponSupportsCurrentFireMode()) {
+          jump Fire();
+        }
       }
       // reload pressed
       on (EReloadWeapon) : {
@@ -5593,7 +6094,10 @@ procedures:
         call Stopped();
         resume;
       }
-      on (EFireWeapon) : {
+      on (EFireWeapon eFire) : {
+        if (!m_bFireWeapon || m_bChangeWeapon) {
+          m_bSecondaryFire = eFire.bSecondary;
+        }
         // start firing
         m_bFireWeapon = TRUE;
         resume;
@@ -5601,6 +6105,7 @@ procedures:
       on (EReleaseWeapon) : {
         // stop firing
         m_bFireWeapon = FALSE;
+        m_bSecondaryFire = FALSE;
         resume;
       }
       on (EReloadWeapon) : {

@@ -3,6 +3,10 @@
 #include "Ecc/StdH.h"
 #include "Ecc/Main.h"
 
+#include <string>
+#include <vector>
+#include <utility>
+
 static char *_strCurrentClass;
 static int _iCurrentClassID;
 static char *_strCurrentBase;
@@ -44,6 +48,8 @@ static char _strCurrentStateID[256];
 static int _bInProcedure;   // set if currently compiling a procedure
 static int _bInHandler;
 static int _bHasOtherwise;  // set if current 'wait' block has an 'otherwise' statement
+
+static std::vector<std::pair<std::string, std::string>> event_members;
 
 static char *_strCurrentEvent;
 static int _bFeature_AbstractBaseClass;
@@ -309,6 +315,8 @@ enum_declaration
     fprintf(_fTables, "EP_ENUMEND(%s);\n\n", _strCurrentEnum);
     fprintf(_fDeclaration, "};\n");
     fprintf(_fDeclaration, "DECL_DLL inline void ClearToDefault(%s &e) { e = (%s)0; } ;\n", _strCurrentEnum, _strCurrentEnum);
+    fprintf(_fDeclaration, "inline void WriteEventMember(CTStream* strm, %s &e) { INDEX ei = e; WriteEventMember(strm, ei); };\n", _strCurrentEnum);
+    fprintf(_fDeclaration, "inline void ReadEventMember(CTStream* strm, %s &e) { INDEX ei; ReadEventMember(strm, ei); e = (%s)ei; };\n", _strCurrentEnum, _strCurrentEnum);
   }
   ;
 opt_comma : /*null*/ | ',';
@@ -332,19 +340,64 @@ event_declaration
     _strCurrentEvent = $2.strString;
     int iID = CreateID();
     fprintf(_fDeclaration, "#define EVENTCODE_%s 0x%08x\n", _strCurrentEvent, iID);
-    fprintf(_fDeclaration, "class DECL_DLL %s : public CEntityEvent {\npublic:\n",
+    fprintf(_fDeclaration, "class DECL_DLL %s : public CJoJoEvent {\npublic:\n",
       _strCurrentEvent);
     fprintf(_fDeclaration, "%s();\n", _strCurrentEvent );
     fprintf(_fDeclaration, "CEntityEvent *MakeCopy(void);\n");
+    fprintf(_fDeclaration, "virtual void Write(CTStream* strm);\n");
+    fprintf(_fDeclaration, "virtual void Read(CTStream* strm);\n");
+    fprintf(_fDeclaration, "virtual void ResolvePointers();\n");
     fprintf(_fImplementation, 
       "CEntityEvent *%s::MakeCopy(void) { "
       "CEntityEvent *peeCopy = new %s(*this); "
       "return peeCopy;}\n",
       _strCurrentEvent, _strCurrentEvent);
-    fprintf(_fImplementation, "%s::%s() : CEntityEvent(EVENTCODE_%s) {;\n",
+   fprintf(_fImplementation, "%s::%s() : CJoJoEvent(EVENTCODE_%s) {;\n", 
       _strCurrentEvent, _strCurrentEvent, _strCurrentEvent);
   } '{' event_members_list opt_comma '}' ';' {
     fprintf(_fImplementation, "};\n");
+
+    fprintf(_fImplementation,
+      "void %s::Write(CTStream* strm) {\n",
+      _strCurrentEvent);
+    for (const auto& event_member : event_members)
+    {
+      fprintf(_fImplementation, "WriteEventMember(strm, %s);\n", event_member.second.c_str());
+    }
+    fprintf(_fImplementation, "};\n");
+
+    fprintf(_fImplementation,
+      "void %s::Read(CTStream* strm) {\n",
+      _strCurrentEvent);
+    for (const auto& event_member : event_members)
+    {
+      fprintf(_fImplementation, "ReadEventMember(strm, %s);\n", event_member.second.c_str());
+    }
+    fprintf(_fImplementation, "};\n");
+
+    fprintf(_fImplementation,
+      "void %s::ResolvePointers() {\n",
+      _strCurrentEvent);
+    for (const auto& event_member : event_members)
+    {
+      if (event_member.first == "CEntityPointer")
+      {
+        fprintf(_fImplementation, "ResolveEntityPointer(%s);\n", event_member.second.c_str());
+      }
+    }
+    fprintf(_fImplementation, "};\n");
+    event_members.clear();
+
+    fprintf(_fImplementation,
+    "CEntityEvent* Create_%s() { return new %s(); }\n"
+    "class %s_FactoryRegistrar {\n"
+    "public:\n"
+    "%s_FactoryRegistrar() {\n"
+    "AddToFactory(EVENTCODE_%s, &Create_%s);\n"
+    "}\n};\n"
+    "static %s_FactoryRegistrar g_registrar_%s;\n",
+    _strCurrentEvent, _strCurrentEvent, _strCurrentEvent, _strCurrentEvent, _strCurrentEvent, _strCurrentEvent, _strCurrentEvent, _strCurrentEvent);
+
     fprintf(_fDeclaration, "};\n");
     fprintf(_fDeclaration, "DECL_DLL inline void ClearToDefault(%s &e) { e = %s(); } ;\n", _strCurrentEvent, _strCurrentEvent);
   }
@@ -362,6 +415,7 @@ non_empty_event_members_list
 
 event_member
   : any_type identifier {
+    event_members.emplace_back(std::make_pair(std::string($1.strString), std::string($2.strString)));
     fprintf(_fDeclaration, "%s %s;\n", $1.strString, $2.strString);
     fprintf(_fImplementation, " ClearToDefault(%s);\n", $2.strString);
   }

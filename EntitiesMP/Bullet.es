@@ -1,6 +1,8 @@
 502
 %{
 #include "StdH.h"
+#include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/entitycast.h"
 %}
 
 uses "EntitiesMP/BasicEffects";
@@ -48,6 +50,10 @@ components:
   1 class   CLASS_BASIC_EFFECT "Classes\\BasicEffect.ecl"
 
 functions:
+
+ BOOL CollidesWithEntity(CEntity* entity) const {
+   return entity && entity_cast(entity, CTheWorld) == NULL;
+ }
 
 /************************************************************
  *                      BULLET LAUNCH                       *
@@ -150,6 +156,14 @@ functions:
       {
         break;
       }
+      
+      if (!CollidesWithEntity(crRay.cr_penHit)) {
+        if (ctCasts > 1) {
+          ctCasts--;
+        }
+        continue;
+      }
+
       // apply damage
       const FLOAT fDamageMul = GetSeriousDamageMultiplier(m_penOwner);
       InflictDirectDamage(crRay.cr_penHit, m_penOwner, m_EdtDamage, m_fDamage*fDamageMul,

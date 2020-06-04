@@ -11,6 +11,8 @@
 #define DECL_DLL 
 #endif
 
+#include "EntitiesJoJo/event_factory.h"
+
 #include "..\Global.h"
 #include "..\Common\Flags.h"
 #include "..\Common\Common.h"
