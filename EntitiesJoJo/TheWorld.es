@@ -172,11 +172,17 @@ functions:
   void RemoveAttachments(INDEX iToRemove)
   {
     if (iToRemove & ATTACHMENT_HANDS) {
-      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTGHOST);
-      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_LEFTGHOST);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_1);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_2);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_3);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_LEFT_1);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_LEFT_2);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_LEFT_3);
     }
     if (iToRemove & ATTACHMENT_LEG) {
-      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEGGHOST);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_1);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_2);
+      GetModelObject()->RemoveAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_3);
     }
     m_addedAttachments &= ~iToRemove;
   }
@@ -203,8 +209,12 @@ functions:
       GetModelObject()->PlayAnim(ZAWARUDO_ANIM_ATTACKHANDS, AOF_LOOPING|AOF_NORESTART);
       if (!(m_addedAttachments & ATTACHMENT_HANDS)) {
         m_addedAttachments |= ATTACHMENT_HANDS;
-        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTGHOST, MODEL_RIGHT_HAND);
-        AddAttachmentModel(ZAWARUDO_ATTACHMENT_LEFTGHOST, MODEL_LEFT_HAND);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_1, MODEL_RIGHT_HAND);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_2, MODEL_RIGHT_HAND);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_3, MODEL_RIGHT_HAND);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_LEFT_1, MODEL_LEFT_HAND);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_LEFT_2, MODEL_LEFT_HAND);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_LEFT_3, MODEL_LEFT_HAND);
       }
     }
   }
@@ -217,7 +227,9 @@ functions:
       GetModelObject()->PlayAnim(ZAWARUDO_ANIM_ATTACKLEG, AOF_LOOPING|AOF_NORESTART);
       if (!(m_addedAttachments & ATTACHMENT_LEG)) {
         m_addedAttachments |= ATTACHMENT_LEG;
-        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEGGHOST, MODEL_RIGHT_LEG);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_1, MODEL_RIGHT_LEG);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_2, MODEL_RIGHT_LEG);
+        AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_3, MODEL_RIGHT_LEG);
       }
     }
   }

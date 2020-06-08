@@ -48,6 +48,7 @@
 #include "EntitiesJoJo/TheWorld.h"
 #include "EntitiesJoJo/graphics_exports.h"
 #include "EntitiesJoJo/RodaRollaDa.h"
+#include "EntitiesJoJo/RodaRollaDebris.h"
 #include "EntitiesJoJo/entitycast.h"
 
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
@@ -73,6 +74,10 @@ enum PlayerState {
   2 PST_SWIM      "",
   3 PST_DIVE      "",
   4 PST_FALL      "",
+};
+
+event ESwitchStandMode
+{
 };
 
 // event for starting cinematic camera sequence
@@ -3414,11 +3419,17 @@ functions:
       return;
     }
 
+    if ((entity_cast(penInflictor, CRodaRollaDa) && ((CRodaRollaDa*)penInflictor)->m_penOwner == this) ||
+        (entity_cast(penInflictor, CRodaRollaDebris) && ((CRodaRollaDebris*)penInflictor)->m_penOwner == this))
+    {
+      return;
+    }
+
     if (dmtType == DMT_IMPACT && m_penTheWorld) {
       if (penInflictor->GetRenderType() == RT_BRUSH ||
           entity_cast(penInflictor, CModelHolder) ||
           entity_cast(penInflictor, CModelHolder2) ||
-          entity_cast(penInflictor, CRodaRollaDa))
+          entity_cast(penInflictor, CEnemyBase))
       {
         return;
       }
@@ -3446,7 +3457,7 @@ functions:
 
     // check for friendly fire
     if (!GetSP()->sp_bFriendlyFire && GetSP()->sp_bCooperative) {
-      if (IsOfClass(penInflictor, "Player") && penInflictor!=this) {
+      if ((IsOfClass(penInflictor, "Player") && penInflictor!=this) || entity_cast(penInflictor, CRodaRollaDa)) {
         return;
       }
     }
@@ -4933,20 +4944,15 @@ functions:
     }
 
     if (ulNewButtons&PLACT_ULTIMATE) {
-      if (m_mode == STAND_PASSIVE &&
+      if (m_pstState == PST_FALL &&
         m_penMainMusicHolder != NULL &&
         ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
         ((CMusicHolder*)&*m_penMainMusicHolder)->m_penDioPlayer.ep_pen == GetPredictionTail())
       {
-        // RODA ROLLA DA
+        //if (m_mode == STAND_ENGAGED) {
+        //  SendEvent(ESwitchStandMode());
+        //}
         penWeapon->FireRodaRollaDa();
-        /*
-        CPlacement3D plView = en_plViewpoint;
-        plView.RelativeToAbsolute(GetPlacement());
-        FLOATmatrix3D m;
-        MakeRotationMatrixFast(m, plView.pl_OrientationAngle);
-        FLOAT3D vZ(m(1,2), m(2,2), m(3,2));
-        */
       }
 
       if (m_penTheWorld) {
@@ -4955,56 +4961,7 @@ functions:
     }
 
     if (ulNewButtons&PLACT_STAND_TOGGLE) {
-      if (m_penTheWorld) {
-        if (CanPlayAnim()) {
-          // make old Warudo disappear (and move to player)
-          m_penTheWorld->SendEvent(EStop());
-
-          // new Warudo is set as child to follow player
-          ESpawnStand ess;
-          ess.penOwner = this;
-          m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
-          m_penTheWorld->Initialize(ess);
-          m_penTheWorld->SetParent(this);
-
-          CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
-          INDEX pose_anim = IRnd()%4;
-          INDEX body_anim = pose_anim + BODY_ANIM_POSE_01;
-          INDEX player_anim = pose_anim + PLAYER_ANIM_POSE_01;
-          GetModelObject()->PlayAnim(player_anim, 0);
-          moBody.PlayAnim(body_anim, 0);
-
-          ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
-
-          // force switch to hands or knife
-          CPlayerWeapons& weapons = ((CPlayerWeapons&)*m_penWeapons);
-          if (weapons.m_iCurrentWeapon != WEAPON_KNIFE && weapons.m_iCurrentWeapon != WEAPON_HANDS) {
-            ESelectWeapon eSelect;
-            eSelect.iWeapon = weapons.GetSelectedWeapon(WEAPON_HANDS);
-            weapons.SendEvent(eSelect);
-          }
-
-          // force switch to 3rd person
-          m_bSwitchViewAfterStand = (m_iViewState == PVT_PLAYEREYES);
-          if (m_bSwitchViewAfterStand) {
-            ChangePlayerView();
-          }
-
-          m_mode = STAND_ENGAGED;
-        } else {
-          m_mode = STAND_PASSIVE;
-
-          // free Warudo and let it follow player freely
-          m_penTheWorld->SetParent(NULL);
-
-          ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
-
-          // restore previous view
-          if (m_bSwitchViewAfterStand) {
-            ChangePlayerView();
-          }
-        }
-      }
+      SendEvent(ESwitchStandMode());
     }
 
     // if reload is pressed
@@ -7203,6 +7160,60 @@ procedures:
           PlaySound(m_soMouth, GenderSound(SOUND_INHALE1), SOF_3D);
         } else {
           PlaySound(m_soMouth, GenderSound(SOUND_INHALE2), SOF_3D);
+        }
+        resume;
+      }
+      on (ESwitchStandMode) :
+      {
+        if (m_penTheWorld) {
+          if (CanPlayAnim()) {
+            // make old Warudo disappear (and move to player)
+            m_penTheWorld->SendEvent(EStop());
+
+            // new Warudo is set as child to follow player
+            ESpawnStand ess;
+            ess.penOwner = this;
+            m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
+            m_penTheWorld->Initialize(ess);
+            m_penTheWorld->SetParent(this);
+
+            CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
+            INDEX pose_anim = IRnd()%4;
+            INDEX body_anim = pose_anim + BODY_ANIM_POSE_01;
+            INDEX player_anim = pose_anim + PLAYER_ANIM_POSE_01;
+            GetModelObject()->PlayAnim(player_anim, 0);
+            moBody.PlayAnim(body_anim, 0);
+
+            ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+
+            // force switch to hands or knife
+            CPlayerWeapons& weapons = ((CPlayerWeapons&)*m_penWeapons);
+            if (weapons.m_iCurrentWeapon != WEAPON_KNIFE && weapons.m_iCurrentWeapon != WEAPON_HANDS) {
+              ESelectWeapon eSelect;
+              eSelect.iWeapon = weapons.GetSelectedWeapon(WEAPON_HANDS);
+              weapons.SendEvent(eSelect);
+            }
+
+            // force switch to 3rd person
+            m_bSwitchViewAfterStand = (m_iViewState == PVT_PLAYEREYES);
+            if (m_bSwitchViewAfterStand) {
+              ChangePlayerView();
+            }
+
+            m_mode = STAND_ENGAGED;
+          } else {
+            m_mode = STAND_PASSIVE;
+
+            // free Warudo and let it follow player freely
+            m_penTheWorld->SetParent(NULL);
+
+            ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+
+            // restore previous view
+            if (m_bSwitchViewAfterStand) {
+              ChangePlayerView();
+            }
+          }
         }
         resume;
       }
