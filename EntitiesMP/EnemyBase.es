@@ -5,6 +5,7 @@
 #include "EntitiesMP/NavigationMarker.h"
 #include "EntitiesMP/TacticsHolder.h"
 #include "EntitiesMP/PlayerWeapons.h"
+#include "EntitiesMP/HealthItem.h"
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 extern INDEX ent_bReportBrokenChains;
 %}
@@ -3015,6 +3016,10 @@ procedures:
       on (EZaWarudoKick eDioKick) : {
         m_vDioKickVector += eDioKick.dioKickDir;
         m_isBeingHit = TRUE;
+        EHealth eHealth;
+        eHealth.fHealth = 3.0f;
+        eHealth.bOverTopHealth = TRUE;
+        eDioKick.penDio->ReceiveItem(eHealth);
         call BeHitByDio();
         resume;
       }
@@ -3297,6 +3302,10 @@ procedures:
         on (EZaWarudoKick eKick) : {
           m_isBeingHit = TRUE;
           m_vDioKickVector += eKick.dioKickDir;
+          EHealth eHealth;
+          eHealth.fHealth = 3.0f;
+          eHealth.bOverTopHealth = TRUE;
+          eKick.penDio->ReceiveItem(eHealth);
           resume;
         }
         on (ETimer) : {

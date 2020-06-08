@@ -110,6 +110,7 @@ event EZaWarudoRestore
 event EZaWarudoKick
 {
   FLOAT3D dioKickDir,
+  CEntityPointer penDio,
 };
 
 // input parameter for weapons
@@ -2120,6 +2121,7 @@ functions:
         } else {
           EZaWarudoKick eDioKick;
           eDioKick.dioKickDir = dioKickDir;
+          eDioKick.penDio = m_penPlayer;
           penClosest->SendEvent(eDioKick);
         }
         result = TRUE;
