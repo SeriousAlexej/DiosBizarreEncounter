@@ -79,10 +79,25 @@ functions:
   {
     const CPlayer& player = ((CPlayer&)*(m_penOwner.ep_pen->GetPredictionTail()));
     const CPlacement3D view_rotation(FLOAT3D(0.0f, 0.0f, 0.0f), ANGLE3D(player.en_plViewpoint.pl_OrientationAngle(1), 0.0f, 0.0f));
-    CPlacement3D stand_offset(FLOAT3D(m_offsetX, 0.0f, m_offsetZ), ANGLE3D(10.0f, 0.0f, 0.0f));
-    stand_offset.RelativeToAbsoluteSmooth(view_rotation);
-    stand_offset.RelativeToAbsoluteSmooth(player.GetPlacement());
-    return stand_offset;
+
+    CPlacement3D stand_offset_1(FLOAT3D(m_offsetX, 0.0f, m_offsetZ), ANGLE3D(10.0f, 0.0f, 0.0f));
+    stand_offset_1.RelativeToAbsoluteSmooth(view_rotation);
+    stand_offset_1.RelativeToAbsoluteSmooth(player.GetPlacement());
+    
+    CPlacement3D stand_offset_2(FLOAT3D(-m_offsetX, 0.0f, m_offsetZ), ANGLE3D(-10.0f, 0.0f, 0.0f));
+    stand_offset_2.RelativeToAbsoluteSmooth(view_rotation);
+    stand_offset_2.RelativeToAbsoluteSmooth(player.GetPlacement());
+
+    FLOAT3D to_pos_1 = GetPlacement().pl_PositionVector - stand_offset_1.pl_PositionVector;
+    FLOAT3D to_pos_2 = GetPlacement().pl_PositionVector - stand_offset_2.pl_PositionVector;
+
+    FLOAT distance2_1 = to_pos_1(1)*to_pos_1(1) + to_pos_1(2)*to_pos_1(2) + to_pos_1(3)*to_pos_1(3);
+    FLOAT distance2_2 = to_pos_2(1)*to_pos_2(1) + to_pos_2(2)*to_pos_2(2) + to_pos_2(3)*to_pos_2(3);
+
+    if (distance2_1 < distance2_2) {
+      return stand_offset_1;
+    }
+    return stand_offset_2;
   }
 
   void MoveToPlayer()

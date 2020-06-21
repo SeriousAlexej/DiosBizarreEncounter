@@ -12,6 +12,7 @@
 #include "EntitiesMP/CameraMarker.h"
 #include "EntitiesMP/Reminder.h"
 #include "EntitiesJoJo/TheWorld.h"
+#include "EntitiesJoJo/DioPosing.h"
 #include "EntitiesJoJo/jojo_events.h"
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesJoJo/RodaRollaDa.h"
@@ -523,6 +524,7 @@ functions:
         entity_cast(penSomething, CMovingBrushMarker) != NULL ||
         entity_cast(penSomething, CCamera) != NULL ||
         entity_cast(penSomething, CCameraMarker) != NULL ||
+        entity_cast(penSomething, CDioPosing) != NULL ||
         (entity_cast(penSomething, CReminder) != NULL && IsDioOrRelated(((CReminder*)penSomething)->m_penOwner.ep_pen)) ||
         (entity_cast(penSomething, CTheWorld) != NULL && IsDioOrRelated(((CTheWorld*)penSomething)->m_penOwner.ep_pen)) ||
         (entity_cast(penSomething, CRodaRollaDa) != NULL && IsDioOrRelated(((CRodaRollaDa*)penSomething)->m_penOwner.ep_pen)) ||

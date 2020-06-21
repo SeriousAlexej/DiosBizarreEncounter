@@ -1037,6 +1037,7 @@ void CPlayer_Precache(void)
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_TELEPORT);
   pdec->PrecacheClass(CLASS_SERIOUSBOMB);
   pdec->PrecacheClass(CLASS_THE_WORLD);
+  pdec->PrecacheClass(CLASS_DIO_POSING);
 
   pdec->PrecacheModel(MODEL_FLESH);
   pdec->PrecacheModel(MODEL_FLESH_APPLE);
@@ -1523,6 +1524,7 @@ properties:
  200 CEntityPointer m_penTheWorld,
  201 enum StandMode m_mode = STAND_PASSIVE,
  202 BOOL m_bSwitchViewAfterStand = FALSE,
+ 203 CEntityPointer m_penDioPosing,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1568,6 +1570,7 @@ components:
   5 class   CLASS_BLOOD_SPRAY     "Classes\\BloodSpray.ecl", 
   6 class   CLASS_SERIOUSBOMB     "Classes\\SeriousBomb.ecl",
   7 class   CLASS_THE_WORLD       "Classes\\TheWorld.ecl",
+  8 class   CLASS_DIO_POSING      "Classes\\DioPosing.ecl",
 
 // gender specific sounds - make sure that offset is exactly 100 
  50 sound SOUND_WATER_ENTER     "Sounds\\Player\\WaterEnter.wav",
@@ -2536,6 +2539,10 @@ functions:
         }
       }
       m_moRender.mo_colBlendColor = colAlpha;
+    }
+
+    if (m_mode == STAND_ENGAGED) {
+      m_moRender.mo_colBlendColor = 0;
     }
 
     // use the appearance for rendering
@@ -6019,6 +6026,10 @@ procedures:
         m_penTheWorld->SendEvent(EStop());
         m_penTheWorld = NULL;
       }
+    if (m_penDioPosing) {
+        m_penDioPosing->SendEvent(EStop());
+        m_penDioPosing = NULL;
+    }
     m_mode = STAND_PASSIVE;
 
     // stop firing when dead
@@ -7082,6 +7093,10 @@ procedures:
           m_penTheWorld->SendEvent(EDisconnected());
           m_penTheWorld = NULL;
         }
+        if (m_penDioPosing) {
+          m_penDioPosing->SendEvent(EDisconnected());
+          m_penDioPosing = NULL;
+        }
         Destroy(); 
         return;
       }
@@ -7183,8 +7198,9 @@ procedures:
             INDEX player_anim = pose_anim + PLAYER_ANIM_POSE_01;
             GetModelObject()->PlayAnim(player_anim, 0);
             moBody.PlayAnim(body_anim, 0);
-
             ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+            m_penDioPosing = CreateEntity(GetPlacement(), CLASS_DIO_POSING);
+            m_penDioPosing->Initialize(ess);
 
             // force switch to hands or knife
             CPlayerWeapons& weapons = ((CPlayerWeapons&)*m_penWeapons);
@@ -7206,6 +7222,8 @@ procedures:
 
             // free Warudo and let it follow player freely
             m_penTheWorld->SetParent(NULL);
+
+            m_penDioPosing->SendEvent(EStop());
 
             ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
 
@@ -7293,6 +7311,10 @@ procedures:
         if (m_penTheWorld) {
           m_penTheWorld->SendEvent(EDisconnected());
           m_penTheWorld = NULL;
+        }
+        if (m_penDioPosing) {
+          m_penDioPosing->SendEvent(EDisconnected());
+          m_penDioPosing = NULL;
         }
         stop;
       }
