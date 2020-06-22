@@ -63,6 +63,10 @@ properties:
   6 INDEX          m_addedAttachments = 0x0,
   7 BOOL           m_isTimeStopped    = FALSE,
 
+{
+CPlacement3D m_plLast;
+}
+
 components:
   1 model   MODEL_ZAWARUDO          "Models\\ZAWARUDO\\ZaWarudo.mdl",
   2 texture TEXTURE_ZAWARUDO        "Models\\ZAWARUDO\\ZaWarudo.tex",
@@ -74,6 +78,23 @@ components:
   8 texture TEXTURE_ZAWARUDO_OPAQUE "Models\\ZAWARUDO\\ZaWarudo_Opaque.tex"
 
 functions:
+
+  CPlacement3D GetLerpedPlacement() const
+  {
+    if (m_penOwner && (((CPlayer*)m_penOwner.ep_pen)->m_mode == STAND_ENGAGED && m_isActive)) {
+      return m_penOwner->GetLerpedPlacement();
+    }
+
+    FLOAT fLerpFactor;
+    if (IsPredictor()) {
+      fLerpFactor = _pTimer->GetLerpFactor();
+    } else {
+      fLerpFactor = _pTimer->GetLerpFactor2();
+    }
+    CPlacement3D plLerped;
+    plLerped.Lerp(m_plLast, en_plPlacement, fLerpFactor);
+    return plLerped;
+  }
 
   CPlacement3D GetDesiredPlacement() const
   {
@@ -102,22 +123,22 @@ functions:
 
   void MoveToPlayer()
   {
-    static const float TRANSLATION_EPSILON = 0.05f;
     static const float ROTATION_EPSILON = 0.05f;
 
-    const CPlacement3D curr_placement = GetPlacement();
+    CPlacement3D curr_placement = GetPlacement();
+    m_plLast = curr_placement;
     const CPlacement3D dest_placement = GetDesiredPlacement();
 
     FLOAT3D vToDestination = dest_placement.pl_PositionVector - curr_placement.pl_PositionVector;
     FLOAT distance_to_dest = vToDestination.Length();
     vToDestination.SafeNormalize();
-    vToDestination *= distance_to_dest * 5.0f;
-
-    for (INDEX i = 1; i <= 3; ++i) {
-      if (Abs(vToDestination(i)) < TRANSLATION_EPSILON) {
-        vToDestination(i) = 0.0f;
-      }
+    if (distance_to_dest > 4.0f) {
+      curr_placement.pl_PositionVector += vToDestination * (distance_to_dest - 4.0f);
+    } else {
+      FLOAT coeff = distance_to_dest * 0.25f;
+      curr_placement.pl_PositionVector += vToDestination * coeff;
     }
+    SetPlacement(curr_placement);
 
     CPlacement3D dest_view_shift(FLOAT3D(0.0f, 0.0f, -1.0f), ANGLE3D(0.0f, 0.0f, 0.0f));
     dest_view_shift.RelativeToAbsoluteSmooth(dest_placement);
@@ -139,7 +160,6 @@ functions:
     if (vToDestination(1) == 0.0f && vToDestination(2) == 0.0f && vToDestination(3) == 0.0f && aToDestinationH == 0.0f) {
       ForceFullStop();
     } else {
-      SetDesiredTranslation(vToDestination);
       SetDesiredRotation(ANGLE3D(aToDestinationH, 0.0f, 0.0f));
     }
   }
@@ -269,7 +289,7 @@ procedures:
   {
     while (m_isActive)
     {
-      wait (0.25f)
+      wait (0.05f)
       {
         on (EBegin) :
         {
