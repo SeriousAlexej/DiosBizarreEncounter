@@ -888,6 +888,8 @@ BOOL SetPlayerAppearance_internal(CModelObject *pmo, const CTFileName &fnmAMC, C
 
     // parse the file recursively starting at root model object and add everything
     ParseAMC_t(pmo, strm, bPreview);
+    // remove DIO flame initially
+    pmo->GetAttachmentModel(1)->amo_moModelObject.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
     return TRUE;
 
   // if anything failed

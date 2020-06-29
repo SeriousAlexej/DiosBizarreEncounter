@@ -47,6 +47,8 @@ functions:
   CModelObject* GetModelForRendering()
   {
     GetModelObject()->Synchronize(*m_penOwner->GetModelObject());
+    // Add flames
+    GetModelObject()->GetAttachmentModel(1)->amo_moModelObject.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
     return GetModelObject();
   }
 
