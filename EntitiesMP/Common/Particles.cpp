@@ -603,7 +603,7 @@ void Particles_RomboidTrail(CEntity *pen)
   Particle_Flush();
 }
 
-void Particles_Menacing(CEntity* pTheWorld)
+void Particles_Menacing(CEntity* pTheWorld, FLOAT opacity)
 {
   FLOAT tmNow = _pTimer->GetLerpedCurrentTick();
 
@@ -641,7 +641,7 @@ void Particles_Menacing(CEntity* pTheWorld)
     } else if (fProgress >= 0.9f) {
       fOpacity = (1.0f - fProgress) * 10.0f;
     }
-    COLOR cCol = RGBToColor(255, 255, 255)|UBYTE(255*fOpacity);
+    COLOR cCol = RGBToColor(255, 255, 255)|UBYTE(255*fOpacity*opacity);
 
     Particle_RenderSquare(vPos, fSize, aRotation, cCol);
   }}
@@ -673,7 +673,7 @@ void Particles_Menacing(CEntity* pTheWorld)
     } else if (fProgress >= 0.9f) {
       fOpacity = (1.0f - fProgress) * 10.0f;
     }
-    COLOR cCol = RGBToColor(255, 255, 255)|UBYTE(255*fOpacity);
+    COLOR cCol = RGBToColor(255, 255, 255)|UBYTE(255*fOpacity*opacity);
 
     Particle_RenderSquare(vPos, fSize, aRotation, cCol);
   }}

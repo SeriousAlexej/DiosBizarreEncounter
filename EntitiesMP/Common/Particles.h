@@ -5,7 +5,7 @@ void DECL_DLL CloseParticles(void);
 // function for rendering local viewer particles
 void DECL_DLL Particles_ViewerLocal(CEntity *penView);
 // different particle effects
-void DECL_DLL Particles_Menacing(CEntity* pTheWorld);
+void DECL_DLL Particles_Menacing(CEntity* pTheWorld, FLOAT opacity);
 void DECL_DLL Particles_RomboidTrail(CEntity *pen);
 void DECL_DLL Particles_RomboidTrail_Prepare(CEntity *pen);
 void DECL_DLL Particles_BombTrail(CEntity *pen);

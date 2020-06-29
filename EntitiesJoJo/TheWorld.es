@@ -62,9 +62,13 @@ properties:
   5 BOOL           m_isActive         = TRUE,
   6 INDEX          m_addedAttachments = 0x0,
   7 BOOL           m_isTimeStopped    = FALSE,
+  8 FLOAT          m_moveSpeed        = 1.0f,
 
 {
 CPlacement3D m_plLast;
+TIME         m_tmParticlesActive;
+FLOAT        m_particlesOpacityPrev;
+FLOAT        m_particlesOpacity;
 }
 
 components:
@@ -132,10 +136,10 @@ functions:
     FLOAT3D vToDestination = dest_placement.pl_PositionVector - curr_placement.pl_PositionVector;
     FLOAT distance_to_dest = vToDestination.Length();
     vToDestination.SafeNormalize();
-    if (distance_to_dest > 4.0f) {
+    if (distance_to_dest > 4.0f * m_moveSpeed) {
       curr_placement.pl_PositionVector += vToDestination * (distance_to_dest - 4.0f);
     } else {
-      FLOAT coeff = distance_to_dest * 0.25f;
+      FLOAT coeff = distance_to_dest * 0.25f * m_moveSpeed;
       curr_placement.pl_PositionVector += vToDestination * coeff;
     }
     SetPlacement(curr_placement);
@@ -243,6 +247,7 @@ functions:
     if (CanPlayAnim()) {
       GetModelObject()->PlayAnim(ZAWARUDO_ANIM_ATTACKHANDS, AOF_LOOPING|AOF_NORESTART);
       if (!(m_addedAttachments & ATTACHMENT_HANDS)) {
+        m_tmParticlesActive = _pTimer->CurrentTick() + 3.0f;
         m_addedAttachments |= ATTACHMENT_HANDS;
         AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_1, MODEL_RIGHT_HAND);
         AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHT_2, MODEL_RIGHT_HAND);
@@ -261,6 +266,7 @@ functions:
     if (CanPlayAnim()) {
       GetModelObject()->PlayAnim(ZAWARUDO_ANIM_ATTACKLEG, AOF_LOOPING|AOF_NORESTART);
       if (!(m_addedAttachments & ATTACHMENT_LEG)) {
+        m_tmParticlesActive = _pTimer->CurrentTick() + 3.0f;
         m_addedAttachments |= ATTACHMENT_LEG;
         AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_1, MODEL_RIGHT_LEG);
         AddAttachmentModel(ZAWARUDO_ATTACHMENT_RIGHTLEG_2, MODEL_RIGHT_LEG);
@@ -280,7 +286,9 @@ functions:
 
   void RenderParticles()
   {
-    Particles_Menacing(this);
+    if (m_particlesOpacity > 0.0f) {
+      Particles_Menacing(this, Lerp(m_particlesOpacityPrev, m_particlesOpacity, _pTimer->GetLerpFactor()));
+    }
   }
 
 procedures:
@@ -293,6 +301,12 @@ procedures:
       {
         on (EBegin) :
         {
+          m_particlesOpacityPrev = m_particlesOpacity;
+          if (m_tmParticlesActive > _pTimer->CurrentTick()) {
+            m_particlesOpacity = ClampUp(m_particlesOpacity + 0.025f, 1.0f);
+          } else {
+            m_particlesOpacity = ClampDn(m_particlesOpacity - 0.025f, 0.0f);
+          }
           AddToMovers();
           resume;
         }
@@ -318,6 +332,7 @@ procedures:
             {
               m_offsetX = 2.0f;
               m_offsetZ = -2.0f;
+              m_moveSpeed = 1.0f;
               RemoveAttachments(~0);
               GetModelObject()->PlayAnim(ZAWARUDO_ANIM_IDLE, AOF_LOOPING|AOF_NORESTART);
             }
@@ -331,6 +346,7 @@ procedures:
             m_isTimeStopped = TRUE;
             m_offsetX = 1.0f;
             m_offsetZ = -4.0f;
+            m_moveSpeed = 2.0f;
             RemoveAttachments(~0);
             GetModelObject()->PlayAnim(ZAWARUDO_ANIM_STOPTIME, AOF_NORESTART);
             SpawnReminder(this, GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_STOPTIME) + 1.0f, ZAWARUDO_ANIM_STOPTIME);
@@ -371,16 +387,24 @@ procedures:
     SetModelReflectionTexture(TEXTURE_REFLECT);
     SetModelSpecularTexture(TEXTURE_SPECULAR);
 
+    m_tmParticlesActive = _pTimer->CurrentTick() + 3.0f;
+    m_particlesOpacity = 0.0f;
+    m_particlesOpacityPrev = 0.0f;
     m_timeSpawned = _pTimer->CurrentTick();
     GetModelObject()->PlayAnim(ZAWARUDO_ANIM_EMERGE, 0);
     SpawnReminder(this, GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_EMERGE), ZAWARUDO_ANIM_EMERGE);
 
     autocall Alive() EEnd;
 
+    m_tmParticlesActive = 0.0f;
+    m_particlesOpacity = 0.0f;
+    m_particlesOpacityPrev = 0.0f;
+
     RemoveAttachments(~0);
     m_timeSpawned = _pTimer->CurrentTick();
     m_offsetX = 0.0f;
     m_offsetZ = 0.0f;
+    m_moveSpeed = 1.0f;
     GetModelObject()->PlayAnim(ZAWARUDO_ANIM_DIE, 0);
     autowait(GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_DIE));
 
