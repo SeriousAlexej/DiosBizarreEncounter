@@ -73,6 +73,8 @@
 #define BODY_ANIM_POSE_02 71
 #define BODY_ANIM_POSE_03 72
 #define BODY_ANIM_POSE_04 73
+#define BODY_ANIM_WRYYY_IN 74
+#define BODY_ANIM_WRYYY_OUT 75
 
 // Color names
 

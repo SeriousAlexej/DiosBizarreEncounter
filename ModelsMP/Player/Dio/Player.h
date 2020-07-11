@@ -41,6 +41,8 @@
 #define PLAYER_ANIM_POSE_02 39
 #define PLAYER_ANIM_POSE_03 40
 #define PLAYER_ANIM_POSE_04 41
+#define PLAYER_ANIM_WRYYY_IN 42
+#define PLAYER_ANIM_WRYYY_OUT 43
 
 // Color names
 
@@ -54,5 +56,6 @@
 
 // Attaching position names
 #define PLAYER_ATTACHMENT_BODY 0
+#define PLAYER_ATTACHMENT_NO_NAME 1
 
 // Sound names

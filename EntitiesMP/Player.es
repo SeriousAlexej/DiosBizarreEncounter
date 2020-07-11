@@ -76,6 +76,10 @@ enum PlayerState {
   4 PST_FALL      "",
 };
 
+event EDoEmote
+{
+};
+
 event ESwitchStandMode
 {
 };
@@ -271,7 +275,8 @@ static void KillAllEnemies(CEntity *penKiller)
 #define PLACT_FIREBOMB            (1L<<13)
 #define PLACT_ULTIMATE            (1L<<14)
 #define PLACT_STAND_TOGGLE        (1L<<15)
-#define PLACT_SELECT_WEAPON_SHIFT (16)
+#define PLACT_EMOTE               (1L<<16)
+#define PLACT_SELECT_WEAPON_SHIFT (17)
 #define PLACT_SELECT_WEAPON_MASK  (0x1FL<<PLACT_SELECT_WEAPON_SHIFT)
                                      
 #define MAX_WEAPONS 30
@@ -320,6 +325,7 @@ struct PlayerControls {
   BOOL bFire;
   BOOL bSecondaryFire;
   BOOL bUltimate;
+  BOOL bEmote;
   BOOL bStandToggle;
   BOOL bReload;
   BOOL bUse;
@@ -510,6 +516,11 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
       dio_move_multiplier = 2.0f;
     }
   }
+  if (ignore_movement == FALSE && ((CPlayer*)&*penThis->GetPredictionTail())->m_bInEmote) {
+    ignore_movement = TRUE;
+    paAction.pa_aRotation     = penThis->m_aLocalRotation;
+    paAction.pa_aViewRotation = penThis->m_aLocalViewRotation;
+  }
   paAction.pa_vTranslation(1) *= dio_move_multiplier;
   paAction.pa_vTranslation(2) *= dio_jump_multiplier;
   paAction.pa_vTranslation(3) *= dio_move_multiplier;
@@ -587,6 +598,7 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
   if(pctlCurrent.bFire)       paAction.pa_ulButtons |= PLACT_FIRE;
   if(pctlCurrent.bSecondaryFire) paAction.pa_ulButtons |= PLACT_SECONDARY_FIRE|PLACT_USE_HELD;
   if(pctlCurrent.bUltimate)      paAction.pa_ulButtons |= PLACT_ULTIMATE;
+  if(pctlCurrent.bEmote)         paAction.pa_ulButtons |= PLACT_EMOTE;
   if(pctlCurrent.bStandToggle)   paAction.pa_ulButtons |= PLACT_STAND_TOGGLE;
   if(pctlCurrent.bReload)     paAction.pa_ulButtons |= PLACT_RELOAD;
   if(pctlCurrent.bUse)        paAction.pa_ulButtons |= PLACT_USE|PLACT_USE_HELD;
@@ -1086,6 +1098,7 @@ void CPlayer_OnInitClass(void)
   _pShell->DeclareSymbol("user INDEX ctl_bFire;",           &pctlCurrent.bFire);
   _pShell->DeclareSymbol("user INDEX ctl_bSecondaryFire;",  &pctlCurrent.bSecondaryFire);
   _pShell->DeclareSymbol("user INDEX ctl_bUltimate;",       &pctlCurrent.bUltimate);
+  _pShell->DeclareSymbol("user INDEX ctl_bEmote;",          &pctlCurrent.bEmote);
   _pShell->DeclareSymbol("user INDEX ctl_bStandToggle;",    &pctlCurrent.bStandToggle);
   _pShell->DeclareSymbol("user INDEX ctl_bReload;",         &pctlCurrent.bReload);
   _pShell->DeclareSymbol("user INDEX ctl_bUse;",            &pctlCurrent.bUse);
@@ -1525,6 +1538,7 @@ properties:
  201 enum StandMode m_mode = STAND_PASSIVE,
  202 BOOL m_bSwitchViewAfterStand = FALSE,
  203 CEntityPointer m_penDioPosing,
+ 204 BOOL m_bInEmote = FALSE,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1782,7 +1796,7 @@ functions:
   
   BOOL CanPlayAnim()
   {
-    return m_mode == STAND_PASSIVE;
+    return m_mode == STAND_PASSIVE && m_bInEmote == FALSE;
   }
 
   export void Copy(CEntity &enOther, ULONG ulFlags)
@@ -4950,6 +4964,10 @@ functions:
       penWeapon->SendEvent(EReleaseWeapon());
     }
 
+    if (ulNewButtons&PLACT_EMOTE) {
+      SendEvent(EDoEmote());
+    }
+
     if (ulNewButtons&PLACT_ULTIMATE) {
       if (m_pstState == PST_FALL &&
         m_penMainMusicHolder != NULL &&
@@ -5951,6 +5969,10 @@ procedures:
  *                       WOUNDED                            *
  ************************************************************/
   Wounded(EDamage eDamage) {
+    if (m_bInEmote) {
+      m_bInEmote = FALSE;
+      ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+    }
     return;
   };
 
@@ -6016,6 +6038,36 @@ procedures:
     return;
   }
 
+  DoEmoteState()
+  {
+    GetModelObject()->PlayAnim(PLAYER_ANIM_WRYYY_IN, 0);
+    CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
+    moBody.PlayAnim(BODY_ANIM_WRYYY_IN, 0);
+    ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+    
+    autowait(GetModelObject()->GetAnimLength(PLAYER_ANIM_WRYYY_IN));
+
+    autowait(2.0f);
+    
+    GetModelObject()->PlayAnim(PLAYER_ANIM_WRYYY_OUT, 0);
+    CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
+    moBody.PlayAnim(BODY_ANIM_WRYYY_OUT, 0);
+
+    autowait(GetModelObject()->GetAnimLength(PLAYER_ANIM_WRYYY_OUT));
+
+    ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+
+    return EReturn();
+  }
+
+  DoEmote()
+  {
+    m_bInEmote = TRUE;
+    autocall DoEmoteState() EReturn;
+    m_bInEmote = FALSE;
+    return;
+  }
+
 /************************************************************
  *                       D E A T H                          *
  ************************************************************/
@@ -6031,6 +6083,7 @@ procedures:
         m_penDioPosing = NULL;
     }
     m_mode = STAND_PASSIVE;
+    m_bInEmote = FALSE;
 
     // stop firing when dead
     ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseWeapon());
@@ -7162,6 +7215,10 @@ procedures:
       }
       on (EPostLevelChange) : {
         if (GetSP()->sp_bSinglePlayer || (GetFlags()&ENF_ALIVE)) {
+          if (m_bInEmote) {
+            m_bInEmote = FALSE;
+            ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+          }
           call WorldChange(); 
         } else {
           call WorldChangeDead(); 
@@ -7182,6 +7239,12 @@ procedures:
       {
         GiveImpulseTranslationAbsolute(kickEvent.dir);
         resume;
+      }
+      on (EDoEmote) :
+      {
+        if (!m_bInEmote) {
+          call DoEmote();
+        }
       }
       on (ESwitchStandMode) :
       {
@@ -7275,6 +7338,10 @@ procedures:
         resume;
       }
       on (EAutoAction eAutoAction) : {
+        if (m_bInEmote) {
+          m_bInEmote = FALSE;
+          ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+        }
         // remember first marker
         m_penActionMarker = eAutoAction.penFirstMarker;
         // do the actions
