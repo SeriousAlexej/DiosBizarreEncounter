@@ -113,6 +113,11 @@ event EZaWarudoKick
   CEntityPointer penDio,
 };
 
+event EDioInstantKick
+{
+  FLOAT3D dir,
+};
+
 // input parameter for weapons
 event EWeaponsInit {
   CEntityPointer penOwner,        // who owns it
@@ -2116,7 +2121,9 @@ functions:
               dioKickDir.Normalize();
               dioKickDir *= 5.0f;
             }
-            ((CMovableEntity*)&*penClosest)->GiveImpulseTranslationAbsolute(dioKickDir * 10.0f);
+            EDioInstantKick kickEvent;
+            kickEvent.dir = dioKickDir * 10.0f;
+            penClosest->SendEvent(kickEvent);
           }
         } else {
           EZaWarudoKick eDioKick;

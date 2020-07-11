@@ -3023,6 +3023,11 @@ procedures:
         call BeHitByDio();
         resume;
       }
+      on (EDioInstantKick kickEvent) :
+      {
+        GiveImpulseTranslationAbsolute(kickEvent.dir);
+        resume;
+      }
       // if you get damaged by someone
       on (EDamage eDamage) : {
         // eventually set new hard target

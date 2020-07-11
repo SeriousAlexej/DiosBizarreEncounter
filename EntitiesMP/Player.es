@@ -7178,6 +7178,11 @@ procedures:
         }
         resume;
       }
+      on (EDioInstantKick kickEvent) :
+      {
+        GiveImpulseTranslationAbsolute(kickEvent.dir);
+        resume;
+      }
       on (ESwitchStandMode) :
       {
         if (m_penTheWorld) {
