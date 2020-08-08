@@ -5,6 +5,7 @@
 %}
 
 uses "EntitiesMP/ModelHolder2";
+uses "EntitiesJoJo/AttachmentAnimator";
 uses "EntitiesMP/Light";
 
 // event sent to the entity that should change animation
@@ -94,6 +95,17 @@ functions:
       {
         return penLight->m_aoAmbientLightAnimation.GetData();
       }
+    } else if (IsOfClass(penTarget, "AttachmentAnimator")) {
+      CAttachmentAnimator* penAttachment = (CAttachmentAnimator*)&*penTarget;
+
+      CModelObject* penMO = penAttachment->GetTargetAttachmentModelObject();
+      if (penMO) {
+        if (slPropertyOffset==offsetof(CAnimationChanger, m_iModelAnim)) {
+          return penMO->GetData();
+        } else if (slPropertyOffset==offsetof(CAnimationChanger, m_iTextureAnim)) {
+          return penMO->mo_toTexture.GetData();
+        }
+      }
     }
 
     return CEntity::GetAnimData(slPropertyOffset);
@@ -114,8 +126,9 @@ procedures:
     if (m_penTarget!=NULL && 
       !IsOfClass(m_penTarget, "AnimationHub") &&
       !IsOfClass(m_penTarget, "ModelHolder2") &&
-      !IsOfClass(m_penTarget, "Light")) {
-      WarningMessage("Target must be AnimationHub ModelHolder2 or Light!");
+      !IsOfClass(m_penTarget, "Light") &&
+      !IsOfClass(m_penTarget, "AttachmentAnimator")) {
+      WarningMessage("Target must be AnimationHub ModelHolder2 AttachmentAnimator or Light!");
       m_penTarget=NULL;
     }
     if (m_penTarget==NULL) {
