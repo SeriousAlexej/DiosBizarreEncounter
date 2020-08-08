@@ -63,6 +63,7 @@ properties:
   6 INDEX          m_addedAttachments = 0x0,
   7 BOOL           m_isTimeStopped    = FALSE,
   8 FLOAT          m_moveSpeed        = 1.0f,
+  9 BOOL           m_isDying          = FALSE
 
 {
 CPlacement3D m_plLast;
@@ -185,9 +186,9 @@ functions:
       FLOAT fFade = (_pTimer->GetLerpedCurrentTick() - m_timeSpawned) / pmo->GetAnimLength(ZAWARUDO_ANIM_EMERGE);
       pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*fFade);
     }
-    else if (pmo->GetAnim() == ZAWARUDO_ANIM_DIE)
+    else if (m_isDying)
     {
-      FLOAT fFade = (_pTimer->GetLerpedCurrentTick() - m_timeSpawned) / pmo->GetAnimLength(ZAWARUDO_ANIM_DIE);
+      FLOAT fFade = ClampUp((_pTimer->GetLerpedCurrentTick() - m_timeSpawned) / pmo->GetAnimLength(ZAWARUDO_ANIM_DIE), 1.0f);
       pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*(1.0f - fFade));
     }
     else if (m_penOwner && ((CPlayer*)m_penOwner.ep_pen)->m_iViewState == PVT_PLAYEREYES)
@@ -405,6 +406,7 @@ procedures:
     m_offsetX = 0.0f;
     m_offsetZ = 0.0f;
     m_moveSpeed = 1.0f;
+    m_isDying = TRUE;
     GetModelObject()->PlayAnim(ZAWARUDO_ANIM_DIE, 0);
     autowait(GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_DIE));
 
