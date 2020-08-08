@@ -5233,7 +5233,7 @@ functions:
       if (m_ulFlags&PLF_ISZOOMING) {
         return this;
       }
-      if (((CPlayerView&)*m_pen3rdPersonView).m_fDistance>2.0f) {
+      if (((CPlayerView&)*m_pen3rdPersonView).m_fDistance>2.0f || m_mode==STAND_ENGAGED) {
         return m_pen3rdPersonView;
       } else {
         return this;
@@ -6047,7 +6047,7 @@ procedures:
     
     autowait(GetModelObject()->GetAnimLength(PLAYER_ANIM_WRYYY_IN));
 
-    autowait(2.0f);
+    autowait(1.0f);
     
     GetModelObject()->PlayAnim(PLAYER_ANIM_WRYYY_OUT, 0);
     CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
@@ -6063,7 +6063,14 @@ procedures:
   DoEmote()
   {
     m_bInEmote = TRUE;
+    m_bSwitchViewAfterStand = (m_iViewState == PVT_PLAYEREYES);
+    if (m_bSwitchViewAfterStand) {
+      ChangePlayerView();
+    }
     autocall DoEmoteState() EReturn;
+    if (m_bSwitchViewAfterStand) {
+      ChangePlayerView();
+    }
     m_bInEmote = FALSE;
     return;
   }
