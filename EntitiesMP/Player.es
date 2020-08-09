@@ -1878,6 +1878,17 @@ functions:
     }
   }
 
+  void PlayPoseAnim()
+  {
+    CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
+    INDEX pose_anim = IRnd()%4;
+    INDEX body_anim = pose_anim + BODY_ANIM_POSE_01;
+    INDEX player_anim = pose_anim + PLAYER_ANIM_POSE_01;
+    GetModelObject()->PlayAnim(player_anim, 0);
+    moBody.PlayAnim(body_anim, 0);
+    ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+  }
+
   void CheckHighScore(void)
   {
     // if not playing a demo
@@ -6055,7 +6066,11 @@ procedures:
 
     autowait(GetModelObject()->GetAnimLength(PLAYER_ANIM_WRYYY_OUT));
 
-    ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+    if (m_penDioPosing != NULL) {
+      PlayPoseAnim();
+    } else {
+      ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+    }
 
     return EReturn();
   }
@@ -7267,13 +7282,7 @@ procedures:
             m_penTheWorld->Initialize(ess);
             m_penTheWorld->SetParent(this);
 
-            CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
-            INDEX pose_anim = IRnd()%4;
-            INDEX body_anim = pose_anim + BODY_ANIM_POSE_01;
-            INDEX player_anim = pose_anim + PLAYER_ANIM_POSE_01;
-            GetModelObject()->PlayAnim(player_anim, 0);
-            moBody.PlayAnim(body_anim, 0);
-            ((CPlayerAnimator&)*m_penAnimator).RemoveWeapon();
+            PlayPoseAnim();
             m_penDioPosing = CreateEntity(GetPlacement(), CLASS_DIO_POSING);
             m_penDioPosing->Initialize(ess);
 
