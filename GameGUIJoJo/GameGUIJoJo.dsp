@@ -55,15 +55,15 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
 # ADD LINK32 /nologo /dll /map /debug /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
-# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Mods\StardustCrusaders\Bin
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Mods\DIO\Bin
 InputPath=.\Release\GameGUIJoJo.dll
 InputName=GameGUIJoJo
 SOURCE="$(InputPath)"
 
-"$(ENGINE_DIR)\Mods\StardustCrusaders\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy Release\$(InputName).dll $(ENGINE_DIR)\Mods\StardustCrusaders\Bin >nul 
-	copy Release\$(InputName).map $(ENGINE_DIR)\Mods\StardustCrusaders\Bin >nul 
-	copy Release\$(InputName).lib $(ENGINE_DIR)\Mods\StardustCrusaders\Bin >nul 
+"$(ENGINE_DIR)\Mods\DIO\Bin\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy Release\$(InputName).dll $(ENGINE_DIR)\Mods\DIO\Bin >nul 
+	copy Release\$(InputName).map $(ENGINE_DIR)\Mods\DIO\Bin >nul 
+	copy Release\$(InputName).lib $(ENGINE_DIR)\Mods\DIO\Bin >nul 
 	
 # End Custom Build
 
@@ -80,7 +80,7 @@ SOURCE="$(InputPath)"
 # PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GAMEGUIJOJO_EXPORTS" /YX /FD /GZ  /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GAMEGUIJOJO_EXPORTS" /YX /FD /GZ /c
 # ADD CPP /nologo /G5 /MDd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GAMEGUI_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -93,15 +93,15 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 /nologo /dll /map /debug /machine:I386 /out:"Debug/GameGUIJoJoD.dll" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
-# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Mods\StardustCrusaders\Bin\Debug
+# Begin Custom Build - Copying $(InputName) binaries to $(ENGINE_DIR)\Mods\DIO\Bin\Debug
 InputPath=.\Debug\GameGUIJoJoD.dll
 InputName=GameGUIJoJoD
 SOURCE="$(InputPath)"
 
-"$(ENGINE_DIR)\Mods\StardustCrusaders\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy Debug\$(InputName).dll $(ENGINE_DIR)\Mods\StardustCrusaders\Bin\Debug >nul 
-	copy Debug\$(InputName).map $(ENGINE_DIR)\Mods\StardustCrusaders\Bin\Debug >nul 
-	copy Debug\$(InputName).lib $(ENGINE_DIR)\Mods\StardustCrusaders\Bin\Debug >nul 
+"$(ENGINE_DIR)\Mods\DIO\Bin\Debug\$(InputName).dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy Debug\$(InputName).dll $(ENGINE_DIR)\Mods\DIO\Bin\Debug >nul 
+	copy Debug\$(InputName).map $(ENGINE_DIR)\Mods\DIO\Bin\Debug >nul 
+	copy Debug\$(InputName).lib $(ENGINE_DIR)\Mods\DIO\Bin\Debug >nul 
 	
 # End Custom Build
 
