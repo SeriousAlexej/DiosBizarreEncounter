@@ -20,6 +20,19 @@ enum StandMode
   1 STAND_ENGAGED "", // controlled by player
 };
 
+enum StandAnim
+{
+  0 STAND_IDLE "",
+  1 STAND_HANDS "",
+  2 STAND_LEGS "",
+  3 STAND_THROW "",
+};
+
+event EStandAnim
+{
+  StandAnim anim,
+};
+
 %{
 void CTheWorld_Precache()
 {
@@ -232,7 +245,7 @@ functions:
     return GetModelObject()->GetAnim() != ZAWARUDO_ANIM_STOPTIME;
   }
 
-  void IdleAnim()
+  void PlayIdleAnim()
   {
     RemoveAttachments(~0);
 
@@ -241,7 +254,7 @@ functions:
     }
   }
 
-  void HandsAnim()
+  void PlayHandsAnim()
   {
     RemoveAttachments(~ATTACHMENT_HANDS);
 
@@ -260,7 +273,7 @@ functions:
     }
   }
 
-  void LegsAnim()
+  void PlayLegsAnim()
   {
     RemoveAttachments(~ATTACHMENT_LEG);
 
@@ -276,7 +289,7 @@ functions:
     }
   }
 
-  void ThrowAnim()
+  void PlayThrowAnim()
   {
     RemoveAttachments(~0);
 
@@ -352,6 +365,25 @@ procedures:
             GetModelObject()->PlayAnim(ZAWARUDO_ANIM_STOPTIME, AOF_NORESTART);
             SpawnReminder(this, GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_STOPTIME) + 1.0f, ZAWARUDO_ANIM_STOPTIME);
             SpawnReminder(this, GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_STOPTIME)*0.8f, ZAWARUDO_START);
+          }
+          resume;
+        }
+        on (EStandAnim eStandAnim) :
+        {
+          switch (eStandAnim.anim)
+          {
+          case STAND_IDLE:
+            PlayIdleAnim();
+            break;
+          case STAND_HANDS:
+            PlayHandsAnim();
+            break;
+          case STAND_LEGS:
+            PlayLegsAnim();
+            break;
+          case STAND_THROW:
+            PlayThrowAnim();
+            break;
           }
           resume;
         }

@@ -10,7 +10,7 @@
 #include "EntitiesJoJo/TheWorld.h"
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesJoJo/RodaRollaDa.h"
-#include "Models/Weapons/Knife/Knife.h"
+#include "Models/Weapons/Knife/KnifeNew.h"
 #include "Models/Weapons/Knife/KnifeItem.h"
 #include "Models/Weapons/Colt/Colt.h"
 #include "Models/Weapons/Colt/ColtMain.h"
@@ -313,6 +313,9 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
   if ( ulAvailable&(1<<(WEAPON_KNIFE-1)) ) {
     pdec->PrecacheModel(MODEL_KNIFE                 );
     pdec->PrecacheModel(MODEL_KNIFEITEM             );
+    pdec->PrecacheModel(MODEL_LEFT_HAND             );
+    pdec->PrecacheModel(MODEL_RIGHT_HAND            );
+    pdec->PrecacheTexture(TEXTURE_DIO_HAND);
     pdec->PrecacheTexture(TEXTURE_KNIFEITEM         );
     pdec->PrecacheSound(SOUND_KNIFE_BACK            );
     pdec->PrecacheSound(SOUND_KNIFE_HIGH            );
@@ -645,8 +648,6 @@ properties:
  55 INDEX m_iMaxSniperBullets = MAX_SNIPERBULLETS,
 
 // weapons specific
-// knife
-210 INDEX m_iKnifeStand = 1,
 // colt
 215 INDEX m_iColtBullets = 6,
 // minigun
@@ -711,7 +712,7 @@ components:
 // ************** KNIFE **************
  20 model   MODEL_KNIFEITEM             "Models\\Weapons\\Knife\\KnifeItem.mdl",
  21 texture TEXTURE_KNIFEITEM           "Models\\Weapons\\Knife\\KnifeItem.tex",
- 22 model   MODEL_KNIFE                 "Models\\Weapons\\Knife\\Knife.mdl",
+ 22 model   MODEL_KNIFE                 "Models\\Weapons\\Knife\\KnifeNew.mdl",
  23 sound   SOUND_KNIFE_BACK            "Models\\Weapons\\Knife\\Sounds\\Back.wav",
  24 sound   SOUND_KNIFE_HIGH            "Models\\Weapons\\Knife\\Sounds\\High.wav",
  25 sound   SOUND_KNIFE_LONG            "Models\\Weapons\\Knife\\Sounds\\Long.wav",
@@ -1650,9 +1651,13 @@ functions:
       // knife
       case WEAPON_KNIFE:
         SetComponents(this, m_moWeapon, MODEL_KNIFE, TEXTURE_HAND, 0, 0, 0);
-        AddAttachmentToModel(this, m_moWeapon, KNIFE_ATTACHMENT_KNIFEITEM, MODEL_KNIFEITEM, 
-                             TEXTURE_KNIFEITEM, TEX_REFL_BWRIPLES02, TEX_SPEC_WEAK, 0);
-        m_moWeapon.PlayAnim(KNIFE_ANIM_WAIT1, 0);
+        AddAttachmentToModel(this, m_moWeapon, KNIFENEW_ATTACHMENT_LEFTHAND, MODEL_LEFT_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, KNIFENEW_ATTACHMENT_RIGHTHAND, MODEL_RIGHT_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, KNIFENEW_ATTACHMENT_KNIFE_01, MODEL_KNIFEITEM, TEXTURE_KNIFEITEM, TEX_REFL_BWRIPLES02, TEX_SPEC_WEAK, 0);
+        AddAttachmentToModel(this, m_moWeapon, KNIFENEW_ATTACHMENT_KNIFE_02, MODEL_KNIFEITEM, TEXTURE_KNIFEITEM, TEX_REFL_BWRIPLES02, TEX_SPEC_WEAK, 0);
+        AddAttachmentToModel(this, m_moWeapon, KNIFENEW_ATTACHMENT_KNIFE_03, MODEL_KNIFEITEM, TEXTURE_KNIFEITEM, TEX_REFL_BWRIPLES02, TEX_SPEC_WEAK, 0);
+        AddAttachmentToModel(this, m_moWeapon, KNIFENEW_ATTACHMENT_KNIFE_04, MODEL_KNIFEITEM, TEXTURE_KNIFEITEM, TEX_REFL_BWRIPLES02, TEX_SPEC_WEAK, 0);
+        m_moWeapon.PlayAnim(KNIFENEW_ANIM_IDLE, 0);
         break;
 
       case WEAPON_HANDS: {
@@ -2521,7 +2526,7 @@ functions:
   void FireKnife(const ANGLE3D& i_rotation, const FLOAT3D& i_position) {
     CPlacement3D plKnife;
     CalcWeaponPosition(
-      FLOAT3D(wpn_fFX[WEAPON_ROCKETLAUNCHER],wpn_fFY[WEAPON_ROCKETLAUNCHER], 0) + i_position,
+      FLOAT3D(wpn_fFX[WEAPON_KNIFE],wpn_fFY[WEAPON_KNIFE], 0) + i_position,
       plKnife, TRUE, i_rotation);
     CEntityPointer penKnife = CreateEntity(plKnife, CLASS_PROJECTILE);
     ELaunchProjectile eLaunch;
@@ -3516,12 +3521,7 @@ functions:
           break;
         }
       case WEAPON_KNIFE:
-        switch (m_iKnifeStand) {
-          case 1: m_moWeapon.PlayAnim(KNIFE_ANIM_WAIT1, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE); break;
-          case 3: m_moWeapon.PlayAnim(KNIFE_ANIM_WAIT1, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE); break;
-          default: ASSERTALWAYS("Unknown knife stand.");
-        }
-        break;
+         m_moWeapon.PlayAnim(KNIFENEW_ANIM_IDLE, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE); break;
       case WEAPON_DOUBLECOLT:
         m_moWeaponSecond.PlayAnim(COLT_ANIM_WAIT1, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
       case WEAPON_COLT:
@@ -3571,11 +3571,7 @@ functions:
    */
   FLOAT KnifeBoring(void) {
     // play boring anim
-    INDEX iAnim;
-    switch (m_iKnifeStand) {
-      case 1: iAnim = KNIFE_ANIM_WAIT1; break;
-      case 3: iAnim = KNIFE_ANIM_WAIT1; break;
-    }
+    INDEX iAnim = KNIFENEW_ANIM_IDLE;
     m_moWeapon.PlayAnim(iAnim, AOF_SMOOTHCHANGE);
     return m_moWeapon.GetAnimLength(iAnim);
   };
@@ -4028,23 +4024,6 @@ procedures:
     m_bChangeWeapon = FALSE;
     // if this is not current weapon change it
     if (m_iCurrentWeapon!=m_iWantedWeapon) {
-/*
-      // iron/nuke cannon changing is special
-      if( (m_iCurrentWeapon == WEAPON_IRONCANNON) && (m_iWantedWeapon == WEAPON_NUKECANNON) )
-      {
-        autocall ChangeToNukeCannon() EEnd;
-        // mark that weapon change has ended
-        m_tmWeaponChangeRequired = 0.0f;
-        jump Idle();
-      }
-      else if( (m_iCurrentWeapon == WEAPON_NUKECANNON) && (m_iWantedWeapon == WEAPON_IRONCANNON) )
-      {
-        autocall ChangeToIronCannon() EEnd;
-        // mark that weapon change has ended
-        m_tmWeaponChangeRequired = 0.0f;
-        jump Idle();
-      }
-      */
 
       // store current weapon
       m_iPreviousWeapon = m_iCurrentWeapon;
@@ -4061,18 +4040,6 @@ procedures:
         PlaySound(pl.m_soWeaponAmbient, SOUND_CS_IDLE, SOF_3D|SOF_VOLUMETRIC|SOF_LOOP|SOF_SMOOTHCHANGE);                
         if(_pNetwork->IsPlayerLocal(m_penPlayer)) {IFeel_PlayEffect("ChainsawIdle");}
       }
-
-    // knife change stand
-    } else if (m_iWantedWeapon == WEAPON_KNIFE) {
-      // mark that weapon change has ended
-      m_tmWeaponChangeRequired = 0.0f;
-      autocall ChangeKnifeStand() EEnd;
-/*    // pipebomb reload
-    } else if (m_iWantedWeapon == WEAPON_PIPEBOMB) {
-      // mark that weapon change has ended
-      m_tmWeaponChangeRequired = 0.0f;
-      jump Reload();
-      */
     }
     jump Idle();
   };
@@ -4086,11 +4053,7 @@ procedures:
         break;
       // knife have different stands
       case WEAPON_KNIFE: 
-        if (m_iKnifeStand==1) {
-          m_iAnim = KNIFE_ANIM_PULLOUT;
-        } else if (m_iKnifeStand==3) {
-          m_iAnim = KNIFE_ANIM_PULLOUT;
-        }
+        m_iAnim = KNIFENEW_ANIM_HIDE;
         break;
       case WEAPON_DOUBLECOLT: case WEAPON_COLT:
         m_iAnim = COLT_ANIM_DEACTIVATE;
@@ -4205,8 +4168,7 @@ procedures:
     // start current weapon bring up animation
     switch (m_iCurrentWeapon) {
       case WEAPON_KNIFE: 
-        m_iAnim = KNIFE_ANIM_PULL;
-        m_iKnifeStand = 1;
+        m_iAnim = KNIFENEW_ANIM_SHOW;
         break;
       case WEAPON_COLT: case WEAPON_DOUBLECOLT:
         m_iAnim = COLT_ANIM_ACTIVATE;
@@ -4388,9 +4350,9 @@ procedures:
             case WEAPON_KNIFE:
               {
                 if (m_bSecondaryFire || ((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
-                  call ThrowKnife();
+                  call ThrowKnife3();
                 } else {
-                  call SwingKnife();
+                  call ThrowKnife1();
                 }
                 break;
               }
@@ -4446,7 +4408,9 @@ procedures:
       {
         CPlayer &pl = (CPlayer&)*m_penPlayer;
         if (pl.m_penTheWorld) {
-          ((CTheWorld&)*pl.m_penTheWorld).IdleAnim();
+          EStandAnim eStandAnim;
+          eStandAnim.anim = STAND_IDLE;
+          pl.m_penTheWorld->SendEvent(eStandAnim);
         }
         jump Idle();
       }
@@ -4469,7 +4433,9 @@ procedures:
           
           CPlayer &pl = (CPlayer&)*m_penPlayer;
           if (pl.m_penTheWorld) {
-            ((CTheWorld&)*pl.m_penTheWorld).IdleAnim();
+            EStandAnim eStandAnim;
+            eStandAnim.anim = STAND_IDLE;
+            pl.m_penTheWorld->SendEvent(eStandAnim);
           }
 
           jump Idle();
@@ -4493,7 +4459,9 @@ procedures:
     moHandsWeapon.PlayAnim(HANDSWEAPON_ANIM_ATTACK, AOF_LOOPING|AOF_NORESTART);
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      ((CTheWorld&)*pl.m_penTheWorld).HandsAnim();
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_HANDS;
+      pl.m_penTheWorld->SendEvent(eStandAnim);
     }
 
     autowait(0.1f);
@@ -4517,7 +4485,9 @@ procedures:
     GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG, 0);
     GetAnimator()->m_bDisableAnimating = TRUE;
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      ((CTheWorld&)*pl.m_penTheWorld).LegsAnim();
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_LEGS;
+      pl.m_penTheWorld->SendEvent(eStandAnim);
     }
 
     CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
@@ -4555,7 +4525,9 @@ procedures:
     GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG_FAST, 0);
     GetAnimator()->m_bDisableAnimating = TRUE;
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      ((CTheWorld&)*pl.m_penTheWorld).LegsAnim();
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_LEGS;
+      pl.m_penTheWorld->SendEvent(eStandAnim);
     }
 
     CModelObject& moLeg1 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
@@ -4584,91 +4556,72 @@ procedures:
     return EEnd();
   }
 
-  ThrowKnife()
+  ThrowKnife3()
   {
     GetAnimator()->FireAnimation(BODY_ANIM_KNIFE_ATTACK, 0);
 
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     PlaySound(pl.m_soWeapon0, SOUND_KNIFE_THROW, SOF_3D|SOF_VOLUMETRIC);
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      ((CTheWorld&)*pl.m_penTheWorld).ThrowAnim();
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_THROW;
+      pl.m_penTheWorld->SendEvent(eStandAnim);
     }
 
-    m_moWeapon.PlayAnim(KNIFE_ANIM_PULL, 0);
-    autowait(m_moWeapon.GetAnimLength(KNIFE_ANIM_PULL) * 0.25f);
-    
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    BOOL zaWarudo = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
-    if (zaWarudo || pl.m_mode == STAND_ENGAGED) {
-      FireKnife(
-        ANGLE3D(FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f)),
-        FLOAT3D(FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f)));
+    m_moWeapon.PlayAnim(KNIFENEW_ANIM_THROWLEFT, 0);
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWLEFT) * 0.2f);
+   
+    for (INDEX i = 0; i < 3; ++i) {
+      CModelObject& moKnife = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_02 + i)->amo_moModelObject;
+      moKnife.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+      if (i == 1 && ((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
+        FireKnife(ANGLE3D(0.0f, 0.0f, 0.0f), FLOAT3D(0.0f, 0.0f, 0.0f));
+      } else {
+        FireKnife(
+          ANGLE3D(FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f)),
+          FLOAT3D(FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f)));
+      }
     }
 
-    FireKnife(ANGLE3D(0.0f, 0.0f, 0.0f), FLOAT3D(0.0f, 0.0f, 0.0f));
-
-    if (zaWarudo || pl.m_mode == STAND_ENGAGED) {
-      FireKnife(
-        ANGLE3D(FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f), FRndRange(-5.0f, 5.0f)),
-        FLOAT3D(FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f), FRndRange(-0.4f, 0.4f)));
-    }
-    autowait(m_moWeapon.GetAnimLength(KNIFE_ANIM_PULL) * 0.75f);
-
-    return EEnd();
-  };
-    
-  // ***************** SWING KNIFE *****************
-  SwingKnife() {
-    INDEX iSwing;
-
-    // animator swing
-    GetAnimator()->FireAnimation(BODY_ANIM_KNIFE_ATTACK, 0);
-    // sound
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    // depending on stand choose random attack
-    switch (m_iKnifeStand) {
-      case 1:
-        iSwing = IRnd()%2;
-        switch (iSwing) {
-          case 0: m_iAnim = KNIFE_ANIM_ATTACK01; m_fAnimWaitTime = 0.25f;
-            PlaySound(pl.m_soWeapon0, SOUND_KNIFE_BACK, SOF_3D|SOF_VOLUMETRIC);
-            if(_pNetwork->IsPlayerLocal(m_penPlayer)) {IFeel_PlayEffect("Knife_back");}
-            break;
-          case 1: m_iAnim = KNIFE_ANIM_ATTACK02; m_fAnimWaitTime = 0.35f;
-            PlaySound(pl.m_soWeapon1, SOUND_KNIFE_BACK, SOF_3D|SOF_VOLUMETRIC);
-            if(_pNetwork->IsPlayerLocal(m_penPlayer)) {IFeel_PlayEffect("Knife_back");}
-            break;
-        }
-        break;
-      case 3:
-        iSwing = IRnd()%2;
-        switch (iSwing) {
-          case 0: m_iAnim = KNIFE_ANIM_ATTACK01; m_fAnimWaitTime = 0.50f;
-            PlaySound(pl.m_soWeapon1, SOUND_KNIFE_BACK, SOF_3D|SOF_VOLUMETRIC);
-            if(_pNetwork->IsPlayerLocal(m_penPlayer)) {IFeel_PlayEffect("Knife_back");}
-            break;
-          case 1: m_iAnim = KNIFE_ANIM_ATTACK02; m_fAnimWaitTime = 0.50f;
-            PlaySound(pl.m_soWeapon3, SOUND_KNIFE_BACK, SOF_3D|SOF_VOLUMETRIC);
-            if(_pNetwork->IsPlayerLocal(m_penPlayer)) {IFeel_PlayEffect("Knife_back");}
-            break;
-        }
-        break;
-    }
-    m_moWeapon.PlayAnim(m_iAnim, 0);
-    if (CutWithKnife(0, 0, 3.0f, 2.0f, 0.5f, ((GetSP()->sp_bCooperative) ? 100.0f : 50.0f))) {
-      autowait(m_fAnimWaitTime);
-    } else if (TRUE) {
-      autowait(m_fAnimWaitTime/2);
-      CutWithKnife(0, 0, 3.0f, 2.0f, 0.5f, ((GetSP()->sp_bCooperative) ? 100.0f : 50.0f));
-      autowait(m_fAnimWaitTime/2);
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWLEFT) * 0.4f);
+    for (INDEX i = 0; i < 3; ++i) {
+      CModelObject& moKnife = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_02 + i)->amo_moModelObject;
+      moKnife.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
     }
 
-    if (m_moWeapon.GetAnimLength(m_iAnim)-m_fAnimWaitTime>=_pTimer->TickQuantum) {
-      autowait(m_moWeapon.GetAnimLength(m_iAnim)-m_fAnimWaitTime);
-    }
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWRIGHT) * 0.4f);
+
     return EEnd();
   };
   
+  ThrowKnife1()
+  {
+    GetAnimator()->FireAnimation(BODY_ANIM_KNIFE_ATTACK, 0);
+
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    PlaySound(pl.m_soWeapon0, SOUND_KNIFE_THROW, SOF_3D|SOF_VOLUMETRIC);
+    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_THROW;
+      pl.m_penTheWorld->SendEvent(eStandAnim);
+    }
+
+    m_moWeapon.PlayAnim(KNIFENEW_ANIM_THROWRIGHT, 0);
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWRIGHT) * 0.2f);
+
+    CModelObject& moKnife_1 = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_01)->amo_moModelObject;
+    moKnife_1.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+    FireKnife(ANGLE3D(0.0f, 0.0f, 0.0f), FLOAT3D(0.0f, 0.0f, 0.0f));
+    
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWRIGHT) * 0.4f);
+    CModelObject& moKnife_1 = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_01)->amo_moModelObject;
+    moKnife_1.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWRIGHT) * 0.4f);
+
+    return EEnd();
+  };
+    
   // ***************** FIRE COLT *****************
   FireColt() {
     GetAnimator()->FireAnimation(BODY_ANIM_COLT_FIRERIGHT, 0);
@@ -5900,26 +5853,6 @@ procedures:
     }
 
     jump Idle();
-  };
-
-
-  /*
-   *  >>>---   KNIFE STAND CHANGE   ---<<<
-   */
-  ChangeKnifeStand(EVoid) {
-/*    if (m_iKnifeStand==1) {
-      // change from knife stand 1 to stand 3
-      m_moWeapon.PlayAnim(KNIFE_ANIM_STAND1TOSTAND3, 0);
-      autowait(m_moWeapon.GetAnimLength(KNIFE_ANIM_STAND1TOSTAND3));
-      m_iKnifeStand = 3;
-    } else if (m_iKnifeStand==3) {
-      // change from knife stand 3 to stand 1
-      m_moWeapon.PlayAnim(KNIFE_ANIM_STAND3TOSTAND1, 0);
-      autowait(m_moWeapon.GetAnimLength(KNIFE_ANIM_STAND3TOSTAND1));
-      m_iKnifeStand = 1;
-    }
-    */
-    return EEnd();
   };
 
   ChangeToIronCannon(EVoid)
