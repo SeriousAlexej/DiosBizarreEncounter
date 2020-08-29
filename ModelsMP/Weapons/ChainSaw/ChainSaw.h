@@ -21,5 +21,6 @@
 // Attaching position names
 #define CHAINSAW_ATTACHMENT_CHAINSAW 0
 #define CHAINSAW_ATTACHMENT_BLADE 1
+#define CHAINSAW_ATTACHMENT_DIO_HAND 2
 
 // Sound names

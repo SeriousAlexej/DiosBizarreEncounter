@@ -346,6 +346,7 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
     pdec->PrecacheTexture(TEXTURE_COLTBULLETS       );  
     pdec->PrecacheSound(SOUND_COLT_FIRE             );
     pdec->PrecacheSound(SOUND_COLT_RELOAD           );
+    pdec->PrecacheModel(MODEL_COLT_DIO_HAND         );
   }
 
   if ( ulAvailable&(1<<(WEAPON_SINGLESHOTGUN-1)) ) {
@@ -356,6 +357,7 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
     pdec->PrecacheTexture(TEXTURE_SS_HANDLE     );    
     pdec->PrecacheTexture(TEXTURE_SS_BARRELS    );    
     pdec->PrecacheSound(SOUND_SINGLESHOTGUN_FIRE);    
+    pdec->PrecacheModel(MODEL_SINGLESHOTGUN_DIO_HAND);
   }
 
   if ( ulAvailable&(1<<(WEAPON_DOUBLESHOTGUN-1)) ) {
@@ -371,6 +373,8 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
     pdec->PrecacheTexture(TEXTURE_DS_SWITCH        );   
     pdec->PrecacheSound(SOUND_DOUBLESHOTGUN_FIRE   ); 
     pdec->PrecacheSound(SOUND_DOUBLESHOTGUN_RELOAD ); 
+    pdec->PrecacheModel(MODEL_DS_DIO_HAND);
+    pdec->PrecacheModel(MODEL_DS_DIO_HANDAMMO);
   }
 
   if ( ulAvailable&(1<<(WEAPON_TOMMYGUN-1)) ) {
@@ -399,7 +403,8 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
     pdec->PrecacheSound(SOUND_MINIGUN_ROTATE   );     
     pdec->PrecacheSound(SOUND_MINIGUN_SPINUP   );     
     pdec->PrecacheSound(SOUND_MINIGUN_SPINDOWN );     
-    pdec->PrecacheSound(SOUND_MINIGUN_CLICK    );     
+    pdec->PrecacheSound(SOUND_MINIGUN_CLICK    );    
+    pdec->PrecacheModel(MODEL_CHAINSAW_DIO_HAND);
   }
                                          
   if ( ulAvailable&(1<<(WEAPON_ROCKETLAUNCHER-1)) ) {
@@ -453,7 +458,8 @@ void CPlayerWeapons_Precache(ULONG ulAvailable)
     pdec->PrecacheSound(SOUND_CS_ENDFIRE   );
     pdec->PrecacheSound(SOUND_CS_BRINGUP   );
     pdec->PrecacheSound(SOUND_CS_BRINGDOWN );
-    pdec->PrecacheSound(SOUND_CS_IDLE      );
+    pdec->PrecacheSound(SOUND_CS_IDLE      );    
+    pdec->PrecacheModel(MODEL_CHAINSAW_DIO_HAND);
   }
 
   if ( ulAvailable&(1<<(WEAPON_FLAMER-1)) ) {
@@ -729,6 +735,7 @@ components:
  36 texture TEXTURE_COLTBULLETS         "Models\\Weapons\\Colt\\ColtBullets.tex",
  37 sound   SOUND_COLT_FIRE             "Models\\Weapons\\Colt\\Sounds\\Fire.wav",
  38 sound   SOUND_COLT_RELOAD           "Models\\Weapons\\Colt\\Sounds\\Reload.wav",
+ 39 model   MODEL_COLT_DIO_HAND         "Models\\Weapons\\Colt\\DIO_Hand.mdl",
 
 // ************** SINGLE SHOTGUN ************
  40 model   MODEL_SINGLESHOTGUN         "Models\\Weapons\\SingleShotgun\\SingleShotgun.mdl",
@@ -738,6 +745,7 @@ components:
  44 texture TEXTURE_SS_HANDLE           "Models\\Weapons\\SingleShotgun\\Handle.tex",
  45 texture TEXTURE_SS_BARRELS          "Models\\Weapons\\SingleShotgun\\Barrels.tex",
  46 sound   SOUND_SINGLESHOTGUN_FIRE    "Models\\Weapons\\SingleShotgun\\Sounds\\_Fire.wav",
+ 47 model   MODEL_SINGLESHOTGUN_DIO_HAND "Models\\Weapons\\SingleShotgun\\DIO_Hand.mdl",
 
 // ************** DOUBLE SHOTGUN **************
  50 model   MODEL_DOUBLESHOTGUN         "Models\\Weapons\\DoubleShotgun\\DoubleShotgun.mdl",
@@ -752,6 +760,8 @@ components:
  59 texture TEXTURE_DS_SWITCH           "Models\\Weapons\\DoubleShotgun\\Switch.tex",
  60 sound   SOUND_DOUBLESHOTGUN_FIRE    "Models\\Weapons\\DoubleShotgun\\Sounds\\Fire.wav",
  61 sound   SOUND_DOUBLESHOTGUN_RELOAD  "Models\\Weapons\\DoubleShotgun\\Sounds\\Reload.wav",
+ 62 model   MODEL_DS_DIO_HAND           "Models\\Weapons\\DoubleShotgun\\DIO_Hand.mdl",
+ 63 model   MODEL_DS_DIO_HANDAMMO       "Models\\Weapons\\DoubleShotgun\\DIO_HandAmmo.mdl",
 
 // ************** TOMMYGUN **************
  70 model   MODEL_TOMMYGUN              "Models\\Weapons\\TommyGun\\TommyGun.mdl",
@@ -850,6 +860,7 @@ components:
 158 sound   SOUND_CS_BRINGUP            "ModelsMP\\Weapons\\Chainsaw\\Sounds\\BringUp.wav",
 159 sound   SOUND_CS_IDLE               "ModelsMP\\Weapons\\Chainsaw\\Sounds\\Idle.wav",
 162 sound   SOUND_CS_BRINGDOWN          "ModelsMP\\Weapons\\Chainsaw\\Sounds\\BringDown.wav",
+163 model   MODEL_CHAINSAW_DIO_HAND     "ModelsMP\\Weapons\\Chainsaw\\DIO_Hand.mdl",
 
 
 /*
@@ -1693,6 +1704,7 @@ functions:
       // colt
       case WEAPON_DOUBLECOLT: {
         SetComponents(this, m_moWeaponSecond, MODEL_COLT, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeaponSecond, COLT_ATTACHMENT_DIO_HAND, MODEL_COLT_DIO_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
         AddAttachmentToModel(this, m_moWeaponSecond, COLT_ATTACHMENT_BULLETS, MODEL_COLTBULLETS, TEXTURE_COLTBULLETS, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeaponSecond, COLT_ATTACHMENT_COCK, MODEL_COLTCOCK, TEXTURE_COLTCOCK, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeaponSecond, COLT_ATTACHMENT_COLT, MODEL_COLTMAIN, TEXTURE_COLTMAIN, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
@@ -1702,6 +1714,7 @@ functions:
         m_moWeaponSecond.PlayAnim(COLT_ANIM_WAIT1, 0);
       case WEAPON_COLT: {
         SetComponents(this, m_moWeapon, MODEL_COLT, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, COLT_ATTACHMENT_DIO_HAND, MODEL_COLT_DIO_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
         AddAttachmentToModel(this, m_moWeapon, COLT_ATTACHMENT_BULLETS, MODEL_COLTBULLETS, TEXTURE_COLTBULLETS, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, COLT_ATTACHMENT_COCK, MODEL_COLTCOCK, TEXTURE_COLTCOCK, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, COLT_ATTACHMENT_COLT, MODEL_COLTMAIN, TEXTURE_COLTMAIN, TEX_REFL_LIGHTBLUEMETAL01, TEX_SPEC_MEDIUM, 0);
@@ -1711,6 +1724,7 @@ functions:
         break; }
       case WEAPON_SINGLESHOTGUN: {
         SetComponents(this, m_moWeapon, MODEL_SINGLESHOTGUN, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, SINGLESHOTGUN_ATTACHMENT_DIO_HAND, MODEL_SINGLESHOTGUN_DIO_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
         AddAttachmentToModel(this, m_moWeapon, SINGLESHOTGUN_ATTACHMENT_BARRELS, MODEL_SS_BARRELS, TEXTURE_SS_BARRELS, TEX_REFL_DARKMETAL, TEX_SPEC_WEAK, 0);
         AddAttachmentToModel(this, m_moWeapon, SINGLESHOTGUN_ATTACHMENT_HANDLE, MODEL_SS_HANDLE, TEXTURE_SS_HANDLE, TEX_REFL_DARKMETAL, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, SINGLESHOTGUN_ATTACHMENT_SLIDER, MODEL_SS_SLIDER, TEXTURE_SS_BARRELS, TEX_REFL_DARKMETAL, TEX_SPEC_MEDIUM, 0);
@@ -1720,11 +1734,13 @@ functions:
         break; }
       case WEAPON_DOUBLESHOTGUN: {
         SetComponents(this, m_moWeapon, MODEL_DOUBLESHOTGUN, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, DOUBLESHOTGUN_ATTACHMENT_DIO_HAND, MODEL_DS_DIO_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
         AddAttachmentToModel(this, m_moWeapon, DOUBLESHOTGUN_ATTACHMENT_BARRELS, MODEL_DS_BARRELS, TEXTURE_DS_BARRELS, TEX_REFL_BWRIPLES01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, DOUBLESHOTGUN_ATTACHMENT_HANDLE, MODEL_DS_HANDLE, TEXTURE_DS_HANDLE, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, DOUBLESHOTGUN_ATTACHMENT_SWITCH, MODEL_DS_SWITCH, TEXTURE_DS_SWITCH, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, DOUBLESHOTGUN_ATTACHMENT_AMMO, MODEL_DS_AMMO, TEXTURE_DS_AMMO, 0 ,0, 0);
         SetComponents(this, m_moWeaponSecond, MODEL_DS_HANDWITHAMMO, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeaponSecond, HANDWITHAMMO_ATTACHMENT_DIO_HAND, MODEL_DS_DIO_HANDAMMO, TEXTURE_DIO_HAND, 0, 0, 0);
         CModelObject &mo = m_moWeapon.GetAttachmentModel(DOUBLESHOTGUN_ATTACHMENT_BARRELS)->amo_moModelObject;
         AddAttachmentToModel(this, mo, DSHOTGUNBARRELS_ATTACHMENT_FLARE, MODEL_FLARE01, TEXTURE_FLARE01, 0, 0, 0);
         m_moWeaponSecond.StretchModel(FLOAT3D(1,1,1));
@@ -1745,6 +1761,7 @@ functions:
         break; }
       case WEAPON_MINIGUN: {
         SetComponents(this, m_moWeapon, MODEL_MINIGUN, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, MINIGUN_ATTACHMENT_DIO_HAND, MODEL_CHAINSAW_DIO_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
         AddAttachmentToModel(this, m_moWeapon, MINIGUN_ATTACHMENT_BARRELS, MODEL_MG_BARRELS, TEXTURE_MG_BARRELS, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, MINIGUN_ATTACHMENT_BODY, MODEL_MG_BODY, TEXTURE_MG_BODY, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, MINIGUN_ATTACHMENT_ENGINE, MODEL_MG_ENGINE, TEXTURE_MG_BARRELS, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
@@ -1784,6 +1801,7 @@ functions:
         break;
       case WEAPON_CHAINSAW: {
         SetComponents(this, m_moWeapon, MODEL_CHAINSAW, TEXTURE_HAND, 0, 0, 0);
+        AddAttachmentToModel(this, m_moWeapon, CHAINSAW_ATTACHMENT_DIO_HAND, MODEL_CHAINSAW_DIO_HAND, TEXTURE_DIO_HAND, 0, 0, 0);
         AddAttachmentToModel(this, m_moWeapon, CHAINSAW_ATTACHMENT_CHAINSAW, MODEL_CS_BODY, TEXTURE_CS_BODY, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddAttachmentToModel(this, m_moWeapon, CHAINSAW_ATTACHMENT_BLADE, MODEL_CS_BLADE, TEXTURE_CS_BLADE, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         CModelObject *pmo;
@@ -2117,6 +2135,11 @@ functions:
         CPlacement3D weaponPl;
         CalcWeaponPosition(FLOAT3D(0.0f, 0.0f, 0.0f), weaponPl, TRUE);
         CPlacement3D offsetZ(FLOAT3D(0.0f, 0.0f, -fKickForce), ANGLE3D(0.0f, 0.0f, 0.0f));
+        CPlayer &pl = (CPlayer&)*m_penPlayer;
+        if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+          CPlacement3D aimHigher(FLOAT3D(0.0f, 0.0f, 0.0f), ANGLE3D(0.0f, 30.0f, 0.0f));
+          offsetZ.RelativeToAbsolute(aimHigher);
+        }
         offsetZ.RelativeToAbsolute(weaponPl);
         FLOAT3D dioKickDir = (offsetZ.pl_PositionVector - weaponPl.pl_PositionVector);
 
@@ -4467,11 +4490,13 @@ procedures:
     autowait(0.1f);
 
     FLOAT damage = 10.0f;
+    FLOAT kickForce = 1.0f;
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
       damage *= 6.0f;
+      kickForce = 3.0f;
     }
-    DioPunch(damage, 1.0f, TRUE);
+    DioPunch(damage, kickForce, TRUE);
 
     return EEnd();
   };
@@ -4501,11 +4526,13 @@ procedures:
     autowait(0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK));
 
     FLOAT damage = 30.0f;
+    FLOAT kickForce = 5.0f;
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      damage *= 2.0f;
+      damage *= 5.0f;
+      kickForce *= 4.0f;
     }
-    DioPunch(damage, 5.0f, FALSE);
+    DioPunch(damage, kickForce, FALSE);
 
     CModelObject& moLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
     autowait(0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK));
@@ -4547,11 +4574,13 @@ procedures:
     autowait(0.1f);
 
     FLOAT damage = 30.0f;
+    FLOAT kickForce = 5.0f;
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      damage *= 2.5f;
+      damage *= 6.0f;
+      kickForce *= 4.0f;
     }
-    DioPunch(damage, 5.0f, TRUE);
+    DioPunch(damage, kickForce, TRUE);
     
     return EEnd();
   }

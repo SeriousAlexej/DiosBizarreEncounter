@@ -12,5 +12,6 @@
 
 // Attaching position names
 #define HANDWITHAMMO_ATTACHMENT_AMMO 0
+#define HANDWITHAMMO_ATTACHMENT_DIO_HAND 1
 
 // Sound names
