@@ -23,11 +23,11 @@ BOOLEAN Attach()
   p_aiCommonElements = reinterpret_cast<CStaticStackArray<INDEX>*>(enginedll_base_address + 0x1F9D90);
   graphicsFlushQuads = reinterpret_cast<void(*)(void)>            (enginedll_base_address + 0x5BD90);
 
-  DWORD old_page_mode;
+  DWORD old_page_mode, dummy;
   if (::VirtualProtect(orig_addr, sizeof(jump_instruction), PAGE_EXECUTE_READWRITE, &old_page_mode) == 0)
     return FALSE;
   memcpy(orig_addr, jump_instruction, sizeof(jump_instruction));
-  if (::VirtualProtect(orig_addr, sizeof(jump_instruction), old_page_mode, &old_page_mode) == 0)
+  if (::VirtualProtect(orig_addr, sizeof(jump_instruction), old_page_mode, &dummy) == 0)
     return FALSE;
 
   return TRUE;
@@ -37,11 +37,11 @@ BOOLEAN Detach()
 {
   ClearEventFactory();
 
-  DWORD old_page_mode;
+  DWORD old_page_mode, dummy;
   if (::VirtualProtect(orig_addr, sizeof(original_bytes), PAGE_EXECUTE_READWRITE, &old_page_mode) == 0)
     return FALSE;
   memcpy(orig_addr, original_bytes, sizeof(original_bytes));
-  if (::VirtualProtect(orig_addr, sizeof(original_bytes), old_page_mode, &old_page_mode) == 0)
+  if (::VirtualProtect(orig_addr, sizeof(original_bytes), old_page_mode, &dummy) == 0)
     return FALSE;
 
   return TRUE;
