@@ -182,8 +182,8 @@ void ShakeIt()
     pwsc->m_tmShakeFrequencyZ = 5.0f;
     pwsc->m_fShakeIntensityY = 0.1f;
     pwsc->m_tmShakeFrequencyY = 5.0f;
-    pwsc->m_fShakeIntensityB = 8.0f;
-    pwsc->m_tmShakeFrequencyB = 3.0f;
+    pwsc->m_fShakeIntensityB = 15.0f;
+    pwsc->m_tmShakeFrequencyB = 7.0f;
     pwsc->m_bShakeFadeIn = FALSE;
   }
 }

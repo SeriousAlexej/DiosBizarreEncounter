@@ -1237,40 +1237,6 @@ CTString GetDifficultyString(void)
   case CSessionProperties::GD_EXTREME:  return TRANS("Serious");
   }
 }
-// armor & health constants getters
-
-FLOAT MaxArmor(void)
-{
-  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
-    return 300;
-  } else {
-    return 200;
-  }
-}
-FLOAT TopArmor(void)
-{
-  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
-    return 200;
-  } else {
-    return 100;
-  }
-}
-FLOAT MaxHealth(void)
-{
-  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
-    return 300;
-  } else {
-    return 200;
-  }
-}
-FLOAT TopHealth(void)
-{
-  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
-    return 200;
-  } else {
-    return 100;
-  }
-}
 
 // info structure
 static EntityInfo eiPlayerGround = {
@@ -5897,14 +5863,14 @@ functions:
       RenderChainsawParticles(TRUE);
       // glowing powerups
       if (GetFlags()&ENF_ALIVE){
-        if (m_tmSeriousDamage>tmNow && m_tmInvulnerability>tmNow) {
+        if (m_tmSeriousDamage>tmNow && m_tmInvulnerability>tmNow && m_mode == STAND_PASSIVE) {
           Particles_ModelGlow(this, Max(m_tmSeriousDamage,m_tmInvulnerability),PT_STAR08, 0.15f, 2, 0.03f, 0xff00ff00);
-        } else if (m_tmInvulnerability>tmNow) {
+        } else if (m_tmInvulnerability>tmNow && m_mode == STAND_PASSIVE) {
           Particles_ModelGlow(this, m_tmInvulnerability, PT_STAR05, 0.15f, 2, 0.03f, 0x3333ff00);
-        } else if (m_tmSeriousDamage>tmNow) {
+        } else if (m_tmSeriousDamage>tmNow && m_mode == STAND_PASSIVE) {
           Particles_ModelGlow(this, m_tmSeriousDamage, PT_STAR08, 0.15f, 2, 0.03f, 0xff777700);
         }
-        if (m_tmSeriousSpeed>tmNow) {
+        if (m_tmSeriousSpeed>tmNow && m_mode == STAND_PASSIVE) {
           Particles_RunAfterBurner(this, m_tmSeriousSpeed, 0.3f, 0);
         }
         if (!GetSP()->sp_bCooperative) {
@@ -5982,7 +5948,12 @@ procedures:
   Wounded(EDamage eDamage) {
     if (m_bInEmote) {
       m_bInEmote = FALSE;
-      ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+      
+      if (m_penDioPosing != NULL) {
+        PlayPoseAnim();
+      } else {
+        ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+      }
     }
     return;
   };
@@ -7268,6 +7239,11 @@ procedures:
           call DoEmote();
         }
       }
+      on (ERodaRollaSaidFULLSTOP) :
+      {
+        ForceFullStop();
+        resume;
+      }
       on (ESwitchStandMode) :
       {
         if (m_penTheWorld) {
@@ -7278,6 +7254,7 @@ procedures:
             // new Warudo is set as child to follow player
             ESpawnStand ess;
             ess.penOwner = this;
+            ess.wasTimeStopped = ((CTheWorld&)*(m_penTheWorld.ep_pen->GetPredictionTail())).m_isTimeStopped;
             m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
             m_penTheWorld->Initialize(ess);
             m_penTheWorld->SetParent(this);

@@ -12,6 +12,39 @@
 #include "ModelsMP/Player/SeriousSam/Head.h"
 extern INDEX ent_bReportBrokenChains;
 
+FLOAT MaxArmor(void)
+{
+  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
+    return 300;
+  } else {
+    return 200;
+  }
+}
+FLOAT TopArmor(void)
+{
+  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
+    return 200;
+  } else {
+    return 100;
+  }
+}
+FLOAT MaxHealth(void)
+{
+  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
+    return 300;
+  } else {
+    return 200;
+  }
+}
+FLOAT TopHealth(void)
+{
+  if (GetSP()->sp_gdGameDifficulty<=CSessionProperties::GD_EASY) {
+    return 200;
+  } else {
+    return 100;
+  }
+}
+
 void CCompMessageID::Clear(void)
 {
   cmi_fnmFileName.Clear();

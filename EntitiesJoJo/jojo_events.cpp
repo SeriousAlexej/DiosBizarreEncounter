@@ -170,7 +170,12 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
     restore_event.physics_flags = p_entity->GetPhysicsFlags();
     restore_event.collision_flags = p_entity->GetCollisionFlags();
     p_entity->SetPhysicsFlags(EPF_MODEL_FIXED);
-    p_entity->SetCollisionFlags(ECF_MODEL_HOLDER | (restore_event.collision_flags & IDENTIFY_AS_ENEMY));
+
+    ULONG collision_flags = ECF_MODEL_HOLDER;
+    if (restore_event.collision_flags & (IDENTIFY_AS_ENEMY | IDENTIFY_AS_PROJECTILE))
+      collision_flags |= IDENTIFY_AS_ENEMY; //projectiles are treated as 'enemy' to make road roller pass through them
+      
+    p_entity->SetCollisionFlags(collision_flags);
   } else {
     restore_event.restore_physics = FALSE;
   }

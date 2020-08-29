@@ -12,6 +12,7 @@
 event ESpawnStand
 {
   CEntityPointer penOwner,
+  BOOL wasTimeStopped,
 };
 
 enum StandMode
@@ -204,14 +205,22 @@ functions:
       FLOAT fFade = ClampUp((_pTimer->GetLerpedCurrentTick() - m_timeSpawned) / pmo->GetAnimLength(ZAWARUDO_ANIM_DIE), 1.0f);
       pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*(1.0f - fFade));
     }
-    else if (m_penOwner && ((CPlayer*)m_penOwner.ep_pen)->m_iViewState == PVT_PLAYEREYES)
+    else if (m_penOwner)
     {
-      FLOAT fDistance = (GetPlacement().pl_PositionVector - m_penOwner->GetPlacement().pl_PositionVector).Length();
-      fDistance = ClampUp(fDistance, 1.0f);
-      if (fDistance < 1.0f) {
-        fDistance = fDistance*fDistance*0.5f;
+      const CPlayer& player = ((CPlayer&)*(m_penOwner.ep_pen->GetPredictionTail()));
+      if (player.m_mode == STAND_PASSIVE)
+      {
+        CPlacement3D playerPlacement = player.en_plViewpoint;
+        playerPlacement.RelativeToAbsoluteSmooth(player.GetPlacement());
+        CPlacement3D thisPlacement = GetPlacement();
+        thisPlacement.AbsoluteToRelativeSmooth(playerPlacement);
+
+        FLOAT fDistance = fabs(thisPlacement.pl_PositionVector(1));
+        fDistance = Clamp(fDistance, 0.3f, 1.0f);
+        pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*fDistance);
+      } else {
+        pmo->mo_colBlendColor = pmo->mo_colBlendColor|UBYTE(255);
       }
-      pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*fDistance);
     } else {
       pmo->mo_colBlendColor = pmo->mo_colBlendColor|UBYTE(255);
     }
@@ -408,6 +417,7 @@ procedures:
   Main(ESpawnStand eSpawnStand)
   {
     m_penOwner = eSpawnStand.penOwner;
+    m_isTimeStopped = eSpawnStand.wasTimeStopped;
 
     SetPredictable(TRUE);
     InitAsModel();
@@ -426,6 +436,10 @@ procedures:
     m_timeSpawned = _pTimer->CurrentTick();
     GetModelObject()->PlayAnim(ZAWARUDO_ANIM_EMERGE, 0);
     SpawnReminder(this, GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_EMERGE), ZAWARUDO_ANIM_EMERGE);
+
+    if (m_isTimeStopped) {
+      SpawnReminder(this, ZA_WARUDO_DURATION, ZAWARUDO_END);
+    }
 
     autocall Alive() EEnd;
 

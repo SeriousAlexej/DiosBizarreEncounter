@@ -301,3 +301,9 @@ void SpawnHitTypeEffect(CEntity *pen, enum BulletHitType bhtType, BOOL bSound, F
   FLOAT3D vIncommingBulletDir, FLOAT3D vDistance);
 
 #define FRndIn(a, b) (a + FRnd()*(b - a))
+
+// armor & health constants getters
+FLOAT MaxArmor(void);
+FLOAT TopArmor(void);
+FLOAT MaxHealth(void);
+FLOAT TopHealth(void);

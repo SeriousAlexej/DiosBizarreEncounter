@@ -18,6 +18,8 @@
 
 #define IDENTIFY_AS_ENEMY (\
   (ECBI_ENEMY) << ECB_IS )
+#define IDENTIFY_AS_PROJECTILE (\
+  (ECBI_PROJECTILE_MAGIC | ECBI_PROJECTILE_SOLID) << ECB_IS )
 
 // standard flag combinations:
 

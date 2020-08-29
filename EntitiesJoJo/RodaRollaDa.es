@@ -6,6 +6,7 @@
 #include "EntitiesJoJo/RodaRollaDebris.h"
 #include "EntitiesMP/MusicHolder.h"
 #include "EntitiesMP/Player.h"
+#include "EntitiesMP/PlayerWeapons.h"
 #include "EntitiesMP/BackgroundViewer.h"
 #include "EntitiesMP/WorldSettingsController.h"
 %}
@@ -15,6 +16,10 @@ uses "EntitiesMP/BasicEffects";
 event ELaunchRodaRolla
 {
   CEntityPointer penLauncher,
+};
+
+event ERodaRollaSaidFULLSTOP
+{
 };
 
 %{
@@ -50,9 +55,9 @@ static const INDEX g_randomDebrisShuffles[24][4] =
   EPF_PUSHABLE|EPF_MOVABLE|EPF_TRANSLATEDBYGRAVITY|EPF_ORIENTEDBYGRAVITY)
 
 #define ECF_RODA_ROLLA ( \
-  ((ECBI_MODEL|ECBI_BRUSH|ECBI_PROJECTILE_MAGIC|ECBI_PROJECTILE_SOLID|ECBI_ITEM|ECBI_MODEL_HOLDER|ECBI_CORPSE_SOLID)<<ECB_TEST) |\
+  ((ECBI_MODEL|ECBI_PROJECTILE_MAGIC|ECBI_PROJECTILE_SOLID|ECBI_BRUSH|ECBI_MODEL_HOLDER|ECBI_CORPSE_SOLID)<<ECB_TEST) |\
   ((ECBI_MODEL)<<ECB_IS) | \
-  ((ECBI_ENEMY)<<ECB_PASS))
+  ((ECBI_ENEMY|ECBI_ITEM)<<ECB_PASS))
 
 void CRodaRollaDa_OnPrecache(CDLLEntityClass* pdec, INDEX iUser) 
 {
@@ -66,7 +71,7 @@ void CRodaRollaDa_OnPrecache(CDLLEntityClass* pdec, INDEX iUser)
   pdec->PrecacheClass(CLASS_RODA_ROLLA_DEBRIS);
 }
 
-#define MAX_EXPLOSION_DAMAGE 1500.0f
+#define MAX_EXPLOSION_DAMAGE 6000.0f
 #define STRETCH_3  FLOAT3D(5.0f,5.0f,5.0f)
 #define STRETCH_4  FLOAT3D(6.0f,6.0f,6.0f)
 %}
@@ -119,8 +124,8 @@ void ShakeIt()
     pwsc->m_tmShakeFrequencyZ = 5.0f;
     pwsc->m_fShakeIntensityY = 0.1f;
     pwsc->m_tmShakeFrequencyY = 5.0f;
-    pwsc->m_fShakeIntensityB = 20.0f;
-    pwsc->m_tmShakeFrequencyB = 10.0f;
+    pwsc->m_fShakeIntensityB = 30.0f;
+    pwsc->m_tmShakeFrequencyB = 20.0f;
     pwsc->m_bShakeFadeIn = FALSE;
   }
 }
@@ -297,9 +302,11 @@ procedures:
           if (m_loopProtectionCounter == 0) {
             m_launchDir = FLOAT3D(0.0f, 0.0f, -50.0f) * en_mRotation;
             GiveImpulseTranslationAbsolute(m_launchDir);
-            ((CMovableEntity*)&*m_penOwner)->ForceFullStop();
+            m_penOwner->SendEvent(ERodaRollaSaidFULLSTOP());
           } else if (m_loopProtectionCounter == 1) {
-            ((CMovableEntity*)&*m_penOwner)->GiveImpulseTranslationAbsolute(m_launchDir);
+            EDioInstantKick e;
+            e.dir = m_launchDir;
+            m_penOwner->SendEvent(e);
           } else if (m_loopProtectionCounter > 120 || HasStopped()) {
             m_isFlying = FALSE;
           }
