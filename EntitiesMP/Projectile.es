@@ -3044,7 +3044,10 @@ void ProjectileTouch(CEntityPointer penHit)
       }
     }
     if (!penHit || penHit->GetRenderType() != RT_BRUSH) {
-      SwitchToEditorModel();
+        SwitchToEditorModel();
+    }
+    if (penHit) {
+      SetParent(penHit);
     }
     m_soEffect.Set3DParameters(50.0f, 5.0f, 1.5f, 1.0f);
     PlaySound(m_soEffect, sound_component, SOF_3D);

@@ -9,6 +9,7 @@
 
 #include <GameMP/PlayerSettings.h>
 #include <GameMP/SessionProperties.h>
+#include <GameJoJo/ButtonAction.h>
 
 #define GAME_SHELL_VER "V012"
 
@@ -58,24 +59,6 @@ public:
 
   FLOAT aa_fLastReading;    // last reading of this axis (for smoothing)
   FLOAT aa_fAbsolute;       // absolute value of the axis (integrated from previous readings)
-};
-
-class CButtonAction {
-public:
-  // default constructor
-  CButtonAction();
-  CListNode ba_lnNode;
-  INDEX ba_iFirstKey;
-  BOOL ba_bFirstKeyDown;
-  INDEX ba_iSecondKey;
-  BOOL ba_bSecondKeyDown;
-  CTString ba_strName;
-  CTString ba_strCommandLineWhenPressed;
-  CTString ba_strCommandLineWhenReleased;
-  // Assignment operator.
-  virtual CButtonAction &operator=(CButtonAction &baOriginal);
-  virtual void Read_t( CTStream &istrm);    // throw char*
-  virtual void Write_t( CTStream &ostrm);    // throw char*
 };
 
 /*

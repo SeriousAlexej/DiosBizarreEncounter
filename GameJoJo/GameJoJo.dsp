@@ -173,6 +173,10 @@ SOURCE=..\GameMP\WEDInterface.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=.\ButtonAction.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\GameMP\Camera.h
 # End Source File
 # Begin Source File

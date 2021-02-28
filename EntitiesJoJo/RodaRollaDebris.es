@@ -1,6 +1,7 @@
 952
 %{
 #include "StdH.h"
+#include "EntitiesJoJo/jojo_events.h"
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesMP/BackgroundViewer.h"
 #include "EntitiesMP/WorldSettingsController.h"
@@ -138,8 +139,6 @@ void Explosion(FLOAT3D vCenter,
     CPlacement3D plHandle = GetPlacement();
     plHandle.pl_PositionVector+=vCenter;
     SpawnEffect(plHandle, ese);
-    // spawn sound event in range
-    SpawnRangeSound( m_penOwner, this, SNDT_PLAYER, 100.0f);
   }
   // on plane
   if (GetNearestPolygon(vOnPlane, vPlaneNormal, fDistanceToEdge)) {
@@ -243,6 +242,7 @@ procedures:
     Explosion(FLOAT3D(-2.0f,1.0f,-1.5f), STRETCH_3, STRETCH_3, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
     Explosion(FLOAT3D(-1.0f,0.5f,1.0f),  STRETCH_4, STRETCH_4, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
 
+    autowait(ZA_WARUDO_DURATION * 2.0f);
     Destroy();
     return;
   }

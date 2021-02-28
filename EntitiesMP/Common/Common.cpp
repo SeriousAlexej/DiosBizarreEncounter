@@ -6,6 +6,7 @@
 #include "EntitiesMP/Bullet.h"
 #include "EntitiesMP/BackgroundViewer.h"
 #include "EntitiesMP/SoundHolder.h"
+#include "EntitiesMP/MusicHolder.h"
 #include "GameMP/PlayerSettings.h"
 #include "ModelsMP/Player/SeriousSam/Player.h"
 #include "ModelsMP/Player/SeriousSam/Body.h"
@@ -1338,11 +1339,15 @@ void SpawnRangeSound( CEntity *penPlayer, CEntity *penPos, enum SoundType st, FL
     // do nothing
     return;
   }
-  // sound event
-  ESound eSound;
-  eSound.EsndtSound = st;
-  eSound.penTarget = penPlayer;
-  penPos->SendEventInRange( eSound, FLOATaabbox3D(penPos->GetPlacement().pl_PositionVector, fRange));
+  extern CMusicHolder* g_musicHolder;
+  if (g_musicHolder == NULL || !g_musicHolder->IsZaWarudo())
+  {
+    // sound event
+    ESound eSound;
+    eSound.EsndtSound = st;
+    eSound.penTarget = penPlayer;
+    penPos->SendEventInRange( eSound, FLOATaabbox3D(penPos->GetPlacement().pl_PositionVector, fRange));
+  }
 }
 
 // get some player for trigger source if any is existing

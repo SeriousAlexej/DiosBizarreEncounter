@@ -211,7 +211,7 @@ void SpawnEffect(const CPlacement3D& plEffect, const ESpawnEffect& eSpawnEffect)
 
 void HitSound()
 {
-  CPrintF("BAAAAAM!\n");
+  //CPrintF("BAAAAAM!\n");
 }
 
 void RangeDamage()
@@ -252,8 +252,6 @@ void Explosion(FLOAT3D vCenter,
     CPlacement3D plHandle = GetPlacement();
     plHandle.pl_PositionVector+=vCenter;
     SpawnEffect(plHandle, ese);
-    // spawn sound event in range
-    SpawnRangeSound( m_penOwner, this, SNDT_PLAYER, 100.0f);
   }
   // on plane
   if (GetNearestPolygon(vOnPlane, vPlaneNormal, fDistanceToEdge)) {
@@ -363,7 +361,7 @@ procedures:
           m_explosionAccumulatedDamage = ClampUp(
             m_explosionAccumulatedDamage + eDamage.fAmount,
             MAX_EXPLOSION_DAMAGE);
-          CPrintF("DAMAGE WILL BE %f\n", m_explosionAccumulatedDamage);
+          //CPrintF("DAMAGE WILL BE %f\n", m_explosionAccumulatedDamage);
           resume;
         }
         on (ETimer) :
@@ -400,8 +398,14 @@ procedures:
     Explosion(FLOAT3D(-2.0f,1.0f,-1.5f), STRETCH_3, STRETCH_3, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
     Explosion(FLOAT3D(-1.0f,0.5f,1.0f),  STRETCH_4, STRETCH_4, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
 
-    SpawnDebris();
-    ShakeIt();
+    extern CMusicHolder* g_musicHolder;
+    if (g_musicHolder == NULL || !g_musicHolder->IsZaWarudo())
+    {
+      SpawnDebris();
+      ShakeIt();
+    }
+
+    autowait(ZA_WARUDO_DURATION * 2.0f);
     Destroy();
     return;
   }

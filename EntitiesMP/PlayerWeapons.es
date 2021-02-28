@@ -10,6 +10,7 @@
 #include "EntitiesJoJo/TheWorld.h"
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesJoJo/RodaRollaDa.h"
+#include "Models/ZAWARUDO/ZaWarudo.h"
 #include "Models/Weapons/Knife/KnifeNew.h"
 #include "Models/Weapons/Knife/KnifeItem.h"
 #include "Models/Weapons/Colt/Colt.h"
@@ -694,6 +695,7 @@ properties:
 
 280 BOOL m_bSecondaryFire = FALSE,
 281 INDEX m_iLastLeg = ROOT_ATTACHMENT_LEG01,
+282 BOOL m_bWasInSecondaryFire = FALSE,
 
 {
   CEntity *penBullet;
@@ -937,6 +939,10 @@ functions:
   {
     ASSERT(m_penPlayer!=NULL);
     return (CPlayer *)&*m_penPlayer;
+  }
+  CEntity* GetTheWorld()
+  {
+    return GetPlayer()->m_penTheWorld;
   }
   CPlayerAnimator *GetAnimator(void)
   {
@@ -1483,7 +1489,7 @@ functions:
       const FLOAT fRatio   = (fDistance-fMinD) / (fMaxD-fMinD);
       const FLOAT fMaxSize = (FLOAT)pdp->GetWidth() / 640.0f;
       const FLOAT fMinSize = fMaxSize * hud_fCrosshairRatio;
-      const FLOAT fSize    = 16 * Lerp( fMaxSize, fMinSize, fRatio) * hud_fCrosshairScale;
+      const FLOAT fSize    = 8 * Lerp( fMaxSize, fMinSize, fRatio) * hud_fCrosshairScale;
       // draw crosshair
       const FLOAT fI0 = + (PIX)vOnScreen(1) - fSize;
       const FLOAT fI1 = + (PIX)vOnScreen(1) + fSize;
@@ -2135,11 +2141,14 @@ functions:
         CPlacement3D weaponPl;
         CalcWeaponPosition(FLOAT3D(0.0f, 0.0f, 0.0f), weaponPl, TRUE);
         CPlacement3D offsetZ(FLOAT3D(0.0f, 0.0f, -fKickForce), ANGLE3D(0.0f, 0.0f, 0.0f));
-        CPlayer &pl = (CPlayer&)*m_penPlayer;
-        if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-          CPlacement3D aimHigher(FLOAT3D(0.0f, 0.0f, 0.0f), ANGLE3D(0.0f, 30.0f, 0.0f));
-          offsetZ.RelativeToAbsolute(aimHigher);
+        CPlayer &pl = *GetPlayer();
+        CEntity* theWorld = GetTheWorld();
+        FLOAT adjustment_angle = 15.0f;
+        if (theWorld && pl.m_mode == STAND_ENGAGED) {
+          adjustment_angle = 30.0f;
         }
+        CPlacement3D aimHigher(FLOAT3D(0.0f, 0.0f, 0.0f), ANGLE3D(0.0f, adjustment_angle, 0.0f));
+        offsetZ.RelativeToAbsolute(aimHigher);
         offsetZ.RelativeToAbsolute(weaponPl);
         FLOAT3D dioKickDir = (offsetZ.pl_PositionVector - weaponPl.pl_PositionVector);
 
@@ -4323,6 +4332,7 @@ procedures:
    */
   Fire()
   {
+    m_bWasInSecondaryFire = m_bSecondaryFire;
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     PlaySound(pl.m_soWeapon0, SOUND_SILENCE, SOF_3D|SOF_VOLUMETRIC);      // stop possible sounds
     // force ending of weapon change
@@ -4342,7 +4352,9 @@ procedures:
 
     // start weapon firing animation for continuous firing
 
-    if (m_iCurrentWeapon==WEAPON_MINIGUN) {
+    if (m_iCurrentWeapon == WEAPON_HANDS) {
+      TM_START = _pTimer->CurrentTick();
+    } else if (m_iCurrentWeapon==WEAPON_MINIGUN) {
       jump MiniGunSpinUp();
     } else if (m_iCurrentWeapon==WEAPON_FLAMER) {
       jump FlamerStart();
@@ -4429,11 +4441,11 @@ procedures:
     switch (m_iCurrentWeapon) {
     case WEAPON_KNIFE:
       {
-        CPlayer &pl = (CPlayer&)*m_penPlayer;
-        if (pl.m_penTheWorld) {
+        CEntity* theWorld = GetTheWorld();
+        if (theWorld) {
           EStandAnim eStandAnim;
           eStandAnim.anim = STAND_IDLE;
-          pl.m_penTheWorld->SendEvent(eStandAnim);
+          theWorld->SendEvent(eStandAnim);
         }
         jump Idle();
       }
@@ -4454,14 +4466,24 @@ procedures:
           GetAnimator()->m_bDisableAnimating = FALSE;
           GetAnimator()->FireAnimationOff();
           
-          CPlayer &pl = (CPlayer&)*m_penPlayer;
-          if (pl.m_penTheWorld) {
-            EStandAnim eStandAnim;
-            eStandAnim.anim = STAND_IDLE;
-            pl.m_penTheWorld->SendEvent(eStandAnim);
-          }
+          CPlayer& pl = *GetPlayer();
+          CEntity* theWorld = GetTheWorld();
+          if (!theWorld || pl.m_mode == STAND_PASSIVE || _pTimer->CurrentTick() - TM_START < 0.5f)
+          {
+            if (theWorld) {
+              EStandAnim eStandAnim;
+              eStandAnim.anim = STAND_IDLE;
+              theWorld->SendEvent(eStandAnim);
+            }
 
-          jump Idle();
+            jump Idle();
+          } else {
+            if (m_bWasInSecondaryFire) {
+              jump LegsFinalBlow();
+            } else {
+              jump HandsFinalBlow();
+            }
+          }
         }
       case WEAPON_TOMMYGUN: { jump TommyGunStop(); break; }
       case WEAPON_MINIGUN: { jump MiniGunSpinDown(); break; }
@@ -4480,39 +4502,66 @@ procedures:
     GetAnimator()->m_bDisableAnimating = FALSE;
     CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
     moHandsWeapon.PlayAnim(HANDSWEAPON_ANIM_ATTACK, AOF_LOOPING|AOF_NORESTART);
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
       EStandAnim eStandAnim;
       eStandAnim.anim = STAND_HANDS;
-      pl.m_penTheWorld->SendEvent(eStandAnim);
+      theWorld->SendEvent(eStandAnim);
     }
 
     autowait(0.1f);
 
     FLOAT damage = 10.0f;
     FLOAT kickForce = 1.0f;
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
       damage *= 6.0f;
       kickForce = 3.0f;
     }
     DioPunch(damage, kickForce, TRUE);
 
     return EEnd();
-  };
+  }
+
+  HandsFinalBlow()
+  {
+    CEntity* theWorld = GetTheWorld();
+    EStandAnim eStandAnim;
+    eStandAnim.anim = STAND_HANDS_BLOW;
+    theWorld->SendEvent(eStandAnim);
+
+    autowait(0.25f * theWorld->GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_HANDSFINALBLOW));
+
+    FLOAT damage = 300.0f;
+    FLOAT kickForce = 5.0f;
+    DioPunch(damage, kickForce, TRUE);
+
+    CEntity* theWorld = GetTheWorld();
+    autowait(0.75f * theWorld->GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_HANDSFINALBLOW));
+
+    CEntity* theWorld = GetTheWorld();
+    EStandAnim eStandAnim;
+    eStandAnim.anim = STAND_IDLE;
+    theWorld->SendEvent(eStandAnim);
+
+    jump Idle();
+  }
 
   HitWithLegs()
   {
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
     if (pl.m_mode == STAND_PASSIVE) {
       pl.StartModelAnim(PLAYER_ANIM_HIT_LEG, 0);
     }
     GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG, 0);
     GetAnimator()->m_bDisableAnimating = TRUE;
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
       EStandAnim eStandAnim;
       eStandAnim.anim = STAND_LEGS;
-      pl.m_penTheWorld->SendEvent(eStandAnim);
+      theWorld->SendEvent(eStandAnim);
     }
 
     CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
@@ -4523,38 +4572,48 @@ procedures:
     moLeg.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
     moLeg.PlayAnim(LEG_ANIM_KICK, 0);
     moLeg.OffsetPhase(0.0f);
-    autowait(0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK));
+    FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      waitTime = 0.05f;
+    }
+    autowait(waitTime);
 
     FLOAT damage = 30.0f;
     FLOAT kickForce = 5.0f;
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      damage *= 5.0f;
-      kickForce *= 4.0f;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 2.0f;
+      kickForce *= 3.0f;
     }
-    DioPunch(damage, kickForce, FALSE);
+    DioPunch(damage, kickForce, theWorld && pl.m_mode == STAND_ENGAGED);
 
     CModelObject& moLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
-    autowait(0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK));
+    FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      waitTime = 0.05f;
+    }
+    autowait(waitTime);
     
     CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
     moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
 
     return EEnd();
-  };
+  }
 
   HitWithLegsFAST()
   {
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
     if (pl.m_mode == STAND_PASSIVE) {
       pl.StartModelAnim(PLAYER_ANIM_HIT_LEG_FAST, 0);
     }
     GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG_FAST, 0);
     GetAnimator()->m_bDisableAnimating = TRUE;
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
       EStandAnim eStandAnim;
       eStandAnim.anim = STAND_LEGS;
-      pl.m_penTheWorld->SendEvent(eStandAnim);
+      theWorld->SendEvent(eStandAnim);
     }
 
     CModelObject& moLeg1 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
@@ -4575,9 +4634,10 @@ procedures:
 
     FLOAT damage = 30.0f;
     FLOAT kickForce = 5.0f;
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
-      damage *= 6.0f;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 5.0f;
       kickForce *= 4.0f;
     }
     DioPunch(damage, kickForce, TRUE);
@@ -4585,25 +4645,56 @@ procedures:
     return EEnd();
   }
 
+  LegsFinalBlow()
+  {
+    CEntity* theWorld = GetTheWorld();
+    EStandAnim eStandAnim;
+    eStandAnim.anim = STAND_LEGS_BLOW;
+    theWorld->SendEvent(eStandAnim);
+
+    autowait(0.25f * theWorld->GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_LEGSFINALBLOW));
+
+    FLOAT damage = 300.0f;
+    FLOAT kickForce = 5.0f;
+    DioPunch(damage, kickForce, TRUE);
+
+    CEntity* theWorld = GetTheWorld();
+    autowait(0.75f * theWorld->GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_LEGSFINALBLOW));
+
+    CEntity* theWorld = GetTheWorld();
+    EStandAnim eStandAnim;
+    eStandAnim.anim = STAND_IDLE;
+    theWorld->SendEvent(eStandAnim);
+
+    jump Idle();
+  }
+
   ThrowKnife3()
   {
     GetAnimator()->FireAnimation(BODY_ANIM_KNIFE_ATTACK, 0);
 
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
     PlaySound(pl.m_soWeapon0, SOUND_KNIFE_THROW, SOF_3D|SOF_VOLUMETRIC);
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
       EStandAnim eStandAnim;
       eStandAnim.anim = STAND_THROW;
-      pl.m_penTheWorld->SendEvent(eStandAnim);
+      theWorld->SendEvent(eStandAnim);
     }
 
     m_moWeapon.PlayAnim(KNIFENEW_ANIM_THROWLEFT, 0);
     autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWLEFT) * 0.2f);
    
-    for (INDEX i = 0; i < 3; ++i) {
-      CModelObject& moKnife = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_02 + i)->amo_moModelObject;
-      moKnife.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
-      if (i == 1 && ((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
+    INDEX knivesToThrow = 3;
+    if (((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
+      knivesToThrow = 6;
+    }
+    for (INDEX i = 0; i < knivesToThrow; ++i) {
+      if (i < 3) {
+        CModelObject& moKnife = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_02 + i)->amo_moModelObject;
+        moKnife.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+      }
+      if (i == knivesToThrow/2 && ((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
         FireKnife(ANGLE3D(0.0f, 0.0f, 0.0f), FLOAT3D(0.0f, 0.0f, 0.0f));
       } else {
         FireKnife(
@@ -4612,7 +4703,11 @@ procedures:
       }
     }
 
-    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWLEFT) * 0.4f);
+    FLOAT secondWaitCoeff = 0.4f;
+    if (((CPlayer&)*m_penPlayer).m_mode == STAND_ENGAGED) {
+      secondWaitCoeff = 0.0f;
+    }
+    autowait(m_moWeapon.GetAnimLength(KNIFENEW_ANIM_THROWLEFT) * secondWaitCoeff);
     for (INDEX i = 0; i < 3; ++i) {
       CModelObject& moKnife = m_moWeapon.GetAttachmentModel(KNIFENEW_ATTACHMENT_KNIFE_02 + i)->amo_moModelObject;
       moKnife.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
@@ -4627,12 +4722,13 @@ procedures:
   {
     GetAnimator()->FireAnimation(BODY_ANIM_KNIFE_ATTACK, 0);
 
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
     PlaySound(pl.m_soWeapon0, SOUND_KNIFE_THROW, SOF_3D|SOF_VOLUMETRIC);
-    if (pl.m_penTheWorld && pl.m_mode == STAND_ENGAGED) {
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
       EStandAnim eStandAnim;
       eStandAnim.anim = STAND_THROW;
-      pl.m_penTheWorld->SendEvent(eStandAnim);
+      theWorld->SendEvent(eStandAnim);
     }
 
     m_moWeapon.PlayAnim(KNIFENEW_ANIM_THROWRIGHT, 0);

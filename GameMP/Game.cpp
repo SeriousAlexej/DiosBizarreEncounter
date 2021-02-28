@@ -11,6 +11,7 @@
 #include <Engine/Base/Profiling.h>
 #include <Engine/Base/Statistics.h>
 #include <Engine/CurrentVersion.h>
+#include <Engine/Templates/Stock_CTextureData.h>
 #include "Camera.h"
 #include "LCDDrawing.h"
 
@@ -427,7 +428,7 @@ void CControls::CreateAction(const CPlayerCharacter &pc, CPlayerAction &paAction
   //CPrintF("creating: prescan %d, x:%g\n", bPreScan, paAction.pa_aRotation(1));
 
   // make the player class create the action packet
-  ctl_ComposeActionPacket(pc, paAction, bPreScan);
+  ctl_ComposeActionPacket(pc, paAction, bPreScan, ctrl_lhButtonActions);
 }
 
 CButtonAction &CControls::AddButtonAction(void)
@@ -2793,6 +2794,20 @@ void CGame::LCDSetDrawport(CDrawPort *pdp)
   }
   
   ::LCDSetDrawport(pdp);
+
+  CTextureData* p_FontTexture = NULL;
+
+  DECLARE_CTFILENAME(fontTexture_caps, "Fonts\\Display3-caps.tex");
+  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_caps);
+  p_FontTexture->ChangeSize(512);
+  
+  DECLARE_CTFILENAME(fontTexture_narrow, "Fonts\\Display3-narrow.tex");
+  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_narrow);
+  p_FontTexture->ChangeSize(256);
+  
+  DECLARE_CTFILENAME(fontTexture_normal, "Fonts\\Display3-normal.tex");
+  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_normal);
+  p_FontTexture->ChangeSize(256);
 }
 void CGame::LCDDrawBox(PIX pixUL, PIX pixDR, PIXaabbox2D &box, COLOR col)
 {

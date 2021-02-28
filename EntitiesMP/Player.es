@@ -51,6 +51,7 @@
 #include "EntitiesJoJo/RodaRollaDebris.h"
 #include "EntitiesJoJo/entitycast.h"
 
+extern CMusicHolder* g_musicHolder;
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 // from game
 #define GRV_SHOWEXTRAS  (1L<<0)   // add extra stuff like console, weapon, pause
@@ -453,7 +454,7 @@ DECL_DLL extern void *ctl_pvPlayerControls = &pctlCurrent;
 DECL_DLL extern const SLONG ctl_slPlayerControlsSize = sizeof(pctlCurrent);
 
 // called to compose action packet from current controls
-DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction &paAction, BOOL bPreScan)
+DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction &paAction, BOOL bPreScan, CListHead& buttonActionsListHead)
 {
   // allow double axis controls
   paAction.pa_aRotation += paAction.pa_aViewRotation;
@@ -496,6 +497,9 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
     // do nothing
     return;
   }
+
+  penThis->mp_buttonActionsListHead = &buttonActionsListHead;
+
   // accumulate local rotation
   penThis->m_aLocalRotation    +=paAction.pa_aRotation;
   penThis->m_aLocalViewRotation+=paAction.pa_aViewRotation;
@@ -1540,6 +1544,8 @@ properties:
   PlayerStats m_psGameTotal;
 
   CModelObject m_moRender;                  // model object to render - this one can be customized
+
+  CListHead* mp_buttonActionsListHead;
 }
 
 components:
@@ -3024,6 +3030,10 @@ functions:
       }
       pdp->Lock();
       return; 
+    }
+
+    if (g_musicHolder != NULL) {
+      g_musicHolder->StepPhysics();
     }
 
     // if rendering real game view (not thumbnail, or similar)
@@ -6037,12 +6047,6 @@ procedures:
 
     autowait(GetModelObject()->GetAnimLength(PLAYER_ANIM_WRYYY_OUT));
 
-    if (m_penDioPosing != NULL) {
-      PlayPoseAnim();
-    } else {
-      ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
-    }
-
     return EReturn();
   }
 
@@ -6054,10 +6058,15 @@ procedures:
       ChangePlayerView();
     }
     autocall DoEmoteState() EReturn;
+    m_bInEmote = FALSE;
+    if (m_penDioPosing != NULL) {
+      PlayPoseAnim();
+    } else {
+      ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+    }
     if (m_bSwitchViewAfterStand) {
       ChangePlayerView();
     }
-    m_bInEmote = FALSE;
     return;
   }
 
@@ -7285,6 +7294,7 @@ procedures:
             m_penTheWorld->SetParent(NULL);
 
             m_penDioPosing->SendEvent(EStop());
+            m_penDioPosing = NULL;
 
             ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
 

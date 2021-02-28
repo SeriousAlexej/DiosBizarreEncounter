@@ -27,6 +27,8 @@ enum StandAnim
   1 STAND_HANDS "",
   2 STAND_LEGS "",
   3 STAND_THROW "",
+  4 STAND_HANDS_BLOW "",
+  5 STAND_LEGS_BLOW "",
 };
 
 event EStandAnim
@@ -307,6 +309,24 @@ functions:
     }
   }
 
+  void PlayHandsBlow()
+  {
+    RemoveAttachments(~0);
+
+    if (CanPlayAnim()) {
+      GetModelObject()->PlayAnim(ZAWARUDO_ANIM_HANDSFINALBLOW, 0);
+    }
+  }
+
+  void PlayLegsBlow()
+  {
+    RemoveAttachments(~0);
+
+    if (CanPlayAnim()) {
+      GetModelObject()->PlayAnim(ZAWARUDO_ANIM_LEGSFINALBLOW, 0);
+    }
+  }
+
   void RenderParticles()
   {
     if (m_particlesOpacity > 0.0f) {
@@ -392,6 +412,12 @@ procedures:
             break;
           case STAND_THROW:
             PlayThrowAnim();
+            break;
+          case STAND_HANDS_BLOW:
+            PlayHandsBlow();
+            break;
+          case STAND_LEGS_BLOW:
+            PlayLegsBlow();
             break;
           }
           resume;

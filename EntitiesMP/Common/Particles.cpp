@@ -126,7 +126,6 @@ INDEX _ctFlameThrowerParticles=0;
 //INDEX _ctFlameThrowerPipeParticles=0;
 #define MAX_FLAME_PARTICLES INDEX(1024)
 FlameThrowerParticleRenderingData _aftprdFlame[MAX_FLAME_PARTICLES];
-//FlameThrowerParticleRenderingData _aftprdFlamePipe[MAX_FLAME_PARTICLES];
 
 BOOL UpdateGrowthCache(CEntity *pen, CTextureData *ptdGrowthMap, FLOATaabbox3D &boxGrowthMap, CEntity *penEPH, INDEX iDrawPort);
 
@@ -563,19 +562,6 @@ void Particles_ViewerLocal(CEntity *penView)
     Particle_Flush();
   }
 
-  /*
-  if(_ctFlameThrowerPipeParticles!=0)
-  {
-    Particle_PrepareTexture( &_toLavaTrailSmoke, PBT_ADDALPHA);
-    Particle_SetTexturePart( 512, 512, 0, 0);
-    for( INDEX iFlameStart=0; iFlameStart<ClampUp(_ctFlameThrowerPipeParticles, MAX_FLAME_PARTICLES); iFlameStart++)
-    {
-      FlameThrowerParticleRenderingData &ftprd=_aftprdFlamePipe[iFlameStart];
-      Particle_RenderSquare( ftprd.ftprd_vPos, ftprd.ftprd_fSize, ftprd.ftprd_fAngle, ftprd.ftprd_colColor);
-    }
-    _ctFlameThrowerPipeParticles=0;
-    Particle_Flush();
-  }*/
 }
 
 // different particle effects
@@ -1805,7 +1791,7 @@ void Particles_FlameThrower(const CPlacement3D &plLeader, const CPlacement3D &pl
 
   INDEX iParticle=0;
   FLOAT fLiving=fLeaderLiving;
-  while(fLiving>=fFollowerLiving)
+  while(fLiving>=fFollowerLiving && (_ctFlameThrowerParticles + iParticle) < MAX_FLAME_PARTICLES)
   {
     FLOAT fOlderThanLeaderTime=fLeaderLiving-fLiving;
 
@@ -1839,7 +1825,7 @@ void Particles_FlameThrower(const CPlacement3D &plLeader, const CPlacement3D &pl
     // color
     COLOR col = pTD->GetTexel(PIX(Clamp(fLiving*1024.0f, 0.0f, 1023.0f)), 0);
 
-    FlameThrowerParticleRenderingData &ftprd=_aftprdFlame[_ctFlameThrowerParticles+iParticle];
+    FlameThrowerParticleRenderingData &ftprd=_aftprdFlame[_ctFlameThrowerParticles + iParticle];
     ftprd.ftprd_iFrameX=iFrameX;
     ftprd.ftprd_iFrameY=iFrameY;
     ftprd.ftprd_vPos=vPos;
@@ -1906,15 +1892,6 @@ void Particles_FlameThrowerStart(const CPlacement3D &plPipe, FLOAT fStartTime, F
       FLOAT fSize=(afStarsPositions[iSpark+16][0]+0.5f)*0.040f/*+fT*0.075f*/;
       COLOR col = pTD->GetTexel(PIX(ClampUp(fT*1024.0f, 1023.0f)), 0);
       FLOAT fAng=afStarsPositions[iSpark+8][0]*fT*360.0f;
-
-      /*
-      FlameThrowerParticleRenderingData &ftprd=_aftprdFlame[_ctFlameThrowerPipeParticles+iParticle];
-      ftprd.ftprd_vPos=vPos;
-      ftprd.ftprd_fSize=fSize;
-      ftprd.ftprd_fAngle=fAng;
-      ftprd.ftprd_colColor=col;
-      iParticle++;
-      */
 
       Particle_RenderSquare( vPos, fSize, fAng, col);
     }

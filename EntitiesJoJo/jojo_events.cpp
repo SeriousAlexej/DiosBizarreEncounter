@@ -7,7 +7,6 @@
 #include "EntitiesMP/CannonBall.h"
 #include "EntitiesMP/DevilProjectile.h"
 #include "EntitiesMP/LarvaOffspring.h"
-
 extern BOOL g_shouldResolveEvents = FALSE;
 static CStaticStackArray<CSentEvent> _aseSentEventsBackup;
 CStaticStackArray<CSentEvent>* _paseSentEvents = NULL;
@@ -374,6 +373,7 @@ void JoJoHandleSentEvents()
         continue;
       } else {
         // handle the current event
+        CEntityEvent* peeEventWeirdBackup = se.se_peeEvent;
         if (se.se_peeEvent->ee_slEvent == EVENTCODE_EZaWarudoRestore)
         {
           // this event is purely custom, so handle it manually
@@ -402,6 +402,7 @@ void JoJoHandleSentEvents()
         } else {
           se.se_penEntity->HandleEvent(*se.se_peeEvent);
         }
+        se.se_peeEvent = peeEventWeirdBackup;
         RemoveEventFromMandatory(se.se_peeEvent);
       }
     }
