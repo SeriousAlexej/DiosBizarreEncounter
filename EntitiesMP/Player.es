@@ -3032,10 +3032,6 @@ functions:
       return; 
     }
 
-    if (g_musicHolder != NULL) {
-      g_musicHolder->StepPhysics();
-    }
-
     // if rendering real game view (not thumbnail, or similar)
     if (pvUserData!=0) {
       // if rendered a game view recently
