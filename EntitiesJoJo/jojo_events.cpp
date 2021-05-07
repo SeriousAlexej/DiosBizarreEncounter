@@ -127,6 +127,9 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
   MarkEntityAsInZaWarudo(p_entity);
 
   EZaWarudoRestore restore_event;
+  restore_event.restore_movement = FALSE;
+  restore_event.restore_physics = FALSE;
+  restore_event.restore_mass = FALSE;
 
   if (p_entity->en_RenderType == CEntity::RT_MODEL)
     p_entity->en_pmoModelObject->PauseAnim();
@@ -148,11 +151,7 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
       restore_event.restore_mass = TRUE;
       restore_event.mass = p_info->fMass;
       p_info->fMass = 10000.0f;
-    } else {
-      restore_event.restore_mass = FALSE;
     }
-  } else {
-    restore_event.restore_movement = FALSE;
   }
 
   if (entity_cast(p_entity, CEnemyBase) ||
@@ -165,18 +164,22 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
       entity_cast(p_entity, CDebris) ||
       entity_cast(p_entity, CRodaRollaDa))
   {
-    restore_event.restore_physics = TRUE;
     restore_event.physics_flags = p_entity->GetPhysicsFlags();
     restore_event.collision_flags = p_entity->GetCollisionFlags();
-    p_entity->SetPhysicsFlags(EPF_MODEL_FIXED);
 
-    ULONG collision_flags = ECF_MODEL_HOLDER;
-    if (restore_event.collision_flags & (IDENTIFY_AS_ENEMY | IDENTIFY_AS_PROJECTILE))
-      collision_flags |= IDENTIFY_AS_ENEMY; //projectiles are treated as 'enemy' to make road roller pass through them
+    if (restore_event.collision_flags != ECF_IMMATERIAL &&
+        restore_event.collision_flags != ECF_CORPSE &&
+        restore_event.collision_flags != (ECF_CORPSE&~((ECBI_PROJECTILE_MAGIC|ECBI_PROJECTILE_SOLID)<<ECB_TEST)))
+    {
+      p_entity->SetPhysicsFlags(EPF_MODEL_FIXED);
+
+      ULONG collision_flags = ECF_MODEL_HOLDER;
+      if (restore_event.collision_flags & (IDENTIFY_AS_ENEMY | IDENTIFY_AS_PROJECTILE))
+        collision_flags |= IDENTIFY_AS_ENEMY; //projectiles are treated as 'enemy' to make road roller pass through them
       
-    p_entity->SetCollisionFlags(collision_flags);
-  } else {
-    restore_event.restore_physics = FALSE;
+      p_entity->SetCollisionFlags(collision_flags);
+      restore_event.restore_physics = TRUE;
+    }
   }
 
   if (restore_event.restore_physics == TRUE ||

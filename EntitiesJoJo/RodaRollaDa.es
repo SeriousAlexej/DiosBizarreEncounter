@@ -405,6 +405,8 @@ procedures:
       ShakeIt();
     }
 
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
     autowait(ZA_WARUDO_DURATION * 2.0f);
     Destroy();
     return;

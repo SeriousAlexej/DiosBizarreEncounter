@@ -242,6 +242,8 @@ procedures:
     Explosion(FLOAT3D(-2.0f,1.0f,-1.5f), STRETCH_3, STRETCH_3, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
     Explosion(FLOAT3D(-1.0f,0.5f,1.0f),  STRETCH_4, STRETCH_4, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
 
+    SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
+    SetCollisionFlags(ECF_IMMATERIAL);
     autowait(ZA_WARUDO_DURATION * 2.0f);
     Destroy();
     return;
