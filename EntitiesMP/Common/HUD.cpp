@@ -13,8 +13,6 @@
 #include <EntitiesJoJo/TheWorld.h>
 #include <GameJoJo/ButtonAction.h>
 
-#define ENTITY_DEBUG
-
 // cheats
 extern INDEX cht_bEnable;
 extern INDEX cht_bGod;
@@ -125,19 +123,6 @@ static CTextureObject _toSniperWheel;
 static CTextureObject _toSniperArrow;
 static CTextureObject _toSniperEye;
 static CTextureObject _toSniperLed;
-
-// all info about color transitions
-struct ColorTransitionTable {
-  COLOR ctt_colFine;      // color for values over 1.0
-  COLOR ctt_colHigh;      // color for values from 1.0 to 'fMedium'
-  COLOR ctt_colMedium;    // color for values from 'fMedium' to 'fLow'
-  COLOR ctt_colLow;       // color for values under fLow
-  FLOAT ctt_fMediumHigh;  // when to switch to high color   (normalized float!)
-  FLOAT ctt_fLowMedium;   // when to switch to medium color (normalized float!)
-  BOOL  ctt_bSmooth;      // should colors have smooth transition
-};
-static struct ColorTransitionTable _cttHUD;
-
 
 // ammo's info structure
 struct AmmoInfo {
@@ -253,79 +238,6 @@ static int qsort_CompareFrags( const void *ppPEN0, const void *ppPEN1) {
   else              return -qsort_CompareDeaths(ppPEN0, ppPEN1);
 }
 
-static int qsort_CompareLatencies( const void *ppPEN0, const void *ppPEN1) {
-  CPlayer &en0 = **(CPlayer**)ppPEN0;
-  CPlayer &en1 = **(CPlayer**)ppPEN1;
-  SLONG sl0 = (SLONG)ceil(en0.m_tmLatency);
-  SLONG sl1 = (SLONG)ceil(en1.m_tmLatency);
-  if(      sl0<sl1) return +1;
-  else if( sl0>sl1) return -1;
-  else              return  0;
-}
-
-// prepare color transitions
-static void PrepareColorTransitions( COLOR colFine, COLOR colHigh, COLOR colMedium, COLOR colLow,
-                                     FLOAT fMediumHigh, FLOAT fLowMedium, BOOL bSmooth)
-{
-  _cttHUD.ctt_colFine     = colFine;
-  _cttHUD.ctt_colHigh     = colHigh;   
-  _cttHUD.ctt_colMedium   = colMedium;
-  _cttHUD.ctt_colLow      = colLow;
-  _cttHUD.ctt_fMediumHigh = fMediumHigh;
-  _cttHUD.ctt_fLowMedium  = fLowMedium;
-  _cttHUD.ctt_bSmooth     = bSmooth;
-}
-
-// get current color from local color transitions table
-static COLOR GetCurrentColor( FLOAT fNormalizedValue)
-{
-  // if value is in 'low' zone just return plain 'low' alert color
-  if( fNormalizedValue < _cttHUD.ctt_fLowMedium) return( _cttHUD.ctt_colLow & 0xFFFFFF00);
-  // if value is in out of 'extreme' zone just return 'extreme' color
-  if( fNormalizedValue > 1.0f) return( _cttHUD.ctt_colFine & 0xFFFFFF00);
- 
-  COLOR col;
-  // should blend colors?
-  if( _cttHUD.ctt_bSmooth)
-  { // lets do some interpolations
-    FLOAT fd, f1, f2;
-    COLOR col1, col2;
-    UBYTE ubH,ubS,ubV, ubH2,ubS2,ubV2;
-    // determine two colors for interpolation
-    if( fNormalizedValue > _cttHUD.ctt_fMediumHigh) {
-      f1   = 1.0f;
-      f2   = _cttHUD.ctt_fMediumHigh;
-      col1 = _cttHUD.ctt_colHigh;
-      col2 = _cttHUD.ctt_colMedium;
-    } else { // fNormalizedValue > _cttHUD.ctt_fLowMedium == TRUE !
-      f1   = _cttHUD.ctt_fMediumHigh;
-      f2   = _cttHUD.ctt_fLowMedium;
-      col1 = _cttHUD.ctt_colMedium;
-      col2 = _cttHUD.ctt_colLow;
-    }
-    // determine interpolation strength
-    fd = (fNormalizedValue-f2) / (f1-f2);
-    // convert colors to HSV
-    ColorToHSV( col1, ubH,  ubS,  ubV);
-    ColorToHSV( col2, ubH2, ubS2, ubV2);
-    // interpolate H, S and V components
-    ubH = (UBYTE)(ubH*fd + ubH2*(1.0f-fd));
-    ubS = (UBYTE)(ubS*fd + ubS2*(1.0f-fd));
-    ubV = (UBYTE)(ubV*fd + ubV2*(1.0f-fd));
-    // convert HSV back to COLOR
-    col = HSVToColor( ubH, ubS, ubV);
-  }
-  else
-  { // simple color picker
-    col = _cttHUD.ctt_colMedium;
-    if( fNormalizedValue > _cttHUD.ctt_fMediumHigh) col = _cttHUD.ctt_colHigh;
-  }
-  // all done
-  return( col & 0xFFFFFF00);
-}
-
-
-
 // fill array with players' statistics (returns current number of players in game)
 extern INDEX SetAllPlayersStats( INDEX iSortKey)
 {
@@ -360,33 +272,6 @@ extern INDEX SetAllPlayersStats( INDEX iSortKey)
 
 
 // ----------------------- drawing functions
-
-// draw icon texture (if color = NONE, use colortransitions structure)
-static void HUD_DrawIcon( FLOAT fCenterX, FLOAT fCenterY, CTextureObject &toIcon,
-                          COLOR colDefault, FLOAT fNormValue, BOOL bBlink)
-{
-  // determine color
-  COLOR col = colDefault;
-  if( col==NONE) col = GetCurrentColor( fNormValue);
-  // determine blinking state
-  if( bBlink && fNormValue<=(_cttHUD.ctt_fLowMedium/2)) {
-    // activate blinking only if value is <= half the low edge
-    INDEX iCurrentTime = (INDEX)(_tmNow*4);
-    if( iCurrentTime&1) col = C_vdGRAY;
-  }
-  // determine location
-  const FLOAT fCenterI = fCenterX*_pixDPWidth  / 640.0f;
-  const FLOAT fCenterJ = fCenterY*_pixDPHeight / (480.0f * _pDP->dp_fWideAdjustment);
-  // determine dimensions
-  CTextureData *ptd = (CTextureData*)toIcon.GetData();
-  const FLOAT fHalfSizeI = _fResolutionScaling*_fCustomScaling * ptd->GetPixWidth()  *0.5f;
-  const FLOAT fHalfSizeJ = _fResolutionScaling*_fCustomScaling * ptd->GetPixHeight() *0.5f;
-  // done
-  _pDP->InitTexture( &toIcon);
-  _pDP->AddTexture( fCenterI-fHalfSizeI, fCenterJ-fHalfSizeJ,
-                    fCenterI+fHalfSizeI, fCenterJ+fHalfSizeJ, col|_ulAlphaHUD);
-  _pDP->FlushRenderingQueue();
-}
 
 enum EScreenPos
 {
@@ -713,23 +598,6 @@ static void DIO_DrawText
   _pDP->PutText(strText, x_pos, y_pos, col|_ulAlphaHUD);
 }
 
-
-// draw text (or numbers, whatever)
-static void HUD_DrawText( FLOAT fCenterX, FLOAT fCenterY, const CTString &strText,
-                          COLOR colDefault, FLOAT fNormValue)
-{
-  // determine color
-  COLOR col = colDefault;
-  if( col==NONE) col = GetCurrentColor( fNormValue);
-  // determine location
-  PIX pixCenterI = (PIX)(fCenterX*_pixDPWidth  / 640.0f);
-  PIX pixCenterJ = (PIX)(fCenterY*_pixDPHeight / (480.0f * _pDP->dp_fWideAdjustment));
-  // done
-  _pDP->SetTextScaling( _fResolutionScaling*_fCustomScaling);
-  _pDP->PutTextCXY( strText, pixCenterI, pixCenterJ, col|_ulAlphaHUD);
-}
-
-
 static void DrawRotatedQuad( class CTextureObject *_pTO, FLOAT fX, FLOAT fY, FLOAT fSize, ANGLE aAngle, COLOR col)
 {
   FLOAT fSinA = Sin(aAngle);
@@ -905,53 +773,9 @@ static void FillWeaponAmmoTables(void)
   }
 }
 
-
-//<<<<<<< DEBUG FUNCTIONS >>>>>>>
-
-#ifdef ENTITY_DEBUG
-CRationalEntity *DBG_prenStackOutputEntity = NULL;
-#endif
 void HUD_SetEntityForStackDisplay(CRationalEntity *pren)
 {
-#ifdef ENTITY_DEBUG
-  DBG_prenStackOutputEntity = pren;
-#endif
-  return;
 }
-
-#ifdef ENTITY_DEBUG
-static void HUD_DrawEntityStack()
-{
-  CTString strTemp;
-  PIX pixFontHeight;
-  ULONG pixTextBottom;
-
-  if (tmp_ai[9]==12345)
-  {
-    if (DBG_prenStackOutputEntity!=NULL)
-    {
-      pixFontHeight = _pfdConsoleFont->fd_pixCharHeight;
-      pixTextBottom = _pixDPHeight*0.83;
-      _pDP->SetFont( _pfdConsoleFont);
-      _pDP->SetTextScaling( 1.0f);
-    
-      INDEX ctStates = DBG_prenStackOutputEntity->en_stslStateStack.Count();
-      strTemp.PrintF("-- stack of '%s'(%s)@%gs\n", DBG_prenStackOutputEntity->GetName(),
-        DBG_prenStackOutputEntity->en_pecClass->ec_pdecDLLClass->dec_strName,
-        _pTimer->CurrentTick());
-      _pDP->PutText( strTemp, 1, pixTextBottom-pixFontHeight*(ctStates+1), _colHUD|_ulAlphaHUD);
-      
-      for(INDEX iState=ctStates-1; iState>=0; iState--) {
-        SLONG slState = DBG_prenStackOutputEntity->en_stslStateStack[iState];
-        strTemp.PrintF("0x%08x %s\n", slState, 
-          DBG_prenStackOutputEntity->en_pecClass->ec_pdecDLLClass->HandlerNameForState(slState));
-        _pDP->PutText( strTemp, 1, pixTextBottom-pixFontHeight*(iState+1), _colHUD|_ulAlphaHUD);
-      }
-    }
-  }
-}
-#endif
-//<<<<<<< DEBUG FUNCTIONS >>>>>>>
 
 CTString GetButtonName(const CPlayer* player, const char* title)
 {
@@ -1283,9 +1107,7 @@ ULTIMATE
 
   // display all ammo infos
   INDEX i;
-  FLOAT fAdv;
   COLOR colIcon;
-  PrepareColorTransitions( colMax, colTop, colMid, C_RED, 0.5f, 0.25f, FALSE);
   // reduce the size of icon slightly
   _fCustomScaling = ClampDn( _fCustomScaling*0.8f, 0.5f);
   const FLOAT fOneUnitS  = fOneUnit  *0.8f;
@@ -1342,7 +1164,7 @@ ULTIMATE
 
       DIO_DrawIcon(ESP_Start, x_pos, ESP_Middle, y_pos, _atoPowerups[i]);
       // play sound if icon is flashing
-      if(fNormValue<=(_cttHUD.ctt_fLowMedium/2)) {
+      if (fNormValue <= 0.125f) {
         // activate blinking only if value is <= half the low edge
         INDEX iLastTime = (INDEX)(_tmLast*4);
         INDEX iCurrentTime = (INDEX)(_tmNow*4);
@@ -1529,6 +1351,7 @@ ULTIMATE
 
 
 
+  /*
   // reduce icon sizes a bit
   const FLOAT fUpperSize = ClampDn(_fCustomScaling*0.5f, 0.5f)/_fCustomScaling;
   _fCustomScaling*=fUpperSize;
@@ -1663,7 +1486,9 @@ ULTIMATE
     bMaxFrags  ? colFrags  = C_WHITE : colFrags  = C_lGRAY;
     bMaxDeaths ? colDeaths = C_WHITE : colDeaths = C_lGRAY;
   }
+  */
 
+/*
   // printout player latency if needed
   if( hud_bShowLatency) {
     CTString strLatency;
@@ -1675,6 +1500,9 @@ ULTIMATE
     _pDP->SetTextCharSpacing( -2.0f*fTextScale);
     _pDP->PutTextR( strLatency, _pixDPWidth, _pixDPHeight-pixFontHeight, C_WHITE|CT_OPAQUE);
   }
+  */
+
+/*
   // restore font defaults
   _pfdDisplayFont->SetVariableWidth();
   _pDP->SetFont( &_fdNumbersFont);
@@ -1701,22 +1529,16 @@ ULTIMATE
     fCol = pixLeftBound +fHalfUnit;
     fAdv = fAdvUnit+ fChrUnit*fWidthAdj/2 -fHalfUnit;
     HUD_DrawText(   fCol+fAdv, fRow, strValue, colScore, 1.0f);
-    HUD_DrawIcon(   fCol,      fRow, _toFrags, C_WHITE /*colScore*/, 1.0f, FALSE);
+    HUD_DrawIcon(   fCol,      fRow, _toFrags, C_WHITE, 1.0f, FALSE);
 
     strValue.PrintF( "%d", iMana);
     fRow = pixTopBound  + fNextUnit+fHalfUnit;
     fCol = pixLeftBound + fHalfUnit;
     fAdv = fAdvUnit+ fChrUnit*fWidthAdj/2 -fHalfUnit;
     HUD_DrawText(   fCol+fAdv, fRow, strValue,  colMana, 1.0f);
-    HUD_DrawIcon(   fCol,      fRow, _toDeaths, C_WHITE /*colMana*/, 1.0f, FALSE);
+    HUD_DrawIcon(   fCol,      fRow, _toDeaths, C_WHITE, 1.0f, FALSE);
   }
-
-
-  #ifdef ENTITY_DEBUG
-  // if entity debug is on, draw entity stack
-  HUD_DrawEntityStack();
-  #endif
-
+  */
   // draw cheat modes
   if( GetSP()->sp_ctMaxPlayers==1) {
     INDEX iLine=1;
