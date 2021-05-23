@@ -589,11 +589,10 @@ void Particles_RomboidTrail(CEntity *pen)
   Particle_Flush();
 }
 
-void Particles_Menacing(CEntity* pTheWorld, FLOAT opacity)
+void Particles_Menacing(const CPlacement3D& pl, CTextureObject& toMenacing, FLOAT opacity)
 {
   FLOAT tmNow = _pTimer->GetLerpedCurrentTick();
 
-  CPlacement3D pl = pTheWorld->GetLerpedPlacement();
   FLOATmatrix3D m;
   MakeRotationMatrixFast(m, pl.pl_OrientationAngle);
   FLOAT3D vX(m(1,1), m(2,1), m(3,1));
@@ -601,7 +600,7 @@ void Particles_Menacing(CEntity* pTheWorld, FLOAT opacity)
   FLOAT3D vStart = pl.pl_PositionVector + vX*0.7f + vY*0.2f;
   FLOAT3D vShift = vX + vY*3.0f;
 
-  Particle_PrepareTexture(&_toMenacing, PBT_BLEND);
+  Particle_PrepareTexture(&toMenacing, PBT_BLEND);
 
   {for (INDEX i = 0; i < 3; ++i)
   {
@@ -665,6 +664,11 @@ void Particles_Menacing(CEntity* pTheWorld, FLOAT opacity)
   }}
 
   Particle_Flush();
+}
+
+void Particles_Menacing(CEntity* pTheWorld, FLOAT opacity)
+{
+  Particles_Menacing(pTheWorld->GetLerpedPlacement(), _toMenacing, opacity);
 }
 
 #define BOMB_TRAIL_POSITIONS 8

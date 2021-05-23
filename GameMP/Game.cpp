@@ -14,6 +14,12 @@
 #include <Engine/Templates/Stock_CTextureData.h>
 #include "Camera.h"
 #include "LCDDrawing.h"
+#include <ModelsMP/Player/Dio/Player.h>
+#include <ModelsMP/Player/Dio/Body.h>
+#include <Models/ZAWARUDO/ZaWarudo.h>
+
+#define DECL_DLL
+#include <EntitiesMP/Common/Particles.h>
 
 extern FLOAT con_fHeightFactor = 0.5f;
 extern FLOAT con_tmLastLines   = 5.0f;
@@ -53,6 +59,10 @@ extern "C" __declspec (dllexport) CGame *GAME_Create(void)
 }
 
 // recorded profiling stats
+#define MUSIC_CHANNEL 0
+static FLOAT2D g_CursorRelPos(0.0f, 0.0f);
+static FLOAT g_PrevWideAdjustment;
+static BOOL g_MainMenu = FALSE;
 static CTimerValue _tvDemoStarted;
 static CTimerValue _tvLastFrame;
 static CTString _strProfile;
@@ -1342,8 +1352,22 @@ BOOL CGame::SaveGame(const CTFileName &fnGame)
   }
 }
 
+void EnsureMenuMusic()
+{
+  if (!IsScriptSoundPlaying(MUSIC_CHANNEL))
+  {
+    FLOAT volume = 1.0f;
+    FLOAT pitch = 1.0f;
+    BOOL looping = TRUE;
+    PlayScriptSound(MUSIC_CHANNEL, CTFILENAME("Music\\Credits.ogg"), volume, pitch, looping);
+  }
+}
+
 void CGame::StopGame(void)
 {
+  if (IsScriptSoundPlaying(MUSIC_CHANNEL))
+    StopScriptSound(MUSIC_CHANNEL);
+
   // disable computer quickly
   ComputerForceOff();
 
@@ -2705,7 +2729,11 @@ void CGame::GameMainLoop(void)
   }
 
   // if game is started
-  if (gm_bGameOn) {
+  if (gm_bGameOn)
+  {
+    if (IsScriptSoundPlaying(MUSIC_CHANNEL))
+      StopScriptSound(MUSIC_CHANNEL);
+ 
     // do main loop procesing
     _pNetwork->MainLoop();
   }
@@ -2717,6 +2745,9 @@ void CGame::GameMainLoop(void)
 
 static CTextureObject _toPointer;
 static CTextureObject _toBcgClouds;
+static CTextureObject _toDioBcgClouds;
+static CTextureObject _toDBE;
+static CTextureObject _toMenacing;
 static CTextureObject _toBcgGrid;
 static CTextureObject _toBackdrop;
 static CTextureObject _toSamU;
@@ -2746,7 +2777,10 @@ void CGame::LCDInit(void)
 {
   try {
     _toBcgClouds.SetData_t(CTFILENAME("Textures\\General\\Background6.tex"));
-    _toPointer.SetData_t(CTFILENAME("TexturesMP\\General\\Pointer.tex",));
+    _toDioBcgClouds.SetData_t(CTFILENAME("Textures\\Effects\\BcgSmoke.tex"));
+    _toDBE.SetData_t(CTFILENAME("Textures\\Logo\\DBE.tex"));
+    _toMenacing.SetData_t(CTFILENAME("Textures\\Effects\\Particles\\Menacing.tex"));
+    _toPointer.SetData_t(CTFILENAME("Textures\\Arrow.tex",));
     _toBcgGrid.SetData_t(CTFILENAME("TexturesMP\\General\\grid.tex"));
     _toBackdrop.SetData_t(CTFILENAME("TexturesMP\\General\\MenuBack.tex"));
     _toSamU.SetData_t(CTFILENAME("TexturesMP\\General\\SamU.tex"));
@@ -2755,6 +2789,9 @@ void CGame::LCDInit(void)
     _toLeftD.SetData_t(CTFILENAME("TexturesMP\\General\\LeftD.tex"));
     // force constant textures
     ((CTextureData*)_toBcgClouds.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toDioBcgClouds.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toDBE      .GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMenacing .GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toPointer  .GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toBcgGrid  .GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toBackdrop .GetData())->Force(TEX_CONSTANT);
@@ -2833,63 +2870,163 @@ void CGame::LCDScreenBoxOpenRight(COLOR col)
 
   ::LCDScreenBoxOpenRight(col);
 }
+
+CModelObject& AddAttachmentToModel
+(
+  CModelObject&     parentModel,
+  INDEX             attachmentIndex,
+  const CTFileName& modelFilename,
+  const CTFileName& diffuseTextureFilename,
+  const CTFileName& reflectionTextureFilename = CTFILENAME(""),
+  const CTFileName& specularTextureFilename = CTFILENAME("")
+)
+{
+  CAttachmentModelObject* pamo = parentModel.AddAttachmentModel(attachmentIndex);
+  ASSERT(pamo != NULL);
+  pamo->amo_moModelObject.SetData_t(modelFilename);
+  pamo->amo_moModelObject.mo_toTexture.SetData_t(diffuseTextureFilename);
+ 
+  if (reflectionTextureFilename.Length() > 0)
+    pamo->amo_moModelObject.mo_toReflection.SetData_t(reflectionTextureFilename);
+ 
+  if (specularTextureFilename.Length() > 0)
+    pamo->amo_moModelObject.mo_toSpecular.SetData_t(specularTextureFilename);
+ 
+  return pamo->amo_moModelObject;
+}
+
 void CGame::LCDRenderClouds1(void)
 {
-  _pdp_SE->PutTexture(&_toBackdrop, _boxScreen_SE, C_WHITE|255);
+  EnsureMenuMusic();
 
-  if (!_bPopup) {
-
-    PIXaabbox2D box;
-        
-    // right character - Sam
-    INDEX iSize = 170;
-    INDEX iYU = 120;
-    INDEX iYM = iYU + iSize;
-    INDEX iYB = iYM + iSize;
-    INDEX iXL = 420;
-    INDEX iXR = iXL + iSize*_pdp_SE->dp_fWideAdjustment;
-    
-    box = PIXaabbox2D( PIX2D( iXL*_pdp_SE->GetWidth()/640, iYU*_pdp_SE->GetHeight()/480) ,
-                       PIX2D( iXR*_pdp_SE->GetWidth()/640, iYM*_pdp_SE->GetHeight()/480));
-    _pdp_SE->PutTexture(&_toSamU, box, SE_COL_BLUE_NEUTRAL|255);
-    box = PIXaabbox2D( PIX2D( iXL*_pdp_SE->GetWidth()/640, iYM*_pdp_SE->GetHeight()/480) ,
-                       PIX2D( iXR*_pdp_SE->GetWidth()/640, iYB*_pdp_SE->GetHeight()/480));
-    _pdp_SE->PutTexture(&_toSamD, box, SE_COL_BLUE_NEUTRAL|255);
-
-    iSize = 120;
-    iYU = 0;
-    iYM = iYU + iSize;
-    iYB = iYM + iSize;
-    iXL = -20;
-    iXR = iXL + iSize;
-    box = PIXaabbox2D( PIX2D( iXL*_pdp_SE->GetWidth()/640, iYU*_pdp_SE->GetWidth()/640) ,
-                       PIX2D( iXR*_pdp_SE->GetWidth()/640, iYM*_pdp_SE->GetWidth()/640));
-    _pdp_SE->PutTexture(&_toLeftU, box, SE_COL_BLUE_NEUTRAL|200);
-    box = PIXaabbox2D( PIX2D( iXL*_pdp_SE->GetWidth()/640, iYM*_pdp_SE->GetWidth()/640) ,
-                       PIX2D( iXR*_pdp_SE->GetWidth()/640, iYB*_pdp_SE->GetWidth()/640));
-    _pdp_SE->PutTexture(&_toLeftD, box, SE_COL_BLUE_NEUTRAL|200);
-    iYU = iYB;
-    iYM = iYU + iSize;
-    iYB = iYM + iSize;
-    iXL = -20;
-    iXR = iXL + iSize;
-    box = PIXaabbox2D( PIX2D( iXL*_pdp_SE->GetWidth()/640, iYU*_pdp_SE->GetWidth()/640) ,
-                       PIX2D( iXR*_pdp_SE->GetWidth()/640, iYM*_pdp_SE->GetWidth()/640));
-    _pdp_SE->PutTexture(&_toLeftU, box, SE_COL_BLUE_NEUTRAL|200);
-    box = PIXaabbox2D( PIX2D( iXL*_pdp_SE->GetWidth()/640, iYM*_pdp_SE->GetWidth()/640) ,
-                       PIX2D( iXR*_pdp_SE->GetWidth()/640, iYB*_pdp_SE->GetWidth()/640));
-    _pdp_SE->PutTexture(&_toLeftD, box, SE_COL_BLUE_NEUTRAL|200);
+  if (_bPopup)
+    return;
   
+  const FLOAT2D screen_size(static_cast<float>(_pdp_SE->GetWidth()), static_cast<float>(_pdp_SE->GetHeight()));
+
+  _pdp_SE->InitTexture(&_toDioBcgClouds);
+  const FLOAT u_offset_1 = -_tmNow_SE*0.1f;
+  _pdp_SE->AddTexture(
+    screen_size(1)*0.0f, -screen_size(2)*0.1f, 0.0f + u_offset_1, 0.0f, 0x29253DFF,
+    screen_size(1)*1.0f, -screen_size(2)*0.1f, 1.0f + u_offset_1, 0.0f, 0x29253DFF,
+    screen_size(1)*1.0f,  screen_size(2)*1.0f, 1.0f + u_offset_1, 1.0f, 0x29253DFF,
+    screen_size(1)*0.0f,  screen_size(2)*1.0f, 0.0f + u_offset_1, 1.0f, 0x29253DFF
+    );
+  _pdp_SE->FlushRenderingQueue();
+  
+
+  static CModelObject g_DioModelObject;
+  static CPlacement3D g_DioModelPlacement = CPlacement3D(FLOAT3D(-1.8f, -1.383f, -4.493f), ANGLE3D(200.0f, 0.0f, 0.0f));
+  static CModelObject g_ZaWarudoModelObject;
+  static CPlacement3D g_ZaWarudoPlacement = CPlacement3D(FLOAT3D(1.225f, -1.05f, -6.375f), ANGLE3D(100.0f, 357.5f, 52.5f));
+  static FLOAT3D      g_LightDirection = FLOAT3D(0.0f, -1.0f, 1.0f).Normalize();
+  static COLOR        g_LightDiffuseColor = 0x295E34FF;
+  static COLOR        g_LightAmbientColor = 0x000000FF;
+
+  if (g_DioModelObject.GetData() == NULL)
+  {
+    g_DioModelObject.SetData_t(CTFILENAME("ModelsMP\\Player\\Dio\\Player.mdl"));
+    g_DioModelObject.mo_toTexture.SetData_t(CTFILENAME("ModelsMP\\Player\\Dio\\Dio.tex"));
+    CModelObject& body_model = AddAttachmentToModel(
+      g_DioModelObject,
+      PLAYER_ATTACHMENT_BODY,
+      CTFILENAME("ModelsMP\\Player\\Dio\\Body.mdl"),
+      CTFILENAME("ModelsMP\\Player\\Dio\\Dio.tex"));
+    AddAttachmentToModel(
+      body_model,
+      BODY_ATTACHMENT_HEAD,
+      CTFILENAME("ModelsMP\\Player\\Dio\\Head.mdl"),
+      CTFILENAME("ModelsMP\\Player\\Dio\\Dio.tex"));
+ 
+    g_DioModelObject.PlayAnim(PLAYER_ANIM_POSE_04, AOF_NORESTART);
+    body_model.PlayAnim(BODY_ANIM_POSE_04, AOF_NORESTART);
+
+    g_ZaWarudoModelObject.SetData_t(CTFILENAME("Models\\ZAWARUDO\\ZaWarudo.mdl"));
+    g_ZaWarudoModelObject.mo_toTexture.SetData_t(CTFILENAME("Models\\ZAWARUDO\\ZaWarudo.tex"));
+    g_ZaWarudoModelObject.PlayAnim(ZAWARUDO_ANIM_DEMO2, AOF_NORESTART);
+
+    InitParticleTables();
   }
 
-  MEXaabbox2D boxBcgClouds1;
-  TiledTextureSE(_boxScreen_SE, 1.2f*_pdp_SE->GetWidth()/640.0f, 
-    MEX2D(sin(_tmNow_SE*0.5f)*35,sin(_tmNow_SE*0.7f+1)*21),   boxBcgClouds1);
-  _pdp_SE->PutTexture(&_toBcgClouds, _boxScreen_SE, boxBcgClouds1, C_BLACK|_ulA_SE>>2);
-  TiledTextureSE(_boxScreen_SE, 0.7f*_pdp_SE->GetWidth()/640.0f, 
-    MEX2D(sin(_tmNow_SE*0.6f+1)*32,sin(_tmNow_SE*0.8f)*25),   boxBcgClouds1);
-  _pdp_SE->PutTexture(&_toBcgClouds, _boxScreen_SE, boxBcgClouds1, C_BLACK|_ulA_SE>>2);
+  CPerspectiveProjection3D projection;
+  projection.FOVL() = AngleRad(2.0f * atan(screen_size(2) / screen_size(1) / 1.357995128834865964950949907368f)); // this magic number corresponds to 45 deg FOV on 16:9 ratio :)
+  projection.ScreenBBoxL() = FLOATaabbox2D(
+    FLOAT2D(0.0f, 0.0f),
+    screen_size);
+  projection.AspectRatioL() = 1.0f;
+  projection.FrontClipDistanceL() = 0.1f;
+
+  CPlacement3D pivot_point(
+    FLOAT3D(0.0f, 0.0f, -3.0f),
+    ANGLE3D(-5.0f * g_CursorRelPos(1) + sin(_tmNow_SE*0.2f), -5.0f * g_CursorRelPos(2) + cos(_tmNow_SE*0.14f), 0.0f)
+    );
+  CPlacement3D camera_placement(FLOAT3D(0.0f, 0.0f, 3.0f), ANGLE3D(0.0f, 0.0f, 0.0f));
+  camera_placement.RelativeToAbsoluteSmooth(pivot_point);
+  projection.ViewerPlacementL() = camera_placement;
+
+  _pdp_SE->FillZBuffer(1.0f);
+  CAnyProjection3D genericProjection;
+  genericProjection = projection;
+  BeginModelRenderingView(genericProjection, _pdp_SE);
+ 
+  CRenderModel renderModel;
+  renderModel.rm_vLightDirection = g_LightDirection;
+  renderModel.SetObjectPlacement(g_DioModelPlacement);
+  renderModel.rm_colLight = g_LightDiffuseColor;
+  renderModel.rm_colAmbient = g_LightAmbientColor;
+ 
+  g_DioModelObject.SetupModelRendering(renderModel);
+  g_DioModelObject.RenderModel(renderModel);
+  
+  renderModel.SetObjectPlacement(g_ZaWarudoPlacement);
+
+  g_ZaWarudoModelObject.SetupModelRendering(renderModel);
+  g_ZaWarudoModelObject.RenderModel(renderModel);
+
+  static FLOAT next_time = 0.0f;
+  static FLOAT prev_time = 0.0f;
+  static bool drawing = false;
+  static FLOAT menacing_opacity = 0.0f;
+  if (_tmNow_SE > next_time)
+  {
+    prev_time = next_time;
+    drawing = !drawing;
+    if (!drawing)
+      next_time = _tmNow_SE + 7.0f + (rand()/FLOAT(RAND_MAX)) * 3.0f;
+    else
+      next_time = _tmNow_SE + 4.0f + (rand()/FLOAT(RAND_MAX)) * 2.0f;
+  }
+  if (!drawing)
+    menacing_opacity = Clamp(1.0f - (_tmNow_SE - prev_time)*0.5f, 0.0f, 1.0f);
+  else
+    menacing_opacity = Clamp((_tmNow_SE - prev_time)*0.5f, 0.0f, 1.0f);
+
+  Particle_PrepareSystem(_pdp_SE, genericProjection);
+  Particle_PrepareEntity(1.0f, FALSE, FALSE, NULL);
+  Particles_Menacing(CPlacement3D(FLOAT3D(-3.5f, -1.0f, -8.0f), ANGLE3D(0.0f, -20.0f, 10.0f)), _toMenacing, menacing_opacity * 0.15f);
+  Particle_EndSystem();
+
+  EndModelRenderingView();
+
+
+  _pdp_SE->InitTexture(&_toDioBcgClouds);
+  const FLOAT u_offset_2 = 0.5f-_tmNow_SE*0.06f;
+  const UBYTE alpha = UBYTE(Clamp(INDEX(233 + 22*cos(_tmNow_SE*0.4f)), INDEX(0), INDEX(255)));
+  _pdp_SE->AddTexture(
+    screen_size(1)*0.0f, screen_size(2)*0.4f, 0.0f + u_offset_2, 0.0f, 0x29253D00 | alpha,
+    screen_size(1)*1.0f, screen_size(2)*0.4f, 1.0f + u_offset_2, 0.0f, 0x29253D00 | alpha,
+    screen_size(1)*1.0f, screen_size(2)*1.0f, 1.0f + u_offset_2, 1.0f, 0x29253D00 | alpha,
+    screen_size(1)*0.0f, screen_size(2)*1.0f, 0.0f + u_offset_2, 1.0f, 0x29253D00 | alpha
+    );
+  _pdp_SE->FlushRenderingQueue();
+
+  if (g_MainMenu)
+  {
+    const FLOAT scale = screen_size(2) / 1080.0f;
+    _pdp_SE->PutTexture(&_toDBE, PIXaabbox2D(PIX2D(screen_size(1)*0.5f - 256.0f * scale, 0.0f), PIX2D(screen_size(1)*0.5f + 256.0f * scale, 256.0f * scale)));
+  }
 }
+
 void CGame::LCDRenderCloudsForComp(void)
 {
   MEXaabbox2D boxBcgClouds1;
@@ -2916,6 +3053,11 @@ void CGame::LCDRenderCompGrid(void)
 }
 void CGame::LCDDrawPointer(PIX pixI, PIX pixJ)
 {
+  g_CursorRelPos = FLOAT2D(
+    Clamp(pixI / static_cast<FLOAT>(_pdp_SE->GetWidth())  * 2.0f - 1.0f, -1.0f, 1.0f),
+    Clamp(pixJ / static_cast<FLOAT>(_pdp_SE->GetHeight()) * 2.0f - 1.0f, -1.0f, 1.0f)
+    );
+
   CDisplayMode dmCurrent;
   _pGfx->GetCurrentDisplayMode(dmCurrent);
   if (dmCurrent.IsFullScreen()) {
@@ -2998,7 +3140,16 @@ COLOR CGame::LCDBlinkingColor(COLOR col0, COLOR col1)
 // menu interface functions
 void CGame::MenuPreRenderMenu(const char *strMenuName)
 {
+  g_MainMenu = strcmp("Main", strMenuName) == 0;
+
+  // artifically scale down font size on 'modern' resolutions
+  g_PrevWideAdjustment = _pdp_SE->dp_fWideAdjustment;
+  if (_pdp_SE->GetWidth() > 1200)
+    _pdp_SE->dp_fWideAdjustment *= 0.6f;
+  else
+    _pdp_SE->dp_fWideAdjustment *= 0.8f;
 }
 void CGame::MenuPostRenderMenu(const char *strMenuName)
 {
+  _pdp_SE->dp_fWideAdjustment = g_PrevWideAdjustment;
 }
