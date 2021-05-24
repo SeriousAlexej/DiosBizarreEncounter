@@ -218,8 +218,8 @@ functions:
         thisPlacement.AbsoluteToRelativeSmooth(playerPlacement);
 
         FLOAT fDistance = fabs(thisPlacement.pl_PositionVector(1));
-        fDistance = Clamp(fDistance, 0.3f, 1.0f);
-        pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*fDistance);
+        fDistance = Clamp(fDistance, 0.5f, 1.0f);
+        pmo->mo_colBlendColor = (pmo->mo_colBlendColor&~255)|UBYTE(255*fDistance*fDistance*fDistance);
       } else {
         pmo->mo_colBlendColor = pmo->mo_colBlendColor|UBYTE(255);
       }

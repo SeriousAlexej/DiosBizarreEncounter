@@ -4944,10 +4944,11 @@ functions:
       }
     }
     if (ulReleasedButtons&PLACT_SECONDARY_FIRE) {
-      penWeapon->SendEvent(EReleaseWeapon());
+      penWeapon->SendEvent(EReleaseSecondaryWeapon());
     }
 
     if (ulNewButtons&PLACT_EMOTE) {
+      penWeapon->SendEvent(EReleaseSecondaryWeapon());
       SendEvent(EDoEmote());
     }
 
@@ -4969,6 +4970,7 @@ functions:
     }
 
     if (ulNewButtons&PLACT_STAND_TOGGLE) {
+      penWeapon->SendEvent(EReleaseSecondaryWeapon());
       SendEvent(ESwitchStandMode());
     }
 
@@ -6085,6 +6087,7 @@ procedures:
 
     // stop firing when dead
     ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseWeapon());
+    ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseSecondaryWeapon());
     // stop all looping ifeel effects
     if(_pNetwork->IsPlayerLocal(this))
     {
@@ -6359,6 +6362,7 @@ procedures:
 
     // stop firing when end
     ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseWeapon());
+    ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseSecondaryWeapon());
 
     // mark player as dead
     SetFlags(GetFlags()&~ENF_ALIVE);
@@ -7253,7 +7257,8 @@ procedures:
       {
         if (m_penTheWorld) {
           if (CanPlayAnim()) {
-            // make old Warudo disappear (and move to player)
+            // make old Warudo disappear
+            m_penTheWorld->SwitchToEditorModel();
             m_penTheWorld->SendEvent(EStop());
 
             // new Warudo is set as child to follow player
@@ -7311,6 +7316,7 @@ procedures:
         }
         // stop firing
         ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseWeapon());
+        ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReleaseSecondaryWeapon());
         resume;
       }
       on (ECameraStop eCameraStop) : {

@@ -1048,9 +1048,6 @@ functions:
 
   // animate player
   void AnimatePlayer(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
 
     FLOAT3D vDesiredTranslation = pl.en_vDesiredTranslationRelative;
@@ -1059,20 +1056,22 @@ functions:
     ANGLE3D aCurrentRotation = pl.en_aCurrentRotationAbsolute;
 
     // if player is moving
+    if (!m_bDisableAnimating) {
     if (vDesiredTranslation.ManhattanNorm()>0.01f
       ||aDesiredRotation.ManhattanNorm()>0.01f) {
       // prevent idle weapon animations
       m_fLastActionTime = _pTimer->CurrentTick();
     }
+    }
 
     // swimming
     if (m_bSwim) {
       if (vDesiredTranslation.Length()>1.0f && vCurrentTranslation.Length()>1.0f) {
-        if (CanPlayAnim()) {
+        if (!m_bDisableAnimating && CanPlayAnim()) {
           pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
         }
       } else {
-        if (CanPlayAnim()) {
+        if (!m_bDisableAnimating && CanPlayAnim()) {
           pl.StartModelAnim(PLAYER_ANIM_SWIMIDLE, AOF_LOOPING|AOF_NORESTART);
         }
       }
@@ -1086,11 +1085,13 @@ functions:
         if (pl.en_tmJumped+_pTimer->TickQuantum>=_pTimer->CurrentTick() &&
             pl.en_tmJumped<=_pTimer->CurrentTick()) {
           m_bReference = FALSE;
-          if (CanPlayAnim()) {
+          if (!m_bDisableAnimating && CanPlayAnim()) {
             pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
           }
           BodyStillAnimation();
+              if (!m_bDisableAnimating) {
           m_fLastActionTime = _pTimer->CurrentTick();
+              }
 
         // not in jump anim and in stand mode change
         } else if (!m_bWaitJumpAnim && m_iCrouchDownWait==0 && m_iRiseUpWait==0) {
@@ -1099,46 +1100,54 @@ functions:
             // running anim
             if (vDesiredTranslation.Length()>5.0f && vCurrentTranslation.Length()>5.0f) {
               if (vCurrentTranslation(3)<0) {
-                if (CanPlayAnim()) {
+                if (!m_bDisableAnimating && CanPlayAnim()) {
                   pl.StartModelAnim(PLAYER_ANIM_RUN, AOF_LOOPING|AOF_NORESTART);
                 }
               } else {
-                if (CanPlayAnim()) {
+                if (!m_bDisableAnimating && CanPlayAnim()) {
                   pl.StartModelAnim(PLAYER_ANIM_BACKPEDALRUN, AOF_LOOPING|AOF_NORESTART);
                 }
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // walking anim
             } else if (vDesiredTranslation.Length()>2.0f && vCurrentTranslation.Length()>2.0f) {
               if (vCurrentTranslation(3)<0) {
-                if (CanPlayAnim()) {
+                if (!m_bDisableAnimating && CanPlayAnim()) {
                   pl.StartModelAnim(PLAYER_ANIM_NORMALWALK, AOF_LOOPING|AOF_NORESTART);
                 }
               } else {
-                if (CanPlayAnim()) {
+                if (!m_bDisableAnimating && CanPlayAnim()) {
                   pl.StartModelAnim(PLAYER_ANIM_BACKPEDAL, AOF_LOOPING|AOF_NORESTART);
                 }
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // left rotation anim
             } else if (aDesiredRotation(1)>0.5f) {
-              if (CanPlayAnim()) {
+              if (!m_bDisableAnimating && CanPlayAnim()) {
                 pl.StartModelAnim(PLAYER_ANIM_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // right rotation anim
             } else if (aDesiredRotation(1)<-0.5f) {
-              if (CanPlayAnim()) {
+              if (!m_bDisableAnimating && CanPlayAnim()) {
                 pl.StartModelAnim(PLAYER_ANIM_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // standing anim
             } else {
-              if (CanPlayAnim()) {
+              if (!m_bDisableAnimating && CanPlayAnim()) {
                 pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
               }
               BodyStillAnimation();
@@ -1148,33 +1157,39 @@ functions:
             // walking anim
             if (vDesiredTranslation.Length()>2.0f && vCurrentTranslation.Length()>2.0f) {
               if (vCurrentTranslation(3)<0) {
-                if (CanPlayAnim()) {
+                if (!m_bDisableAnimating && CanPlayAnim()) {
                   pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALK, AOF_LOOPING|AOF_NORESTART);
                 }
               } else {
-                if (CanPlayAnim()) {
+                if (!m_bDisableAnimating && CanPlayAnim()) {
                   pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALKBACK, AOF_LOOPING|AOF_NORESTART);
                 }
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // left rotation anim
             } else if (aDesiredRotation(1)>0.5f) {
-              if (CanPlayAnim()) {
+              if (!m_bDisableAnimating && CanPlayAnim()) {
                 pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // right rotation anim
             } else if (aDesiredRotation(1)<-0.5f) {
-              if (CanPlayAnim()) {
+              if (!m_bDisableAnimating && CanPlayAnim()) {
                 pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
               }
               BodyStillAnimation();
+              if (!m_bDisableAnimating) {
               m_fLastActionTime = _pTimer->CurrentTick();
+              }
             // standing anim
             } else {
-              if (CanPlayAnim()) {
+              if (!m_bDisableAnimating && CanPlayAnim()) {
                 pl.StartModelAnim(PLAYER_ANIM_CROUCH_IDLE, AOF_LOOPING|AOF_NORESTART);
               }
               BodyStillAnimation();
@@ -1188,20 +1203,24 @@ functions:
         // touched reference
         if (pl.en_penReference!=NULL) {
           m_bReference = TRUE;
-          if (CanPlayAnim()) {
+          if (!m_bDisableAnimating && CanPlayAnim()) {
             pl.StartModelAnim(PLAYER_ANIM_JUMPEND, AOF_NORESTART);
           }
           BodyStillAnimation();
+          if(!m_bDisableAnimating) {
           SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_JUMPEND), (INDEX) AA_JUMPDOWN);
           m_bWaitJumpAnim = TRUE;
+          }
         }
       }
     }
 
+    if (!m_bDisableAnimating) {
     // boring weapon animation
     if (_pTimer->CurrentTick()-m_fLastActionTime > 10.0f) {
       m_fLastActionTime = _pTimer->CurrentTick();
       ((CPlayerWeapons&)*pl.m_penWeapons).SendEvent(EBoringWeapon());
+    }
     }
 
     // moving view change
@@ -1234,11 +1253,8 @@ functions:
 
   // crouch
   void Crouch(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (CanPlayAnim()) {
+    if (!m_bDisableAnimating && CanPlayAnim()) {
       pl.StartModelAnim(PLAYER_ANIM_CROUCH, AOF_NORESTART);
     }
     SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_CROUCH), (INDEX) AA_CROUCH);
@@ -1248,11 +1264,8 @@ functions:
 
   // rise
   void Rise(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (CanPlayAnim()) {
+    if (!m_bDisableAnimating && CanPlayAnim()) {
       pl.StartModelAnim(PLAYER_ANIM_RISE, AOF_NORESTART);
     }
     SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_RISE), (INDEX) AA_RISE);
@@ -1262,11 +1275,8 @@ functions:
 
   // fall
   void Fall(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (CanPlayAnim()) {
+    if (!m_bDisableAnimating && CanPlayAnim()) {
       pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
     }
     if (_pNetwork->ga_ulDemoMinorVersion>6) { m_bCrouch = FALSE; }
@@ -1275,11 +1285,8 @@ functions:
 
   // swim
   void Swim(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (CanPlayAnim()) {
+    if (!m_bDisableAnimating && CanPlayAnim()) {
       pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
     }
     if (_pNetwork->ga_ulDemoMinorVersion>2) { m_bCrouch = FALSE; }
@@ -1288,11 +1295,8 @@ functions:
 
   // stand
   void Stand(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    if (CanPlayAnim()) {
+    if (!m_bDisableAnimating && CanPlayAnim()) {
       pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
     }
     if (_pNetwork->ga_ulDemoMinorVersion>2) { m_bCrouch = FALSE; }
@@ -1378,9 +1382,11 @@ functions:
 
   // stand
   void BodyStillAnimation() {
+    if (!m_bDisableAnimating) {
     BodyAnimationTemplate(BODY_ANIM_WAIT, 
       BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, BODY_ANIM_HANDS_STAND,
       AOF_LOOPING|AOF_NORESTART);
+    }
   };
 
   // push weapon

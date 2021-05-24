@@ -155,7 +155,6 @@ static struct AmmoInfo _aaiAmmo[8] = {
   { &_toAIronBall,      &_awiWeapons[14], NULL,             0, 0, 0, -9, FALSE }, //  6
   { &_toASniperBullets, &_awiWeapons[13], NULL,             0, 0, 0, -9, FALSE }, //  7
 };
-static const INDEX aiAmmoRemap[8] = { 0, 1, 2, 3, 4, 7, 5, 6 };
 
 struct WeaponInfo _awiWeapons[18] = {
   { WEAPON_NONE,            NULL,                 NULL,         FALSE },   //  0
