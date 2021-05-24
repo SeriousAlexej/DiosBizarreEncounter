@@ -65,8 +65,8 @@
 extern INDEX hud_bShowWeapon;
 
 const int index_remap[12] = { 0, 3, 5, 1, 4, 2, 6, 9, 11, 8, 10, 7 };
-extern const INDEX aiWeaponsRemap[19] = { 0,  1,  10,  2,  3,  4,  5,  6,  7,
-                                          8,  9,  11, 13, 12, 14, 15, 16, 17, 18 };
+extern const INDEX aiWeaponsRemap[19] = { 0, 15, 1,  10,  2,  3,  4,  5,  6,  7,
+                                          8,  9,  11, 13, 12, 14, 16, 17, 18 };
 static void ClearToDefault(FLOATmatrix3D& m) { m = FLOATmatrix3D(); }
 %}
 
@@ -139,10 +139,13 @@ event EFireWeapon
 };
 // release weapon
 event EReleaseWeapon {};
+event EReleaseSecondaryWeapon {};
 // reload weapon
 event EReloadWeapon {};
 // weapon changed - used to notify other entities
 event EWeaponChanged {};
+
+event EStartLegKick {};
 
 // weapons (do not change order! - needed by HUD.cpp)
 enum WeaponType {
@@ -602,9 +605,9 @@ properties:
   1 CEntityPointer m_penPlayer,       // player which owns it
   2 BOOL m_bFireWeapon = FALSE,       // weapon is firing
   3 BOOL m_bHasAmmo    = FALSE,       // weapon has ammo
-  4 enum WeaponType m_iCurrentWeapon  = WEAPON_KNIFE,    // currently active weapon (internal)
-  5 enum WeaponType m_iWantedWeapon   = WEAPON_KNIFE,     // wanted weapon (internal)
-  6 enum WeaponType m_iPreviousWeapon = WEAPON_KNIFE,   // previous active weapon (internal)
+  4 enum WeaponType m_iCurrentWeapon  = WEAPON_HANDS,    // currently active weapon (internal)
+  5 enum WeaponType m_iWantedWeapon   = WEAPON_HANDS,     // wanted weapon (internal)
+  6 enum WeaponType m_iPreviousWeapon = WEAPON_HANDS,   // previous active weapon (internal)
  11 INDEX m_iAvailableWeapons = 0x4001,   // avaible weapons (1 << KNIFE-1) | (1 << HANDS-1)
  12 BOOL  m_bChangeWeapon = FALSE,      // change current weapon
  13 BOOL  m_bReloadWeapon = FALSE,      // reload weapon
@@ -624,6 +627,7 @@ properties:
  
  25 CModelObject m_moWeapon,               // current weapon model
  26 CModelObject m_moWeaponSecond,         // current weapon second (additional) model
+ 56 CModelObject m_moWeaponLegs,
  27 FLOAT m_tmWeaponChangeRequired = 0.0f, // time when weapon change was required
 
  30 CEntityPointer m_penRayHit,         // entity hit by ray
@@ -696,6 +700,8 @@ properties:
 280 BOOL m_bSecondaryFire = FALSE,
 281 INDEX m_iLastLeg = ROOT_ATTACHMENT_LEG01,
 282 BOOL m_bWasInSecondaryFire = FALSE,
+283 BOOL m_bHoldingSecondary = FALSE,
+284 BOOL m_bLegKickInProgress = FALSE,
 
 {
   CEntity *penBullet;
@@ -920,7 +926,19 @@ components:
 functions:
    
  BOOL CollidesWithEntity(CEntity* entity) const {
-   return entity && entity_cast(entity, CTheWorld) == NULL;
+   if (!entity) {
+     return FALSE;
+   }
+   if (entity_cast(entity, CTheWorld) != NULL) {
+     return FALSE;
+   }
+   if (entity_cast(entity, CProjectile) != NULL) {
+     CProjectile* projectile = (CProjectile*)entity;
+     if (projectile->m_penLauncher == m_penPlayer) {
+       return FALSE;
+     }
+   }
+   return TRUE;
  }
 
  // add to prediction any entities that this entity depends on
@@ -974,6 +992,12 @@ functions:
 //    plan.m_fRecoilSpeed += wpn_fRecoilSpeed[m_iCurrentWeapon];
   }
 
+  BOOL IsPlayerSwimming()
+  {
+    CPlayer &pl = (CPlayer&)*m_penPlayer;
+    return pl.m_pstState == PST_DIVE || pl.m_pstState == PST_SWIM;
+  }
+
   BOOL CurrentWeaponSupportsCurrentFireMode()
   {
     if (!m_bSecondaryFire) {
@@ -984,8 +1008,7 @@ functions:
     {
     case WEAPON_HANDS:
       {
-        CPlayer &pl = (CPlayer&)*m_penPlayer;
-        if (pl.m_pstState == PST_DIVE || pl.m_pstState == PST_SWIM) {
+        if (IsPlayerSwimming()) {
           return FALSE;
         }
         return TRUE;
@@ -1080,6 +1103,41 @@ functions:
         ubBlend =(INDEX)(INVISIBILITY_ALPHA_LOCAL+(FLOAT)(254-INVISIBILITY_ALPHA_LOCAL)*fIntensity);      
       }      
     }      
+
+    if (TRUE)
+    {
+      CRenderModel rmMain;
+      CPerspectiveProjection3D prMirror = prProjection;
+      prMirror.ViewerPlacementL() =  plView;
+      prMirror.FrontClipDistanceL() = wpn_fClip[WEAPON_HANDS];
+      prMirror.DepthBufferNearL() = 0.2f;
+      prMirror.DepthBufferFarL() = 0.3f;
+      CPlacement3D plWeaponMirror(FLOAT3D(0, 0, 0), ANGLE3D(20, 0, 0));
+      ((CPerspectiveProjection3D &)prMirror).FOVL() = AngleDeg(wpn_fFOV[WEAPON_HANDS]);
+      CAnyProjection3D apr;
+      apr = prMirror;
+      Stereo_AdjustProjection(*apr, iEye, 0.1f);
+      BeginModelRenderingView(apr, pdp);
+
+      WeaponMovingOffset(plWeaponMirror.pl_PositionVector);
+      plWeaponMirror.RelativeToAbsoluteSmooth(plView);
+      rmMain.SetObjectPlacement(plWeaponMirror);
+
+      rmMain.rm_colLight   = colLight;
+      rmMain.rm_colAmbient = colAmbient;
+      rmMain.rm_vLightDirection = vViewerLightDirection;
+      rmMain.rm_ulFlags |= RMF_WEAPON;
+      if (tmInvisibility>tmNow) {
+        rmMain.rm_colBlend = (rmMain.rm_colBlend&0xffffff00)|ubBlend;
+      }      
+      
+      FLOAT3D prevStretch = m_moWeaponLegs.mo_Stretch;
+      m_moWeaponLegs.StretchModel(FLOAT3D(1,1,-1));
+      m_moWeaponLegs.SetupModelRendering(rmMain);
+      m_moWeaponLegs.RenderModel(rmMain);
+      EndModelRenderingView();
+      m_moWeaponLegs.StretchModel(prevStretch);
+    }
       
     // DRAW WEAPON MODEL
     //  Double colt - second colt in mirror
@@ -1662,6 +1720,11 @@ functions:
   // Set weapon model for current weapon.
   void SetCurrentWeaponModel(void) {
     // WARNING !!! ---> Order of attachment must be the same with order in RenderWeaponModel()
+    SetComponents(this, m_moWeaponLegs, MODEL_HANDS_ROOT, 0, 0, 0, 0);
+    AddAttachmentToModel(this, m_moWeaponLegs, ROOT_ATTACHMENT_LEG01, MODEL_DIO_LEG, TEXTURE_DIO_BODY, 0, 0, 0);
+    AddAttachmentToModel(this, m_moWeaponLegs, ROOT_ATTACHMENT_LEG02, MODEL_DIO_LEG, TEXTURE_DIO_BODY, 0, 0, 0);
+    AddAttachmentToModel(this, m_moWeaponLegs, ROOT_ATTACHMENT_LEG03, MODEL_DIO_LEG, TEXTURE_DIO_BODY, 0, 0, 0);
+
     switch (m_iCurrentWeapon) {
       case WEAPON_NONE:
         break;
@@ -2896,6 +2959,113 @@ functions:
     Precache();
   };
 
+  FLOAT HitWithLegs_1(CModelObject& moLegs)
+  {
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (pl.m_mode == STAND_PASSIVE) {
+      pl.StartModelAnim(PLAYER_ANIM_HIT_LEG, 0);
+    }
+    if (m_iCurrentWeapon == WEAPON_HANDS) {
+      GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG, 0);
+    }
+    GetAnimator()->m_bDisableAnimating = TRUE;
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_LEGS;
+      theWorld->SendEvent(eStandAnim);
+    }
+
+    CModelObject& moLastLeg = moLegs.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
+
+    m_iLastLeg = ROOT_ATTACHMENT_LEG01 + (IRnd()%3);
+    CModelObject& moLeg = moLegs.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    moLeg.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+    moLeg.PlayAnim(LEG_ANIM_KICK, 0);
+    moLeg.OffsetPhase(0.0f);
+    FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      waitTime = 0.05f;
+    }
+    return waitTime;
+  }
+
+  FLOAT HitWithLegs_2(CModelObject& moLegs)
+  {
+    FLOAT damage = 30.0f;
+    FLOAT kickForce = 5.0f;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 2.0f;
+      kickForce *= 3.0f;
+    }
+    DioPunch(damage, kickForce, theWorld && pl.m_mode == STAND_ENGAGED);
+
+    CModelObject& moLeg = moLegs.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      waitTime = 0.05f;
+    }
+    return waitTime;
+  }
+
+  void HitWithLegs_3(CModelObject& moLegs)
+  { 
+    CModelObject& moLastLeg = moLegs.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
+    moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
+  }
+
+  FLOAT HitWithLegsFAST_1(CModelObject& moLegs)
+  {
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (pl.m_mode == STAND_PASSIVE) {
+      pl.StartModelAnim(PLAYER_ANIM_HIT_LEG_FAST, 0);
+    }
+    if (m_iCurrentWeapon == WEAPON_HANDS) {
+      GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG_FAST, 0);
+    }
+    GetAnimator()->m_bDisableAnimating = TRUE;
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      EStandAnim eStandAnim;
+      eStandAnim.anim = STAND_LEGS;
+      theWorld->SendEvent(eStandAnim);
+    }
+
+    CModelObject& moLeg1 = moLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
+    CModelObject& moLeg2 = moLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
+    CModelObject& moLeg3 = moLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
+
+    BOOL changeOffset = (moLeg2.GetAnim() != LEG_ANIM_KICKLOOP);
+
+    moLeg1.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
+    moLeg2.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
+    moLeg3.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
+    
+    if (changeOffset) {
+      moLeg2.OffsetPhase(moLeg1.GetAnimLength(LEG_ANIM_KICKLOOP) / 3.0f);
+      moLeg3.OffsetPhase(moLeg1.GetAnimLength(LEG_ANIM_KICKLOOP) / 3.0f * 2.0f);
+    }
+
+    return 0.1f;
+  }
+
+  void HitWithLegsFAST_2()
+  {
+    FLOAT damage = 30.0f;
+    FLOAT kickForce = 5.0f;
+    CPlayer &pl = *GetPlayer();
+    CEntity* theWorld = GetTheWorld();
+    if (theWorld && pl.m_mode == STAND_ENGAGED) {
+      damage *= 5.0f;
+      kickForce *= 4.0f;
+    }
+    DioPunch(damage, kickForce, TRUE);
+  }
+
+
   // add a given amount of mana to the player
   void AddManaToPlayer(INDEX iMana)
   {
@@ -3461,6 +3631,7 @@ functions:
         WeaponSelectOk(WEAPON_TOMMYGUN)||
         WeaponSelectOk(WEAPON_DOUBLESHOTGUN)||
         WeaponSelectOk(WEAPON_SINGLESHOTGUN)||
+        WeaponSelectOk(WEAPON_HANDS) ||
         WeaponSelectOk(WEAPON_DOUBLECOLT)||
         WeaponSelectOk(WEAPON_COLT)||
         WeaponSelectOk(WEAPON_KNIFE);
@@ -3472,6 +3643,7 @@ functions:
         WeaponSelectOk(WEAPON_TOMMYGUN)||
         WeaponSelectOk(WEAPON_DOUBLESHOTGUN)||
         WeaponSelectOk(WEAPON_SINGLESHOTGUN)||
+        WeaponSelectOk(WEAPON_HANDS) ||
         WeaponSelectOk(WEAPON_DOUBLECOLT)||
         WeaponSelectOk(WEAPON_COLT)||
         WeaponSelectOk(WEAPON_KNIFE);
@@ -3484,6 +3656,7 @@ functions:
         WeaponSelectOk(WEAPON_TOMMYGUN)||
         WeaponSelectOk(WEAPON_DOUBLESHOTGUN)||
         WeaponSelectOk(WEAPON_SINGLESHOTGUN)||
+        WeaponSelectOk(WEAPON_HANDS) ||
         WeaponSelectOk(WEAPON_DOUBLECOLT)||
         WeaponSelectOk(WEAPON_COLT)||
         WeaponSelectOk(WEAPON_KNIFE);
@@ -3495,12 +3668,13 @@ functions:
         WeaponSelectOk(WEAPON_TOMMYGUN)||
         WeaponSelectOk(WEAPON_DOUBLESHOTGUN)||
         WeaponSelectOk(WEAPON_SINGLESHOTGUN)||
+        WeaponSelectOk(WEAPON_HANDS) ||
         WeaponSelectOk(WEAPON_DOUBLECOLT)||
         WeaponSelectOk(WEAPON_COLT)||
         WeaponSelectOk(WEAPON_KNIFE);
         break;
       default:
-        WeaponSelectOk(WEAPON_KNIFE);
+        WeaponSelectOk(WEAPON_HANDS);
         ASSERT(FALSE);
     }
   };
@@ -4302,7 +4476,13 @@ procedures:
     }
     */
 
+    if (m_iCurrentWeapon == WEAPON_KNIFE || m_iCurrentWeapon == WEAPON_SNIPER) {
+      SendEvent(EReleaseSecondaryWeapon());
+    }
+
     if (m_iCurrentWeapon==WEAPON_HANDS) {
+      //SendEvent(EReleaseSecondaryWeapon());
+
       CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
       moHandsWeapon.PlayAnim(m_iAnim, 0);
       autowait(moHandsWeapon.GetAnimLength(m_iAnim));
@@ -4551,97 +4731,16 @@ procedures:
 
   HitWithLegs()
   {
-    CPlayer &pl = *GetPlayer();
-    CEntity* theWorld = GetTheWorld();
-    if (pl.m_mode == STAND_PASSIVE) {
-      pl.StartModelAnim(PLAYER_ANIM_HIT_LEG, 0);
-    }
-    GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG, 0);
-    GetAnimator()->m_bDisableAnimating = TRUE;
-    if (theWorld && pl.m_mode == STAND_ENGAGED) {
-      EStandAnim eStandAnim;
-      eStandAnim.anim = STAND_LEGS;
-      theWorld->SendEvent(eStandAnim);
-    }
-
-    CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
-    moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
-
-    m_iLastLeg = ROOT_ATTACHMENT_LEG01 + (IRnd()%3);
-    CModelObject& moLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
-    moLeg.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
-    moLeg.PlayAnim(LEG_ANIM_KICK, 0);
-    moLeg.OffsetPhase(0.0f);
-    FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
-    if (theWorld && pl.m_mode == STAND_ENGAGED) {
-      waitTime = 0.05f;
-    }
-    autowait(waitTime);
-
-    FLOAT damage = 30.0f;
-    FLOAT kickForce = 5.0f;
-    CPlayer &pl = *GetPlayer();
-    CEntity* theWorld = GetTheWorld();
-    if (theWorld && pl.m_mode == STAND_ENGAGED) {
-      damage *= 2.0f;
-      kickForce *= 3.0f;
-    }
-    DioPunch(damage, kickForce, theWorld && pl.m_mode == STAND_ENGAGED);
-
-    CModelObject& moLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
-    FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
-    if (theWorld && pl.m_mode == STAND_ENGAGED) {
-      waitTime = 0.05f;
-    }
-    autowait(waitTime);
-    
-    CModelObject& moLastLeg = m_moWeapon.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
-    moLastLeg.PlayAnim(LEG_ANIM_DEFAULT, 0);
-
+    autowait(HitWithLegs_1(m_moWeapon));
+    autowait(HitWithLegs_2(m_moWeapon));
+    HitWithLegs_3(m_moWeapon);
     return EEnd();
   }
 
   HitWithLegsFAST()
   {
-    CPlayer &pl = *GetPlayer();
-    CEntity* theWorld = GetTheWorld();
-    if (pl.m_mode == STAND_PASSIVE) {
-      pl.StartModelAnim(PLAYER_ANIM_HIT_LEG_FAST, 0);
-    }
-    GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK_LEG_FAST, 0);
-    GetAnimator()->m_bDisableAnimating = TRUE;
-    if (theWorld && pl.m_mode == STAND_ENGAGED) {
-      EStandAnim eStandAnim;
-      eStandAnim.anim = STAND_LEGS;
-      theWorld->SendEvent(eStandAnim);
-    }
-
-    CModelObject& moLeg1 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
-    CModelObject& moLeg2 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
-    CModelObject& moLeg3 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
-
-    BOOL changeOffset = (moLeg2.GetAnim() != LEG_ANIM_KICKLOOP);
-
-    moLeg1.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
-    moLeg2.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
-    moLeg3.PlayAnim(LEG_ANIM_KICKLOOP, AOF_LOOPING|AOF_NORESTART);
-    
-    if (changeOffset) {
-      moLeg2.OffsetPhase(moLeg1.GetAnimLength(LEG_ANIM_KICKLOOP) / 3.0f);
-      moLeg3.OffsetPhase(moLeg1.GetAnimLength(LEG_ANIM_KICKLOOP) / 3.0f * 2.0f);
-    }
-    autowait(0.1f);
-
-    FLOAT damage = 30.0f;
-    FLOAT kickForce = 5.0f;
-    CPlayer &pl = *GetPlayer();
-    CEntity* theWorld = GetTheWorld();
-    if (theWorld && pl.m_mode == STAND_ENGAGED) {
-      damage *= 5.0f;
-      kickForce *= 4.0f;
-    }
-    DioPunch(damage, kickForce, TRUE);
-    
+    autowait(HitWithLegsFAST_1(m_moWeapon));
+    HitWithLegsFAST_2();
     return EEnd();
   }
 
@@ -6088,6 +6187,12 @@ procedures:
 
         if (CurrentWeaponSupportsCurrentFireMode()) {
           jump Fire();
+        } else if (eFire.bSecondary) {
+          BOOL changing = m_bHoldingSecondary != eFire.bSecondary;
+          m_bHoldingSecondary = eFire.bSecondary;
+          if (changing && m_bHoldingSecondary && m_iCurrentWeapon != WEAPON_SNIPER) {
+            SendEvent(EStartLegKick());
+          }
         }
       }
       // reload pressed
@@ -6104,6 +6209,13 @@ procedures:
   // weapons wait here while player is dead, so that stupid animations wouldn't play
   Stopped()
   {
+    for (INDEX i = ROOT_ATTACHMENT_LEG01; i <= ROOT_ATTACHMENT_LEG03; ++i)
+    {
+      CModelObject& moLeg = m_moWeaponLegs.GetAttachmentModel(i)->amo_moModelObject;
+      moLeg.PlayAnim(LEG_ANIM_DEFAULT, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
+    }
+    GetAnimator()->m_bDisableAnimating = FALSE;
+
     // make sure we restore all rockets if we are holding the rocket launcher
     if (m_iCurrentWeapon==WEAPON_ROCKETLAUNCHER) {
       CModelObject *pmo = &(m_moWeapon.GetAttachmentModel(ROCKETLAUNCHER_ATTACHMENT_ROCKET1)->amo_moModelObject);
@@ -6148,7 +6260,15 @@ procedures:
     PlayDefaultAnim();    
 
     wait() {
-      on (EBegin) : { call Idle(); }
+      on (EBegin) : {
+        // just in case
+        for (INDEX i = ROOT_ATTACHMENT_LEG01; i <= ROOT_ATTACHMENT_LEG03; ++i)
+        {
+          CModelObject& moLeg = m_moWeaponLegs.GetAttachmentModel(i)->amo_moModelObject;
+          moLeg.PlayAnim(LEG_ANIM_DEFAULT, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
+        }
+        call Idle();
+      }
       on (ESelectWeapon eSelect) : {
         // try to change weapon
         SelectWeaponChange(eSelect.iWeapon);
@@ -6158,6 +6278,9 @@ procedures:
       on (EPreLevelChange) : { 
         // stop everything
         m_bFireWeapon = FALSE;
+        m_bSecondaryFire = FALSE;
+        m_bHoldingSecondary = FALSE;
+        
         call Stopped();
         resume;
       }
@@ -6167,12 +6290,98 @@ procedures:
         }
         // start firing
         m_bFireWeapon = TRUE;
+
+        BOOL changing = m_bHoldingSecondary != eFire.bSecondary;
+        m_bHoldingSecondary = eFire.bSecondary;
+        if (changing &&
+            m_bHoldingSecondary &&
+            m_iCurrentWeapon != WEAPON_SNIPER &&
+            m_iCurrentWeapon != WEAPON_HANDS &&
+            m_iCurrentWeapon != WEAPON_KNIFE) {
+          SendEvent(EStartLegKick());
+        }
         resume;
       }
       on (EReleaseWeapon) : {
         // stop firing
         m_bFireWeapon = FALSE;
         m_bSecondaryFire = FALSE;
+        resume;
+      }
+      on (EReleaseSecondaryWeapon) : {
+        m_bHoldingSecondary = FALSE;
+        if (CurrentWeaponSupportsCurrentFireMode() && m_bSecondaryFire) {
+          SendEvent(EReleaseWeapon());
+        }
+        resume;
+      }
+      // ideally this should've been done by creating separate entity but I'm so lazy & tired...
+      // reminders ftw
+      on (EStartLegKick) : {
+        if (!IsPlayerSwimming() && !m_bLegKickInProgress && m_bHoldingSecondary && /*m_iCurrentWeapon != WEAPON_HANDS &&*/ m_iCurrentWeapon != WEAPON_KNIFE)
+        {
+          if (m_iCurrentWeapon == WEAPON_HANDS) {
+            CPrintF("MIGHTY FEET ENGAGED!\n");
+          }
+          CModelObject& moLeg1 = m_moWeaponLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
+          CModelObject& moLeg2 = m_moWeaponLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
+          CModelObject& moLeg3 = m_moWeaponLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
+          BOOL zaWarudoActive = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+          
+          m_bLegKickInProgress = TRUE;
+          if (zaWarudoActive) {
+            moLeg1.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+            moLeg2.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+            moLeg3.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
+            SpawnReminder(this, HitWithLegsFAST_1(m_moWeaponLegs), 142);
+          } else {
+            moLeg1.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+            moLeg2.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+            moLeg3.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
+            SpawnReminder(this, HitWithLegs_1(m_moWeaponLegs), 42);
+          }
+        }
+        resume;
+      }
+      on (EReminder eReminder) : {
+        switch (eReminder.iValue)
+        {
+        case 42:
+          SpawnReminder(this, HitWithLegs_2(m_moWeaponLegs), 43);
+          break;
+        case 43:
+          {
+            HitWithLegs_3(m_moWeaponLegs);
+            m_bLegKickInProgress = FALSE;
+          
+            for (INDEX i = ROOT_ATTACHMENT_LEG01; i <= ROOT_ATTACHMENT_LEG03; ++i)
+            {
+              CModelObject& moLeg = m_moWeaponLegs.GetAttachmentModel(i)->amo_moModelObject;
+              moLeg.PlayAnim(LEG_ANIM_DEFAULT, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
+            }
+            GetAnimator()->m_bDisableAnimating = FALSE;
+
+            SendEvent(EStartLegKick());
+            break;
+          }
+        case 142:
+          {
+            HitWithLegsFAST_2();
+            m_bLegKickInProgress = FALSE;
+          
+            for (INDEX i = ROOT_ATTACHMENT_LEG01; i <= ROOT_ATTACHMENT_LEG03; ++i)
+            {
+              CModelObject& moLeg = m_moWeaponLegs.GetAttachmentModel(i)->amo_moModelObject;
+              moLeg.PlayAnim(LEG_ANIM_DEFAULT, AOF_LOOPING|AOF_NORESTART|AOF_SMOOTHCHANGE);
+            }
+            GetAnimator()->m_bDisableAnimating = FALSE;
+
+            SendEvent(EStartLegKick());
+            break;
+          }
+        default:
+          break;
+        }
         resume;
       }
       on (EReloadWeapon) : {
