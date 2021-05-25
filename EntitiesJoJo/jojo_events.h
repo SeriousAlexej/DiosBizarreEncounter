@@ -25,5 +25,6 @@ extern CStaticStackArray<CSentEvent>* _paseSentEvents;
 extern BOOL g_shouldResolveEvents;
 
 #define ZA_WARUDO_DURATION 9.0f
+#define MAX_ULTIMATE_CHARGE 50000
 
 #endif

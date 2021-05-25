@@ -536,7 +536,7 @@ functions:
     return FALSE;
   }
 
-  BOOL IsZaWarudo()
+  BOOL IsZaWarudo() const
   {
     return m_penDioPlayer != NULL ? TRUE : FALSE;
   }
@@ -609,6 +609,9 @@ procedures:
         }
         on (EZaWarudoEnd) :
         {
+          if (m_penDioPlayer) {
+            m_penDioPlayer->SendEvent(EZaWarudoEnd());
+          }
           TokiWaUgokiDasu();
           stop;
         }

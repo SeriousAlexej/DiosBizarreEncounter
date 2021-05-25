@@ -11,6 +11,7 @@
 #include <EntitiesMP/EnemyBase.h>
 #include <EntitiesMP/EnemyCounter.h>
 #include <EntitiesJoJo/TheWorld.h>
+#include <EntitiesJoJo/jojo_events.h>
 #include <GameJoJo/ButtonAction.h>
 
 // cheats
@@ -68,6 +69,7 @@ static CTextureObject _toUltBcg;
 static CTextureObject _toUltOverlay;
 static CTextureObject _toFireTexture;
 static CTextureObject _toUlt;
+static CTextureObject _toUltRodarollada;
 static CTextureObject _toUltFlare;
 static CTextureObject _toWeaponBrace;
 static CTextureObject _toInfAmmo;
@@ -354,7 +356,8 @@ static void DIO_DrawIcon
   EScreenPos y_anchor, INDEX y_offset,
   CTextureObject &toIcon,
   ANGLE angle = 0.0f,
-  COLOR color = C_WHITE
+  COLOR color = C_WHITE,
+  FLOAT opacity = 1.0f
 )
 {
   CTextureData* ptd = (CTextureData*)toIcon.GetData();
@@ -415,11 +418,13 @@ static void DIO_DrawIcon
     p3 = p3 * transformMatrix;
   }
   
+  const UBYTE alpha = Clamp(INDEX(opacity * _ulAlphaHUD), INDEX(0), INDEX(255));
+  const INDEX final_color = (color & 0xFFFFFF00) | alpha;
   _pDP->AddTexture(
-    p0(1), p0(2), 0.0f, 0.0f, color|_ulAlphaHUD,
-    p1(1), p1(2), 1.0f, 0.0f, color|_ulAlphaHUD,
-    p2(1), p2(2), 1.0f, 1.0f, color|_ulAlphaHUD,
-    p3(1), p3(2), 0.0f, 1.0f, color|_ulAlphaHUD
+    p0(1), p0(2), 0.0f, 0.0f, final_color,
+    p1(1), p1(2), 1.0f, 0.0f, final_color,
+    p2(1), p2(2), 1.0f, 1.0f, final_color,
+    p3(1), p3(2), 0.0f, 1.0f, final_color
     );
 
   _pDP->FlushRenderingQueue();
@@ -430,12 +435,16 @@ static void DIO_DrawIconCircle
   EScreenPos x_anchor, INDEX x_offset,
   EScreenPos y_anchor, INDEX y_offset,
   CTextureObject &toIcon,
-  FLOAT percentage
+  FLOAT percentage,
+  COLOR color = C_WHITE,
+  FLOAT opacity = 1.0f
 )
 {
   if (percentage < 0.1f) {
     return;
   }
+  const UBYTE alpha = Clamp(INDEX(opacity * _ulAlphaHUD), INDEX(0), INDEX(255));
+  const INDEX final_color = (color & 0xFFFFFF00) | alpha;
 
   CTextureData* ptd = (CTextureData*)toIcon.GetData();
   const FLOAT width = ptd->GetPixWidth() * _dioHUDScaling;
@@ -471,10 +480,10 @@ static void DIO_DrawIconCircle
   FLOAT2D pinterp = (p0 + p1)*0.5f;
   FLOAT2D pinterpUV = (p0UV + p1UV)*0.5f;
   _pDP->AddTexture(
-    p0(1), p0(2), p0UV(1), p0UV(2), C_WHITE|_ulAlphaHUD,
-    x_pos, y_pos, 0.5f, 0.5f, C_WHITE|_ulAlphaHUD ,
-    p1(1), p1(2), p1UV(1), p1UV(2), C_WHITE|_ulAlphaHUD,
-    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), C_WHITE|_ulAlphaHUD   
+    p0(1), p0(2), p0UV(1), p0UV(2), final_color,
+    x_pos, y_pos, 0.5f, 0.5f, final_color,
+    p1(1), p1(2), p1UV(1), p1UV(2), final_color,
+    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), final_color   
     );
 
 if (percentage > 12.5f)
@@ -490,10 +499,10 @@ if (percentage > 12.5f)
   FLOAT2D pinterp = (p0 + p1)*0.5f;
   FLOAT2D pinterpUV = (p0UV + p1UV)*0.5f;
   _pDP->AddTexture(
-    x_pos, y_pos, 0.5f, 0.5f, C_WHITE|_ulAlphaHUD ,
-    p0(1), p0(2), p0UV(1), p0UV(2), C_WHITE|_ulAlphaHUD,
-    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), C_WHITE|_ulAlphaHUD,
-    p1(1), p1(2), p1UV(1), p1UV(2), C_WHITE|_ulAlphaHUD
+    x_pos, y_pos, 0.5f, 0.5f, final_color,
+    p0(1), p0(2), p0UV(1), p0UV(2), final_color,
+    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), final_color,
+    p1(1), p1(2), p1UV(1), p1UV(2), final_color
     );
 if (percentage > 37.5f)
 {
@@ -508,10 +517,10 @@ if (percentage > 37.5f)
   FLOAT2D pinterp = (p0 + p1)*0.5f;
   FLOAT2D pinterpUV = (p0UV + p1UV)*0.5f;
   _pDP->AddTexture(
-    x_pos, y_pos, 0.5f, 0.5f, C_WHITE|_ulAlphaHUD ,
-    p0(1), p0(2), p0UV(1), p0UV(2), C_WHITE|_ulAlphaHUD,
-    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), C_WHITE|_ulAlphaHUD,
-    p1(1), p1(2), p1UV(1), p1UV(2), C_WHITE|_ulAlphaHUD
+    x_pos, y_pos, 0.5f, 0.5f, final_color,
+    p0(1), p0(2), p0UV(1), p0UV(2), final_color,
+    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), final_color,
+    p1(1), p1(2), p1UV(1), p1UV(2), final_color
     );
 if (percentage > 62.5f)
 {
@@ -526,10 +535,10 @@ if (percentage > 62.5f)
   FLOAT2D pinterp = (p0 + p1)*0.5f;
   FLOAT2D pinterpUV = (p0UV + p1UV)*0.5f;
   _pDP->AddTexture(
-    x_pos, y_pos, 0.5f, 0.5f, C_WHITE|_ulAlphaHUD ,
-    p0(1), p0(2), p0UV(1), p0UV(2), C_WHITE|_ulAlphaHUD,
-    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), C_WHITE|_ulAlphaHUD,
-    p1(1), p1(2), p1UV(1), p1UV(2), C_WHITE|_ulAlphaHUD
+    x_pos, y_pos, 0.5f, 0.5f, final_color,
+    p0(1), p0(2), p0UV(1), p0UV(2), final_color,
+    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), final_color,
+    p1(1), p1(2), p1UV(1), p1UV(2), final_color
     );
 if (percentage > 87.5f)
 {
@@ -544,10 +553,10 @@ if (percentage > 87.5f)
   FLOAT2D pinterp = (p0 + p1)*0.5f;
   FLOAT2D pinterpUV = (p0UV + p1UV)*0.5f;
   _pDP->AddTexture(
-    x_pos, y_pos, 0.5f, 0.5f, C_WHITE|_ulAlphaHUD ,
-    p0(1), p0(2), p0UV(1), p0UV(2), C_WHITE|_ulAlphaHUD,
-    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), C_WHITE|_ulAlphaHUD,
-    p1(1), p1(2), p1UV(1), p1UV(2), C_WHITE|_ulAlphaHUD
+    x_pos, y_pos, 0.5f, 0.5f, final_color,
+    p0(1), p0(2), p0UV(1), p0UV(2), final_color,
+    pinterp(1), pinterp(2), pinterpUV(1), pinterpUV(2), final_color,
+    p1(1), p1(2), p1UV(1), p1UV(2), final_color
     );
 }
 }
@@ -564,13 +573,16 @@ static void DIO_DrawText
   const CTString &strText,
   FLOAT textScale,
   EScreenPos text_alignment,
-  COLOR col
+  COLOR col,
+  FLOAT opacity = 1.0f,
+  BOOL framed = FALSE
 )
 {
   _pDP->SetTextCharSpacing(textScale * _dioHUDScaling * _pDP->dp_FontData->fd_pixCharSpacing);
   _pDP->SetTextScaling(textScale * _dioHUDScaling);
 
-  FLOAT text_width = _pDP->GetTextWidth(strText);
+  const FLOAT text_width_orig = _pDP->GetTextWidth(strText);
+  FLOAT text_width = text_width_orig;
   const FLOAT text_height = _pDP->dp_FontData->fd_pixCharHeight * _pDP->dp_fTextScaling;
 
   FLOAT x_pos = 0.0f;
@@ -594,7 +606,14 @@ static void DIO_DrawText
   }
   y_pos += static_cast<FLOAT>(y_offset) * _dioHUDScaling - text_height;
 
-  _pDP->PutText(strText, x_pos, y_pos, col|_ulAlphaHUD);
+  const UBYTE alpha = Clamp(INDEX(opacity * _ulAlphaHUD), INDEX(0), INDEX(255));
+  const INDEX final_color = (col & 0xFFFFFF00) | alpha;
+
+  if (framed) {
+    _pDP->Fill(x_pos, y_pos, text_width_orig, text_height, 0x19191980);
+  }
+
+  _pDP->PutText(strText, x_pos, y_pos, final_color);
 }
 
 static void DrawRotatedQuad( class CTextureObject *_pTO, FLOAT fX, FLOAT fY, FLOAT fSize, ANGLE aAngle, COLOR col)
@@ -811,6 +830,8 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   if( penPlayerCurrent->IsPredictor()) penLast = (CPlayer*)(((CPlayer*)penPlayerCurrent)->GetPredicted());
   ASSERT( penLast!=NULL);
   if( penLast==NULL) return; // !!!! just in case
+
+  FixupHiresFonts();
 
   // cache local variables
   hud_fOpacity = Clamp( hud_fOpacity, 0.1f, 1.0f);
@@ -1045,21 +1066,53 @@ HEALTH
 /*
 ULTIMATE
 */
+  FLOAT ultimate_opacity = 0.0f;
+  if (_penPlayer->m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
+    ultimate_opacity = Clamp(2.0f * (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate), 0.0f, 1.0f);
 
-  //DIO_DrawIcon(ESP_Middle, 0, ESP_End, -120 - 32, _toFireTexture);
-  //DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltFlare, _pTimer->CurrentTick()*45.0f*PI/180.0f);
-  //DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUlt);
+    if (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate < 5.0f) {
+      
+      CTString switch_to_stand_button = GetButtonName(_penPlayer, "Toggle stand");
+      if (switch_to_stand_button != "")
+      {
+        _pDP->SetFont(_pfdDisplayFont);
+        strValue.PrintF(TRANS("Press '%s' to toggle STAND"), switch_to_stand_button);
+        DIO_DrawText(ESP_Middle, 0, ESP_End, -300, strValue, 3.0f, ESP_Middle, C_WHITE, 1.0f, TRUE);
+        _pDP->SetFont(&_fdNumbersFont);
+      }
+    }
 
-  DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltBcg);
-  DIO_DrawIconCircle(ESP_Middle, 0, ESP_End, -90 - 32, _toUltOverlay, int(_pTimer->CurrentTick()) % 100);
-  strValue.PrintF("%d", int(_pTimer->CurrentTick()) % 100);
-  DIO_DrawText(ESP_Middle, -4, ESP_End, -53 -32, strValue, 1.0f, ESP_Middle, C_WHITE);
+  }
+  if (ultimate_opacity > 0.0f) {
+    BOOL can_throw_rodarollada = const_cast<CPlayer*>(_penPlayer)->CanThrowRodaRollaDa();
+
+    COLOR ult_icon_color = C_WHITE;
+    CMusicHolder &mh = (CMusicHolder&)*_penPlayer->m_penMainMusicHolder;
+    if (mh.IsZaWarudo() && !can_throw_rodarollada) {
+      ult_icon_color = C_GRAY;
+    }
+
+    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -120 - 32, _toFireTexture, 0.0f, C_WHITE, ultimate_opacity);
+    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltFlare, _pTimer->CurrentTick()*45.0f*PI/180.0f, C_WHITE, ultimate_opacity);
+    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (can_throw_rodarollada ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
+  }
+  if (ultimate_opacity < 1.0f) {
+    const FLOAT ult_percentage = (_penPlayer->m_ultimateCharge / static_cast<FLOAT>(MAX_ULTIMATE_CHARGE)) * 100.0f;
+    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltBcg, 0.0f, C_WHITE, 1.0f - ultimate_opacity);
+    DIO_DrawIconCircle(ESP_Middle, 0, ESP_End, -90 - 32, _toUltOverlay, ult_percentage, C_WHITE, 1.0f - ultimate_opacity);
+    strValue.PrintF("%d", int(ult_percentage));
+    DIO_DrawText(ESP_Middle, -4, ESP_End, -53 -32, strValue, 1.0f, ESP_Middle, C_WHITE, 1.0f - ultimate_opacity);
+  }
+
+
+
+
 
   CTString ultimate_button = GetButtonName(_penPlayer, "Ultimate");
   if (ultimate_button != "")
   {
     _pDP->SetFont(_pfdDisplayFont);
-    DIO_DrawText(ESP_Middle, 0, ESP_End, -20, ultimate_button, 1.0f, ESP_Middle, C_WHITE);
+    DIO_DrawText(ESP_Middle, 0, ESP_End, -20, ultimate_button, 3.0f, ESP_Middle, C_WHITE);
     _pDP->SetFont(&_fdNumbersFont);
   }
 
@@ -1575,6 +1628,7 @@ extern void InitHUD(void)
     _toUltOverlay.SetData_t(CTFILENAME("Textures\\HUD\\ult_overlay.tex"));
     _toFireTexture.SetData_t(CTFILENAME("Textures\\UltimateFire\\UltimateFire.tex"));
     _toUlt.SetData_t(CTFILENAME("Textures\\HUD\\ult.tex"));
+    _toUltRodarollada.SetData_t(CTFILENAME("Textures\\HUD\\ult_rodarollada.tex"));
     _toUltFlare.SetData_t(CTFILENAME("Textures\\HUD\\ult_flare.tex"));
     _toWeaponBrace.SetData_t(CTFILENAME("Textures\\HUD\\weapon_brace.tex"));
     _toInfAmmo.SetData_t(CTFILENAME("Textures\\HUD\\no_ammo.tex"));
@@ -1640,6 +1694,7 @@ extern void InitHUD(void)
     ((CTextureData*)_toFireTexture.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toUlt.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toUltFlare.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toUltRodarollada.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toWeaponBrace.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toInfAmmo.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toDIO.GetData())->Force(TEX_CONSTANT);

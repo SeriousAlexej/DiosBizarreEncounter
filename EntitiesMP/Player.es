@@ -50,6 +50,7 @@
 #include "EntitiesJoJo/RodaRollaDa.h"
 #include "EntitiesJoJo/RodaRollaDebris.h"
 #include "EntitiesJoJo/entitycast.h"
+#include "EntitiesJoJo/jojo_events.h"
 
 extern CMusicHolder* g_musicHolder;
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
@@ -1509,6 +1510,9 @@ properties:
  202 BOOL m_bSwitchViewAfterStand = FALSE,
  203 CEntityPointer m_penDioPosing,
  204 BOOL m_bInEmote = FALSE,
+ 205 INDEX m_ultimateCharge = 0,
+ 206 FLOAT m_tmGainedUltimate = 0.0f,
+ 207 FLOAT m_tmLastUltAutoIncrement = 0.0f,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1656,6 +1660,89 @@ components:
 
 
 functions:
+
+  void AddUltimate(INDEX iUltimate)
+  {
+    if (m_penTheWorld) {
+      return;
+    }
+    BOOL was_incomplete = (m_ultimateCharge < MAX_ULTIMATE_CHARGE);
+    m_ultimateCharge += iUltimate;
+    m_ultimateCharge = Clamp(m_ultimateCharge, INDEX(0), INDEX(MAX_ULTIMATE_CHARGE));
+    if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE && was_incomplete) {
+      m_tmGainedUltimate = _pTimer->CurrentTick();
+      
+      if (!m_penTheWorld)
+      {
+        ESpawnStand ess;
+        ess.penOwner = this;
+        m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
+        m_penTheWorld->Initialize(ess);
+      }
+    }
+  }
+
+  BOOL CanThrowRodaRollaDa()
+  {
+    return m_pstState == PST_FALL &&
+           m_penMainMusicHolder != NULL &&
+           ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
+           ((CMusicHolder*)&*m_penMainMusicHolder)->m_penDioPlayer.ep_pen == GetPredictionTail();
+  }
+
+  void DoSwitchStandMode()
+  {
+    if (m_penTheWorld) {
+      if (m_mode == STAND_PASSIVE) {
+        // make old Warudo disappear
+        m_penTheWorld->SwitchToEditorModel();
+        m_penTheWorld->SendEvent(EStop());
+
+        // new Warudo is set as child to follow player
+        ESpawnStand ess;
+        ess.penOwner = this;
+        ess.wasTimeStopped = ((CTheWorld&)*(m_penTheWorld.ep_pen->GetPredictionTail())).m_isTimeStopped;
+        m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
+        m_penTheWorld->Initialize(ess);
+        m_penTheWorld->SetParent(this);
+
+        PlayPoseAnim();
+        m_penDioPosing = CreateEntity(GetPlacement(), CLASS_DIO_POSING);
+        m_penDioPosing->Initialize(ess);
+
+        // force switch to hands or knife
+        CPlayerWeapons& weapons = ((CPlayerWeapons&)*m_penWeapons);
+        if (weapons.m_iCurrentWeapon != WEAPON_KNIFE && weapons.m_iCurrentWeapon != WEAPON_HANDS) {
+          ESelectWeapon eSelect;
+          eSelect.iWeapon = weapons.GetSelectedWeapon(WEAPON_HANDS);
+          weapons.SendEvent(eSelect);
+        }
+
+        // force switch to 3rd person
+        m_bSwitchViewAfterStand = (m_iViewState == PVT_PLAYEREYES);
+        if (m_bSwitchViewAfterStand) {
+          ChangePlayerView();
+        }
+
+        m_mode = STAND_ENGAGED;
+      } else {
+        m_mode = STAND_PASSIVE;
+
+        // free Warudo and let it follow player freely
+        m_penTheWorld->SetParent(NULL);
+
+        m_penDioPosing->SendEvent(EStop());
+        m_penDioPosing = NULL;
+
+        ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
+
+        // restore previous view
+        if (m_bSwitchViewAfterStand) {
+          ChangePlayerView();
+        }
+      }
+    }
+  }
 
   INDEX GenderSound(INDEX iSound)
   {
@@ -4260,6 +4347,12 @@ functions:
       // reset damage ammount
       m_fDamageAmmount = 0.0f;
     }
+
+    if (_pTimer->CurrentTick() - m_tmLastUltAutoIncrement > 1.0f) {
+      m_tmLastUltAutoIncrement = _pTimer->CurrentTick();
+      const FLOAT ult_auto_charge_speed = MAX_ULTIMATE_CHARGE / (5.0f * 60.0f);
+      AddUltimate(ult_auto_charge_speed);
+    }
   }
 
   // Auto-actions
@@ -4617,15 +4710,6 @@ functions:
         vTranslation /= 2.5f;
         // don't go down
         vTranslation(2) = 0.0f;
-
-
-        if (!m_penTheWorld)
-        {
-          ESpawnStand ess;
-          ess.penOwner = this;
-          m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
-          m_penTheWorld->Initialize(ess);
-        }
       }
 
       // if diving
@@ -4953,19 +5037,19 @@ functions:
     }
 
     if (ulNewButtons&PLACT_ULTIMATE) {
-      if (m_pstState == PST_FALL &&
-        m_penMainMusicHolder != NULL &&
-        ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
-        ((CMusicHolder*)&*m_penMainMusicHolder)->m_penDioPlayer.ep_pen == GetPredictionTail())
-      {
-        //if (m_mode == STAND_ENGAGED) {
-        //  SendEvent(ESwitchStandMode());
-        //}
-        penWeapon->FireRodaRollaDa();
-      }
+      if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
+        if (CanThrowRodaRollaDa())
+        {
+          //if (m_mode == STAND_ENGAGED) {
+          //  SendEvent(ESwitchStandMode());
+          //}
+          penWeapon->FireRodaRollaDa();
+        }
 
-      if (m_penTheWorld) {
-        m_penTheWorld->SendEvent(EStart());
+        if (m_penTheWorld) {
+          m_penTheWorld->SendEvent(EStart());
+          SpawnReminder(this, ZA_WARUDO_DURATION + 3.0f, 1900);
+        }
       }
     }
 
@@ -4976,10 +5060,6 @@ functions:
 
     // if reload is pressed
     if (ulReleasedButtons&PLACT_RELOAD) {
-      if (m_penTheWorld) {
-        m_penTheWorld->SendEvent(EStop());
-        m_penTheWorld = NULL;
-      }
       ((CPlayerWeapons&)*m_penWeapons).SendEvent(EReloadWeapon());
     }
     // if fire bomb is pressed
@@ -7248,6 +7328,22 @@ procedures:
           call DoEmote();
         }
       }
+      on (EZaWarudoEnd) : {
+        m_ultimateCharge = 0;
+        resume;
+      }
+      on (EReminder eReminder) :
+      {
+        if (m_penTheWorld && 1900 == eReminder.iValue && m_ultimateCharge < MAX_ULTIMATE_CHARGE) {
+          if (m_mode == STAND_ENGAGED) {
+            m_bInEmote = FALSE;
+            DoSwitchStandMode();
+          }
+          m_penTheWorld->SendEvent(EStop());
+          m_penTheWorld = NULL;
+        }
+        resume;
+      }
       on (ERodaRollaSaidFULLSTOP) :
       {
         ForceFullStop();
@@ -7255,56 +7351,7 @@ procedures:
       }
       on (ESwitchStandMode) :
       {
-        if (m_penTheWorld) {
-          if (CanPlayAnim()) {
-            // make old Warudo disappear
-            m_penTheWorld->SwitchToEditorModel();
-            m_penTheWorld->SendEvent(EStop());
-
-            // new Warudo is set as child to follow player
-            ESpawnStand ess;
-            ess.penOwner = this;
-            ess.wasTimeStopped = ((CTheWorld&)*(m_penTheWorld.ep_pen->GetPredictionTail())).m_isTimeStopped;
-            m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
-            m_penTheWorld->Initialize(ess);
-            m_penTheWorld->SetParent(this);
-
-            PlayPoseAnim();
-            m_penDioPosing = CreateEntity(GetPlacement(), CLASS_DIO_POSING);
-            m_penDioPosing->Initialize(ess);
-
-            // force switch to hands or knife
-            CPlayerWeapons& weapons = ((CPlayerWeapons&)*m_penWeapons);
-            if (weapons.m_iCurrentWeapon != WEAPON_KNIFE && weapons.m_iCurrentWeapon != WEAPON_HANDS) {
-              ESelectWeapon eSelect;
-              eSelect.iWeapon = weapons.GetSelectedWeapon(WEAPON_HANDS);
-              weapons.SendEvent(eSelect);
-            }
-
-            // force switch to 3rd person
-            m_bSwitchViewAfterStand = (m_iViewState == PVT_PLAYEREYES);
-            if (m_bSwitchViewAfterStand) {
-              ChangePlayerView();
-            }
-
-            m_mode = STAND_ENGAGED;
-          } else {
-            m_mode = STAND_PASSIVE;
-
-            // free Warudo and let it follow player freely
-            m_penTheWorld->SetParent(NULL);
-
-            m_penDioPosing->SendEvent(EStop());
-            m_penDioPosing = NULL;
-
-            ((CPlayerAnimator&)*m_penAnimator).SetWeapon();
-
-            // restore previous view
-            if (m_bSwitchViewAfterStand) {
-              ChangePlayerView();
-            }
-          }
-        }
+        DoSwitchStandMode();
         resume;
       }
       on (ECameraStart eStart) : {
@@ -7356,6 +7403,7 @@ procedures:
         m_psLevelStats.ps_iScore += eScore.iPoints;
         m_psGameStats.ps_iScore += eScore.iPoints;
         m_iMana  += eScore.iPoints*GetSP()->sp_fManaTransferFactor;
+        AddUltimate(eScore.iPoints);
         CheckHighScore();
         resume;
       }
