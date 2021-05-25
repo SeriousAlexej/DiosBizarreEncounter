@@ -2832,19 +2832,7 @@ void CGame::LCDSetDrawport(CDrawPort *pdp)
   
   ::LCDSetDrawport(pdp);
 
-  CTextureData* p_FontTexture = NULL;
-
-  DECLARE_CTFILENAME(fontTexture_caps, "Fonts\\Display3-caps.tex");
-  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_caps);
-  p_FontTexture->ChangeSize(512);
-  
-  DECLARE_CTFILENAME(fontTexture_narrow, "Fonts\\Display3-narrow.tex");
-  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_narrow);
-  p_FontTexture->ChangeSize(256);
-  
-  DECLARE_CTFILENAME(fontTexture_normal, "Fonts\\Display3-normal.tex");
-  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_normal);
-  p_FontTexture->ChangeSize(256);
+  FixupHiresFonts();
 }
 void CGame::LCDDrawBox(PIX pixUL, PIX pixDR, PIXaabbox2D &box, COLOR col)
 {

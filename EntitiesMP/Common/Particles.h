@@ -1,3 +1,4 @@
+void DECL_DLL FixupHiresFonts();
 // init particle effects
 void DECL_DLL InitParticles(void);
 void DECL_DLL InitParticleTables(void);

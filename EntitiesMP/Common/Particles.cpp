@@ -1,4 +1,5 @@
 #include "StdH.h"
+#include <Engine/Templates/Stock_CTextureData.h>
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesJoJo/RodaRollaDa.h"
 #include "EntitiesMP/BloodSpray.h"
@@ -6,6 +7,23 @@
 #include "EntitiesMP/WorldSettingsController.h"
 #include "EntitiesMP/BackgroundViewer.h"
 #include "EntitiesMP/EnvironmentParticlesHolder.h"
+
+void FixupHiresFonts()
+{
+  CTextureData* p_FontTexture = NULL;
+
+  DECLARE_CTFILENAME(fontTexture_caps, "Fonts\\Display3-caps.tex");
+  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_caps);
+  p_FontTexture->ChangeSize(512);
+  
+  DECLARE_CTFILENAME(fontTexture_narrow, "Fonts\\Display3-narrow.tex");
+  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_narrow);
+  p_FontTexture->ChangeSize(256);
+  
+  DECLARE_CTFILENAME(fontTexture_normal, "Fonts\\Display3-normal.tex");
+  p_FontTexture = _pTextureStock->Obtain_t(fontTexture_normal);
+  p_FontTexture->ChangeSize(256);
+}
 
 static CTextureObject _toRomboidTrail;
 static CTextureObject _toBombTrail;
