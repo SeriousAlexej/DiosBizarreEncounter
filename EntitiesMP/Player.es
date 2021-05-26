@@ -1076,6 +1076,7 @@ void CPlayer_Precache(void)
 
 void CPlayer_OnInitClass(void)
 {
+  FixupHiresFonts();
   // clear current player controls
   memset(&pctlCurrent, 0, sizeof(pctlCurrent));
   // declare player control variables
@@ -2991,7 +2992,7 @@ functions:
       pdp->SetFont( _pfdDisplayFont);
       pdp->SetTextScaling( fScale);
       pdp->SetTextAspect( 1.0f);
-      pdp->PutTextCXY( m_strCenterMessage, pixDPWidth*0.5f, pixDPHeight*0.85f, C_WHITE|0xDD);
+      pdp->PutTextCXY( m_strCenterMessage, pixDPWidth*0.5f, pixDPHeight*0.8f, C_WHITE|0xDD);
     // print picked item
     } else if (_pTimer->CurrentTick()<m_tmLastPicked+PICKEDREPORT_TIME) {
       pdp->SetFont( _pfdDisplayFont);
@@ -3003,11 +3004,11 @@ functions:
       } else {
         strPicked.PrintF("%s +%d", m_strPickedName, int(m_fPickedAmmount));
       }
-      pdp->PutTextCXY( strPicked, pixDPWidth*0.5f, pixDPHeight*0.82f, C_WHITE|0xDD);
+      pdp->PutTextCXY( strPicked, pixDPWidth*0.5f, pixDPHeight*0.77f, C_WHITE|0xDD);
       if (!GetSP()->sp_bCooperative && !GetSP()->sp_bUseFrags && m_fPickedMana>=1) {
         CTString strValue;
         strValue.PrintF("%s +%d", TRANS("Value"), INDEX(m_fPickedMana));
-        pdp->PutTextCXY( strValue, pixDPWidth*0.5f, pixDPHeight*0.85f, C_WHITE|0xDD);
+        pdp->PutTextCXY( strValue, pixDPWidth*0.5f, pixDPHeight*0.8f, C_WHITE|0xDD);
       }
     }
 
