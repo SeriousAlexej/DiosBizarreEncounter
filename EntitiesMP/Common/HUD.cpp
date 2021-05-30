@@ -113,6 +113,7 @@ static CTextureObject _toWFlamer;
 static CTextureObject _toWLaser;
 static CTextureObject _toWIronCannon;
 static CTextureObject _toWHands;
+static CTextureObject _toWSBomb;
 
 // powerup textures (ORDER IS THE SAME AS IN PLAYER.ES!)
 #define MAX_POWERUPS 4
@@ -1157,6 +1158,16 @@ ULTIMATE
     }
   }
 
+  if (penPlayerCurrent->m_iSeriousBombCount > 0)
+  {
+    DIO_DrawIcon(ESP_End, -32, ESP_End, -237, _toWeaponBrace);
+    DIO_DrawIcon(ESP_End, -128, ESP_End, -240, _toWSBomb);
+    strValue.PrintF("%d", penPlayerCurrent->m_iSeriousBombCount);
+    DIO_DrawText(ESP_End, -82, ESP_End, -252, strValue, 0.75f, ESP_End, C_WHITE);
+    DIO_DrawText(ESP_End, -82+7, ESP_End, -252-7, "/", 0.5f, ESP_Middle, additional_color);
+    DIO_DrawText(ESP_End, -82+13, ESP_End, -252-7, "3", 0.5f, ESP_Start, C_WHITE);
+  }
+
   // display all ammo infos
   INDEX i;
   COLOR colIcon;
@@ -1673,6 +1684,7 @@ extern void InitHUD(void)
     _toWSniper.SetData_t(          CTFILENAME("Textures\\HUD\\Weapons\\Sniper.tex"));
     _toWFlamer.SetData_t(          CTFILENAME("Textures\\HUD\\Weapons\\Flamer.tex"));
     _toWHands.SetData_t(           CTFILENAME("Textures\\HUD\\Weapons\\Hand.tex"));
+    _toWSBomb.SetData_t(           CTFILENAME("Textures\\HUD\\Weapons\\SeriousBomb.tex"));
         
     // initialize powerup textures (DO NOT CHANGE ORDER!)
     _atoPowerups[0].SetData_t( CTFILENAME("Textures\\HUD\\Invisibility.tex"));
@@ -1736,6 +1748,7 @@ extern void InitHUD(void)
     ((CTextureData*)_toWMinigun        .GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toWFlamer         .GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toWHands          .GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toWSBomb          .GetData())->Force(TEX_CONSTANT);
     
     ((CTextureData*)_atoPowerups[0].GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_atoPowerups[1].GetData())->Force(TEX_CONSTANT);
