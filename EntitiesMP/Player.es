@@ -1706,6 +1706,16 @@ functions:
     }
   }
 
+  FLOAT GetStandAbilityCooldown() const
+  {
+    return 10.0f;
+  }
+
+  FLOAT GetStandAbilityTime() const
+  {
+    return 10.0f;
+  }
+
   BOOL CanThrowRodaRollaDa()
   {
     return (_pTimer->CurrentTick() - m_tmLastRodaRollaThrew) > GetSP()->sp_fRodaRollaCooldown &&
@@ -1719,7 +1729,7 @@ functions:
   {
     if (m_penTheWorld) {
       if (m_mode == STAND_PASSIVE) {
-        if ((_pTimer->CurrentTick() - m_tmWhenStandTurnedPassive) <= 10.0f) {
+        if ((_pTimer->CurrentTick() - m_tmWhenStandTurnedPassive) <= GetStandAbilityCooldown()) {
           return;
         }
         // make old Warudo disappear
@@ -1753,7 +1763,7 @@ functions:
         }
 
         m_mode = STAND_ENGAGED;
-        SpawnReminder(this, 10.0f, 1900 + m_myLife);
+        SpawnReminder(this, GetStandAbilityTime(), 1900 + m_myLife);
       } else {
         m_tmWhenStandTurnedPassive = _pTimer->CurrentTick();
         m_mode = STAND_PASSIVE;

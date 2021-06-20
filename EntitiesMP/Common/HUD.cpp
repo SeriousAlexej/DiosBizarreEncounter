@@ -1173,7 +1173,7 @@ protected:
     if (!player)
       return FLOAT2D(1.0f, 1.0f);
 
-    return FLOAT2D(player->m_tmWhenStandTurnedPassive, 10.0f);
+    return FLOAT2D(player->m_tmWhenStandTurnedPassive, player->GetStandAbilityCooldown());
   }
 
   ABState DetermineState(const CPlayer* player)
@@ -1187,7 +1187,8 @@ protected:
     if (player->m_mode == STAND_ENGAGED)
       return AB_Using;
 
-    if (_pTimer->CurrentTick() - player->m_tmWhenStandTurnedPassive <= 10.0f)
+    FLOAT2D cd_time_and_duration = GetCooldownTimeAndDuration(player);
+    if (_pTimer->CurrentTick() - cd_time_and_duration(1) <= cd_time_and_duration(2))
       return AB_Cooldown;
 
     return AB_Active;
