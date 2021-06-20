@@ -9,6 +9,7 @@
 #include "EntitiesMP/PlayerWeapons.h"
 #include "EntitiesMP/BackgroundViewer.h"
 #include "EntitiesMP/WorldSettingsController.h"
+#include "Models/RODAROLLADA/RODAROLLADA.h"
 %}
 
 uses "EntitiesMP/BasicEffects";
@@ -65,6 +66,9 @@ void CRodaRollaDa_OnPrecache(CDLLEntityClass* pdec, INDEX iUser)
   pdec->PrecacheTexture(TEX_REFL_LIGHTMETAL01);
   pdec->PrecacheModel(MODEL_RODA_ROLLA_DA);
   pdec->PrecacheTexture(TEXTURE_RODA_ROLLA_DA);
+  pdec->PrecacheTexture(TEXTURE_RODA_ROLLA_DA_LOW);
+  pdec->PrecacheTexture(TEXTURE_RODA_ROLLA_DA_MED);
+  pdec->PrecacheTexture(TEXTURE_RODA_ROLLA_DA_HI);
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_CANNON);
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_CANNONEXPLOSIONSTAIN);
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_CANNONSHOCKWAVE);
@@ -72,6 +76,7 @@ void CRodaRollaDa_OnPrecache(CDLLEntityClass* pdec, INDEX iUser)
 }
 
 #define MAX_EXPLOSION_DAMAGE 6000.0f
+#define BASE_EXPLOSION_DAMAGE 2000.0f
 #define STRETCH_3  FLOAT3D(5.0f,5.0f,5.0f)
 #define STRETCH_4  FLOAT3D(6.0f,6.0f,6.0f)
 %}
@@ -88,15 +93,18 @@ properties:
   3 INDEX          m_loopProtectionCounter = 0,
   4 FLOAT3D        m_launchDir = FLOAT3D(0.0f, 0.0f, 0.0f),
   5 FLOAT          m_explosionTime = 0.0f,
-  6 FLOAT          m_explosionAccumulatedDamage = 750.0f,
+  6 FLOAT          m_explosionAccumulatedDamage = BASE_EXPLOSION_DAMAGE,
 
 components:
   1 model   MODEL_RODA_ROLLA_DA       "Models\\RODAROLLADA\\RODAROLLADA.mdl",
   2 texture TEXTURE_RODA_ROLLA_DA     "Models\\RODAROLLADA\\WRYYYYYY.tex",
-  3 texture TEX_SPEC_MEDIUM           "Models\\SpecularTextures\\Medium.tex",
-  4 texture TEX_REFL_LIGHTMETAL01     "Models\\ReflectionTextures\\LightMetal01.tex",
-  5 class   CLASS_BASIC_EFFECT        "Classes\\BasicEffect.ecl",
-  6 class   CLASS_RODA_ROLLA_DEBRIS   "Classes\\RodaRollaDebris.ecl",
+  3 texture TEXTURE_RODA_ROLLA_DA_LOW "Models\\RODAROLLADA\\WRYYYYYY_01.tex",
+  4 texture TEXTURE_RODA_ROLLA_DA_MED "Models\\RODAROLLADA\\WRYYYYYY_02.tex",
+  5 texture TEXTURE_RODA_ROLLA_DA_HI  "Models\\RODAROLLADA\\WRYYYYYY_03.tex",
+  6 texture TEX_SPEC_MEDIUM           "Models\\SpecularTextures\\Medium.tex",
+  7 texture TEX_REFL_LIGHTMETAL01     "Models\\ReflectionTextures\\LightMetal01.tex",
+  8 class   CLASS_BASIC_EFFECT        "Classes\\BasicEffect.ecl",
+  9 class   CLASS_RODA_ROLLA_DEBRIS   "Classes\\RodaRollaDebris.ecl",
 
 functions:
 
@@ -361,6 +369,18 @@ procedures:
           m_explosionAccumulatedDamage = ClampUp(
             m_explosionAccumulatedDamage + eDamage.fAmount,
             MAX_EXPLOSION_DAMAGE);
+          
+          FLOAT gained_percentage = (m_explosionAccumulatedDamage - BASE_EXPLOSION_DAMAGE) / (MAX_EXPLOSION_DAMAGE - BASE_EXPLOSION_DAMAGE);
+          if (gained_percentage <= 0.33f) {
+            GetModelObject()->PlayAnim(RODAROLLADA_ANIM_DMGLOW, AOF_NORESTART);
+            SetModelMainTexture(TEXTURE_RODA_ROLLA_DA_LOW);
+          } else if (gained_percentage <= 0.66f) {
+            GetModelObject()->PlayAnim(RODAROLLADA_ANIM_DMGMED, AOF_NORESTART);
+            SetModelMainTexture(TEXTURE_RODA_ROLLA_DA_MED);
+          } else {
+            GetModelObject()->PlayAnim(RODAROLLADA_ANIM_DMGHI, AOF_NORESTART);
+            SetModelMainTexture(TEXTURE_RODA_ROLLA_DA_HI);
+          }
           //CPrintF("DAMAGE WILL BE %f\n", m_explosionAccumulatedDamage);
           resume;
         }

@@ -638,6 +638,8 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
   pctlCurrent.bUseOrComputerLast = pctlCurrent.bUseOrComputer;
 };
 
+extern BOOL g_shouldInverse = FALSE;
+
 void ZaWarudoEffect(CDrawPort* pdp, TIME zaWarudoStartTime)
 {
   const INDEX width = pdp->GetWidth();
@@ -717,27 +719,9 @@ void ZaWarudoEffect(CDrawPort* pdp, TIME zaWarudoStartTime)
   if (factor < 0.01f)
     return;
 
-  BOOL should_inverse = FALSE;
-  switch (GetSP()->sp_iWarudoWarpEffect)
-  {
-  case 0:
-    should_inverse = TRUE;
-    break;
-
-  case 1:
-    should_inverse = FALSE;
-    break;
-
-  case 2:
-    should_inverse = rand()&1;
-    break;
-
-  default:
-    break;
-  }
 
   FLOAT refraction_factor = 0.5f + 0.5f*sin(ClampUp(orig_factor*0.5f, 1.0f)*2.0f*3.14159265f - 3.14159265f*0.5f);//sin(ClampUp(orig_factor * 0.35f, 1.0f) * 3.14159265f);
-  if (!should_inverse)
+  if (!g_shouldInverse)
     factor = refraction_factor;
 
   g_staticDataCache.UpdateRefractionRemap(width, height);
@@ -7232,6 +7216,7 @@ procedures:
  ************************************************************/
   Main(EVoid evoid)
   {
+    g_shouldInverse = FALSE;
     // remember start time
     time(&m_iStartTime);
 

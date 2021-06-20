@@ -82,7 +82,7 @@ void RangeDamage()
 {
   FLOAT hotSpot = 1.0f;
   FLOAT fallOff = 16.0f;
-  InflictRangeDamage(this, DMT_CANNONBALL_EXPLOSION, 100.0f,
+  InflictRangeDamage(this, DMT_CANNONBALL_EXPLOSION, 500.0f,
       GetPlacement().pl_PositionVector, hotSpot, fallOff);
 }
 
