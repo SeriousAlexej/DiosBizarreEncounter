@@ -359,8 +359,6 @@ procedures:
           {
             if (eReminder.iValue == ZAWARUDO_START)
             {
-              extern BOOL g_shouldInverse;
-              g_shouldInverse = (rand() & 1) ? TRUE : FALSE;
               EZaWarudo za_warudo;
               za_warudo.penDio = m_penOwner->GetPredictionTail();
               CPlayer& player = (CPlayer&)*za_warudo.penDio.ep_pen;

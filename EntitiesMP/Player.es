@@ -638,8 +638,6 @@ DECL_DLL void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction 
   pctlCurrent.bUseOrComputerLast = pctlCurrent.bUseOrComputer;
 };
 
-extern BOOL g_shouldInverse = FALSE;
-
 void ZaWarudoEffect(CDrawPort* pdp, TIME zaWarudoStartTime)
 {
   const INDEX width = pdp->GetWidth();
@@ -719,8 +717,27 @@ void ZaWarudoEffect(CDrawPort* pdp, TIME zaWarudoStartTime)
   if (factor < 0.01f)
     return;
 
+  BOOL should_inverse = FALSE;
+  switch (GetSP()->sp_iWarudoWarpEffect)
+  {
+  case 0:
+    should_inverse = TRUE;
+    break;
+
+  case 1:
+    should_inverse = FALSE;
+    break;
+
+  case 2:
+    should_inverse = rand()&1;
+    break;
+
+  default:
+    break;
+  }
+
   FLOAT refraction_factor = 0.5f + 0.5f*sin(ClampUp(orig_factor*0.5f, 1.0f)*2.0f*3.14159265f - 3.14159265f*0.5f);//sin(ClampUp(orig_factor * 0.35f, 1.0f) * 3.14159265f);
-  if (!g_shouldInverse)
+  if (!should_inverse)
     factor = refraction_factor;
 
   g_staticDataCache.UpdateRefractionRemap(width, height);
@@ -1514,6 +1531,9 @@ properties:
  205 INDEX m_ultimateCharge = 0,
  206 FLOAT m_tmGainedUltimate = 0.0f,
  207 FLOAT m_tmLastUltAutoIncrement = 0.0f,
+ 208 FLOAT m_tmLastRodaRollaThrew = 0.0f,
+ 209 INDEX m_myLife = 0,
+ 210 FLOAT m_tmWhenStandTurnedPassive = 0.0f,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1664,7 +1684,7 @@ functions:
 
   void AddUltimate(INDEX iUltimate)
   {
-    if (m_penTheWorld) {
+    if (m_penTheWorld && m_ultimateCharge == 0) {
       return;
     }
     BOOL was_incomplete = (m_ultimateCharge < MAX_ULTIMATE_CHARGE);
@@ -1672,9 +1692,12 @@ functions:
     m_ultimateCharge = Clamp(m_ultimateCharge, INDEX(0), INDEX(MAX_ULTIMATE_CHARGE));
     if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE && was_incomplete) {
       m_tmGainedUltimate = _pTimer->CurrentTick();
-      
+    }
+
+    if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE / 2) {
       if (!m_penTheWorld)
       {
+        m_tmWhenStandTurnedPassive = _pTimer->CurrentTick();
         ESpawnStand ess;
         ess.penOwner = this;
         m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
@@ -1685,7 +1708,8 @@ functions:
 
   BOOL CanThrowRodaRollaDa()
   {
-    return m_pstState == PST_FALL &&
+    return (_pTimer->CurrentTick() - m_tmLastRodaRollaThrew) > GetSP()->sp_fRodaRollaCooldown &&
+           m_pstState == PST_FALL &&
            m_penMainMusicHolder != NULL &&
            ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
            ((CMusicHolder*)&*m_penMainMusicHolder)->m_penDioPlayer.ep_pen == GetPredictionTail();
@@ -1695,6 +1719,9 @@ functions:
   {
     if (m_penTheWorld) {
       if (m_mode == STAND_PASSIVE) {
+        if ((_pTimer->CurrentTick() - m_tmWhenStandTurnedPassive) <= 10.0f) {
+          return;
+        }
         // make old Warudo disappear
         m_penTheWorld->SwitchToEditorModel();
         m_penTheWorld->SendEvent(EStop());
@@ -1726,7 +1753,9 @@ functions:
         }
 
         m_mode = STAND_ENGAGED;
+        SpawnReminder(this, 10.0f, 1900 + m_myLife);
       } else {
+        m_tmWhenStandTurnedPassive = _pTimer->CurrentTick();
         m_mode = STAND_PASSIVE;
 
         // free Warudo and let it follow player freely
@@ -5041,15 +5070,13 @@ functions:
       if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
         if (CanThrowRodaRollaDa())
         {
-          //if (m_mode == STAND_ENGAGED) {
-          //  SendEvent(ESwitchStandMode());
-          //}
           penWeapon->FireRodaRollaDa();
+          m_tmLastRodaRollaThrew = _pTimer->CurrentTick();
         }
 
         if (m_penTheWorld) {
           m_penTheWorld->SendEvent(EStart());
-          SpawnReminder(this, ZA_WARUDO_DURATION + 3.0f, 1900);
+          SpawnReminder(this, ZA_WARUDO_DURATION + 3.0f, -(1900 + m_myLife));
         }
       }
     }
@@ -5544,6 +5571,7 @@ functions:
     m_ulFlags &= PLF_INITIALIZED|PLF_LEVELSTARTED|PLF_RESPAWNINPLACE;  // must not clear initialized flag
     m_fFallTime = 0.0f;
     m_pstState = PST_STAND;
+    m_myLife += 1;
     m_fDamageAmmount = 0.0f;
     m_tmWoundedTime  = 0.0f;
     m_tmInvisibility    = 0.0f, 
@@ -7194,7 +7222,6 @@ procedures:
  ************************************************************/
   Main(EVoid evoid)
   {
-    g_shouldInverse = FALSE;
     // remember start time
     time(&m_iStartTime);
 
@@ -7335,13 +7362,18 @@ procedures:
       }
       on (EReminder eReminder) :
       {
-        if (m_penTheWorld && 1900 == eReminder.iValue && m_ultimateCharge < MAX_ULTIMATE_CHARGE) {
+        if (!((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
+            m_penTheWorld &&
+            1900 + m_myLife == abs(eReminder.iValue))
+        {
           if (m_mode == STAND_ENGAGED) {
             m_bInEmote = FALSE;
             DoSwitchStandMode();
           }
-          m_penTheWorld->SendEvent(EStop());
-          m_penTheWorld = NULL;
+          if (eReminder.iValue < 0 && m_ultimateCharge < MAX_ULTIMATE_CHARGE / 2) {
+            m_penTheWorld->SendEvent(EStop());
+            m_penTheWorld = NULL;
+          }
         }
         resume;
       }

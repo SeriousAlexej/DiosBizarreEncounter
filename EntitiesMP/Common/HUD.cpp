@@ -78,6 +78,24 @@ static CTextureObject _toZaWarudo;
 static CTextureObject _toBarBcg;
 static CTextureObject _toBar;
 
+static CTextureObject _toMBLeft;
+static CTextureObject _toMBRight;
+static CTextureObject _toMB3;
+static CTextureObject _toMB4;
+static CTextureObject _toMB5;
+static CTextureObject _toMWUp;
+static CTextureObject _toMWDown;
+
+static CTextureObject _toAbilityFrame;
+static CTextureObject _toAbilityCancel;
+static CTextureObject _toAbilityOverlay;
+static CTextureObject _toAbility_Stand;
+static CTextureObject _toAbility_Leg;
+static CTextureObject _toAbility_Zoom;
+static CTextureObject _toAbility_Knives;
+
+static CFontData* _owFont = NULL;
+
 // status bar textures
 static CTextureObject _toHealth;
 static CTextureObject _toOxygen;
@@ -351,6 +369,88 @@ static void DIO_DrawBcg
   _pDP->Fill(x_pos, y_pos, x_pos_end - x_pos, y_pos_end - y_pos, color);
 }
 
+static void DIO_DrawIconADD
+(
+  EScreenPos x_anchor, INDEX x_offset,
+  EScreenPos y_anchor, INDEX y_offset,
+  CTextureObject &toIcon,
+  ANGLE angle = 0.0f,
+  FLOAT2D scale = FLOAT2D(1.0f, 1.0f)
+)
+{
+  CTextureData* ptd = (CTextureData*)toIcon.GetData();
+  const FLOAT half_width = ptd->GetPixWidth()*0.5f * _dioHUDScaling * scale(1);
+  const FLOAT half_height = ptd->GetPixHeight()*0.5f * _dioHUDScaling * scale(2);
+
+  FLOAT x_pos = 0.0f;
+  if (x_anchor == ESP_Middle) {
+    x_pos = _pixDPWidth / 2;
+  } else if (x_anchor == ESP_End) {
+    x_pos = _pixDPWidth;
+  }
+  x_pos += static_cast<FLOAT>(x_offset) * _dioHUDScaling - half_width;
+  const FLOAT x_pos_end = x_pos + half_width + half_width;
+  
+  FLOAT y_pos = 0.0f;
+  if (y_anchor == ESP_Middle) {
+    y_pos = _pixDPHeight / 2;
+  } else if (y_anchor == ESP_End) {
+    y_pos = _pixDPHeight;
+  }
+  y_pos += static_cast<FLOAT>(y_offset) * _dioHUDScaling - half_height;
+  const FLOAT y_pos_end = y_pos + half_height + half_height;
+
+  _pDP->InitTexture(&toIcon);
+  // ADD blending mode
+  shaDisableDepthWrite();
+  shaDisableAlphaTest();
+  shaEnableBlend();
+  shaBlendFunc(GFX_ONE, GFX_ONE);
+
+  FLOAT3D p0(x_pos, y_pos, 1.0f);
+  FLOAT3D p1(x_pos_end, y_pos, 1.0f);
+  FLOAT3D p2(x_pos_end, y_pos_end, 1.0f);
+  FLOAT3D p3(x_pos, y_pos_end, 1.0f);
+
+  if (angle != 0.0f)
+  {
+    FLOAT2D vtoCenter(x_pos + half_width, y_pos + half_height);
+    FLOATmatrix3D toCenter(0.0f);
+    toCenter(1, 3) = vtoCenter(1);
+    toCenter(2, 3) = vtoCenter(2);
+    toCenter(1, 1) = 1.0f;
+    toCenter(2, 2) = 1.0f;
+    toCenter(3, 3) = 1.0f;
+    FLOATmatrix3D fromCenter(0.0f);
+    fromCenter(1, 3) = -vtoCenter(1);
+    fromCenter(2, 3) = -vtoCenter(2);
+    fromCenter(1, 1) = 1.0f;
+    fromCenter(2, 2) = 1.0f;
+    fromCenter(3, 3) = 1.0f;
+    FLOATmatrix3D rotate(0.0f);
+    rotate(1, 1) = cos(angle);
+    rotate(1, 2) = -sin(angle);
+    rotate(2, 1) = -rotate(1, 2);
+    rotate(2, 2) = rotate(1, 1);
+    rotate(3, 3) = 1.0f;
+    FLOATmatrix3D transformMatrix = toCenter * rotate * fromCenter;
+
+    p0 = p0 * transformMatrix;
+    p1 = p1 * transformMatrix;
+    p2 = p2 * transformMatrix;
+    p3 = p3 * transformMatrix;
+  }
+
+  _pDP->AddTexture(
+    p0(1), p0(2), 0.0f, 0.0f, C_WHITE | 255,
+    p1(1), p1(2), 1.0f, 0.0f, C_WHITE | 255,
+    p2(1), p2(2), 1.0f, 1.0f, C_WHITE | 255,
+    p3(1), p3(2), 0.0f, 1.0f, C_WHITE | 255
+    );
+
+  _pDP->FlushRenderingQueue();
+}
+
 static void DIO_DrawIcon
 (
   EScreenPos x_anchor, INDEX x_offset,
@@ -358,12 +458,14 @@ static void DIO_DrawIcon
   CTextureObject &toIcon,
   ANGLE angle = 0.0f,
   COLOR color = C_WHITE,
-  FLOAT opacity = 1.0f
+  FLOAT opacity = 1.0f,
+  FLOAT scale = 1.0f,
+  FLOAT vertical_slice = 1.0f // wow thats hardcode :D
 )
 {
   CTextureData* ptd = (CTextureData*)toIcon.GetData();
-  const FLOAT half_width = ptd->GetPixWidth()*0.5f * _dioHUDScaling;
-  const FLOAT half_height = ptd->GetPixHeight()*0.5f * _dioHUDScaling;
+  const FLOAT half_width = ptd->GetPixWidth()*0.5f * _dioHUDScaling * scale;
+  const FLOAT half_height = ptd->GetPixHeight()*0.5f * _dioHUDScaling * scale;
 
   FLOAT x_pos = 0.0f;
   if (x_anchor == ESP_Middle) {
@@ -385,8 +487,8 @@ static void DIO_DrawIcon
 
   _pDP->InitTexture(&toIcon);
   
-  FLOAT3D p0(x_pos, y_pos, 1.0f);
-  FLOAT3D p1(x_pos_end, y_pos, 1.0f);
+  FLOAT3D p0(x_pos, y_pos + (1.0f - vertical_slice)*half_height*2.0f, 1.0f);
+  FLOAT3D p1(x_pos_end, y_pos + (1.0f - vertical_slice)*half_height*2.0f, 1.0f);
   FLOAT3D p2(x_pos_end, y_pos_end, 1.0f);
   FLOAT3D p3(x_pos, y_pos_end, 1.0f);
 
@@ -422,8 +524,8 @@ static void DIO_DrawIcon
   const UBYTE alpha = Clamp(INDEX(opacity * _ulAlphaHUD), INDEX(0), INDEX(255));
   const INDEX final_color = (color & 0xFFFFFF00) | alpha;
   _pDP->AddTexture(
-    p0(1), p0(2), 0.0f, 0.0f, final_color,
-    p1(1), p1(2), 1.0f, 0.0f, final_color,
+    p0(1), p0(2), 0.0f, 1.0f - vertical_slice, final_color,
+    p1(1), p1(2), 1.0f, 1.0f - vertical_slice, final_color,
     p2(1), p2(2), 1.0f, 1.0f, final_color,
     p3(1), p3(2), 0.0f, 1.0f, final_color
     );
@@ -575,8 +677,7 @@ static void DIO_DrawText
   FLOAT textScale,
   EScreenPos text_alignment,
   COLOR col,
-  FLOAT opacity = 1.0f,
-  BOOL framed = FALSE
+  FLOAT opacity = 1.0f
 )
 {
   _pDP->SetTextCharSpacing(textScale * _dioHUDScaling * _pDP->dp_FontData->fd_pixCharSpacing);
@@ -609,11 +710,11 @@ static void DIO_DrawText
 
   const UBYTE alpha = Clamp(INDEX(opacity * _ulAlphaHUD), INDEX(0), INDEX(255));
   const INDEX final_color = (col & 0xFFFFFF00) | alpha;
-
+/*
   if (framed) {
     _pDP->Fill(x_pos, y_pos, text_width_orig, text_height, 0x19191980);
   }
-
+*/
   _pDP->PutText(strText, x_pos, y_pos, final_color);
 }
 
@@ -796,28 +897,416 @@ void HUD_SetEntityForStackDisplay(CRationalEntity *pren)
 {
 }
 
-CTString GetButtonName(const CPlayer* player, const char* title)
+CTextureObject* GetButtonTexture(INDEX button_index)
 {
-  if (player && player->mp_buttonActionsListHead)
+  switch (button_index)
   {
-    FOREACHINLIST(CButtonAction, ba_lnNode, *player->mp_buttonActionsListHead, itButtonAction)
-    {
-      if (itButtonAction->ba_strName == title)
-      {
-        if (itButtonAction->ba_iFirstKey != KID_NONE)
-          return _pInput->GetButtonTransName(itButtonAction->ba_iFirstKey);
-        else if (itButtonAction->ba_iSecondKey != KID_NONE)
-          return _pInput->GetButtonTransName(itButtonAction->ba_iSecondKey);
-
-        break;
-      }
-    }
+  case KID_MOUSE1:
+    return &_toMBLeft;
+  case KID_MOUSE2:
+    return &_toMBRight;
+  case KID_MOUSE3:
+    return &_toMB3;
+  case KID_MOUSE4:
+    return &_toMB4;
+  case KID_MOUSE5:
+    return &_toMB5;
+  case KID_MOUSEWHEELUP:
+    return &_toMWUp;
+  case KID_MOUSEWHEELDOWN:
+    return &_toMWDown;
+  default:
+    return NULL;
   }
-  return "";
 }
 
+void DIO_DrawButton
+(
+  const CPlayer* player,
+  EScreenPos x_anchor, INDEX x_offset,
+  EScreenPos y_anchor, INDEX y_offset,
+  const char* title,
+  COLOR color = C_WHITE,
+  FLOAT opacity = 1.0f
+)
+{
+  if (!player || !player->mp_buttonActionsListHead)
+    return;
+
+  INDEX button_index = KID_NONE; 
+  FOREACHINLIST(CButtonAction, ba_lnNode, *player->mp_buttonActionsListHead, itButtonAction)
+  {
+    if (itButtonAction->ba_strName == title)
+    {
+      if (itButtonAction->ba_iFirstKey != KID_NONE)
+        button_index = itButtonAction->ba_iFirstKey;
+      else if (itButtonAction->ba_iSecondKey != KID_NONE)
+        button_index = itButtonAction->ba_iSecondKey;
+      break;
+    }
+  }
+  if (button_index == KID_NONE)
+    return;
+
+  CTextureObject* button_texture = GetButtonTexture(button_index);
+  if (button_texture)
+  {
+    DIO_DrawIcon(x_anchor, x_offset, y_anchor, y_offset, *button_texture, 0.0f, color, opacity);
+  } else {
+    CFontData* prev_font = _pDP->dp_FontData;
+    _pDP->SetFont(_owFont);
+    const FLOAT text_scale = 0.8f;
+    const FLOAT text_height = _pDP->dp_FontData->fd_pixCharHeight * text_scale;
+    DIO_DrawText(x_anchor, x_offset - 5, y_anchor, y_offset + text_height * 0.5f, _pInput->GetButtonTransName(button_index), text_scale, ESP_Middle, color, opacity);
+    _pDP->SetFont(prev_font);
+  }
+}
+
+/***************************************
+PEW PEW ABILITIES
+****************************************/
+class AbilityButton
+{
+public:
+  virtual ~AbilityButton()
+  {
+  }
+
+  BOOL Render
+  (
+  const CPlayer* player,
+  EScreenPos x_anchor, INDEX x_offset,
+  EScreenPos y_anchor, INDEX y_offset
+  )
+  {
+    if (!IsVisible(player))
+      return FALSE;
+
+    UpdateState(player);
+    const FLOAT factor = LerpFactor();
+    const FLOAT2D shift = Lerp(m_src_offset, m_desired_offset, factor);
+    const FLOAT opacity = Lerp(m_src_opacity, m_desired_opacity, factor);
+    const COLOR col = LerpColor(m_src_col, m_desired_col, factor);
+
+    const INDEX x_pos = x_offset + shift(1);
+    const INDEX y_pos = y_offset + shift(2);
+
+    DIO_DrawIcon(x_anchor, x_pos, y_anchor, y_pos, m_logo, 0, col, opacity);
+
+    COLOR text_color = C_WHITE;
+    switch (m_state)
+    {
+    case AB_Active:
+      if (m_prevstate != AB_Cooldown)
+        break;
+      if (factor < 1.0f)
+        DIO_DrawIcon(x_anchor, x_pos, y_anchor, y_pos, m_logo, 0.0f, col, Lerp(0.2f, 1.0f, factor), Lerp(10.0f, 1.0f, factor));
+      break;
+
+    case AB_Using:
+      if (factor < 1.0f)
+        DIO_DrawIcon(x_anchor, x_offset, y_anchor, y_offset, m_logo, 0, m_desired_col, Lerp(1.0f, 0.0f, factor), Lerp(1.0f, 3.0f, factor));
+      break;
+
+    case AB_Inactive:
+      DIO_DrawIcon(x_anchor, x_pos, y_anchor, y_pos, _toAbilityFrame, 0, 0x77000000, factor * opacity);
+      DIO_DrawIcon(x_anchor, x_pos + 19, y_anchor, y_pos + 30, _toAbilityCancel, 0, C_WHITE, factor * opacity);
+      text_color = col;
+      break;
+
+    case AB_Cooldown:
+      {
+        const FLOAT2D cooldown_start_time_and_duration = GetCooldownTimeAndDuration(player);
+        const FLOAT cooldown_factor = (_pTimer->GetLerpedCurrentTick() - cooldown_start_time_and_duration(1)) / cooldown_start_time_and_duration(2);
+        DIO_DrawIcon(x_anchor, x_pos, y_anchor, y_pos, _toAbilityOverlay, 0, C_WHITE, factor*0.5f, 1.0f, Lerp(0.2421875f, 0.7421875f, cooldown_factor));
+        DIO_DrawIcon(x_anchor, x_pos, y_anchor, y_pos, _toAbilityFrame, 0, C_WHITE, factor);
+
+
+        CTString seconds_left;
+        seconds_left.PrintF("%d", (INDEX)ceil((1.0f - cooldown_factor) * cooldown_start_time_and_duration(2)));
+        CFontData* prev_font = _pDP->dp_FontData;
+        _pDP->SetFont(_owFont);
+        const FLOAT text_scale = 1.0f;
+        const FLOAT text_height = _pDP->dp_FontData->fd_pixCharHeight * text_scale;
+        DIO_DrawText(x_anchor, x_pos - 2, y_anchor, y_pos + text_height * 0.5f + 3, seconds_left, text_scale, ESP_Middle, C_WHITE);
+	      _pDP->SetFont(prev_font);
+
+        text_color = col;
+        break;
+      }
+
+    default:
+      break;
+    }
+    DIO_DrawButton(player, x_anchor, x_offset - 15, y_anchor, y_offset + 58, m_button_name, text_color, opacity);
+
+    if (m_prevstate == AB_Cooldown && !m_toAbilityFlame.IsAnimFinished())
+    {
+      FLOAT flame_angle = RadAngle(22.0f);
+      FLOAT2D flame_shift(150.0f * sin(flame_angle), 150.0f * (-cos(flame_angle)));
+      DIO_DrawIconADD(x_anchor, x_pos + flame_shift(1), y_anchor, y_pos + flame_shift(2), m_toAbilityFlame, flame_angle, FLOAT2D(1.0f, 2.0f));
+    }
+
+    return TRUE;
+  }
+
+protected:
+  enum ABState
+  {
+    AB_Active,
+    AB_Inactive,
+    AB_Using,
+    AB_Cooldown
+  };
+
+  AbilityButton(CTextureObject& logo, const CTString& button_name)
+    : m_logo(logo)
+    , m_button_name(button_name)
+    , m_src_offset(0,0)
+    , m_desired_offset(0,0)
+    , m_src_opacity(1.0f)
+    , m_desired_opacity(1.0f)
+    , m_src_col(C_WHITE)
+    , m_desired_col(C_WHITE)
+    , m_state(AB_Active)
+    , m_prevstate(AB_Active)
+    , m_stateChanged(0)
+  {
+    m_toAbilityFlame.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\Flame.tex"));
+    ((CTextureData*)m_toAbilityFlame.GetData())->Force(TEX_CONSTANT);
+  }
+
+  void UpdateState(const CPlayer* player)
+  {
+    ABState new_state = DetermineState(player);
+    if (new_state != m_state)
+    {
+      m_prevstate = m_state;
+      const FLOAT factor = LerpFactor();
+      m_src_offset = Lerp(m_src_offset, m_desired_offset, factor);
+      m_src_opacity = Lerp(m_src_opacity, m_desired_opacity, factor);
+      m_src_col = LerpColor(m_src_col, m_desired_col, factor);
+
+      m_stateChanged = _pTimer->GetLerpedCurrentTick();
+
+      if (m_prevstate == AB_Cooldown)
+        m_toAbilityFlame.PlayAnim(0, 0);
+
+      switch (new_state)
+      {
+      case AB_Active:
+        m_desired_offset = FLOAT2D(0, 0);
+        m_desired_opacity = 1.0f;
+        m_desired_col = C_WHITE;
+        break;
+
+      case AB_Cooldown: // [[fallthrough]];
+      case AB_Inactive:
+        m_desired_offset = FLOAT2D(0, 0);
+        m_desired_opacity = 0.8f;
+        m_desired_col = 0x77777700;
+        break;
+
+      case AB_Using:
+        m_desired_offset = FLOAT2D(4, 4);
+        m_desired_opacity = 1.0f;
+        m_desired_col = 0xF48F2700;
+        break;
+
+      default:
+        FatalError("Unknown ability state!\n");
+      }
+    } else {
+      if (LerpFactor() >= 1.0f)
+      {
+        m_src_offset = m_desired_offset;
+        m_src_opacity = m_desired_opacity;
+        m_src_col = m_desired_col;
+      }
+    }
+    m_state = new_state;
+  }
+
+  FLOAT LerpFactor() const
+  {
+    return Clamp((_pTimer->GetLerpedCurrentTick() - m_stateChanged) / 0.1f, 0.0f, 1.0f);
+  }
+
+  virtual FLOAT2D GetCooldownTimeAndDuration(const CPlayer* player)
+  {
+    (void)player;
+    return FLOAT2D(INDEX(_pTimer->CurrentTick() / 10.0f) * 10.0f, 10.0f);
+  }
+
+  virtual ABState DetermineState(const CPlayer* player) = 0;
+
+  virtual BOOL IsVisible(const CPlayer* player) = 0;
+
+protected:
+  CTextureObject& m_logo;
+  CTString m_button_name;
+  FLOAT2D m_src_offset;
+  FLOAT2D m_desired_offset;
+  FLOAT m_src_opacity;
+  FLOAT m_desired_opacity;
+  COLOR m_src_col;
+  COLOR m_desired_col;
+  ABState m_state;
+  ABState m_prevstate;
+  TIME m_stateChanged;
+  CTextureObject m_toAbilityFlame;
+};
+
+/************************************************************/
+/************************************************************/
+class Ability_Stand : public AbilityButton
+{
+public:
+  Ability_Stand()
+    : AbilityButton(_toAbility_Stand, "Toggle stand")
+  {
+  }
+
+protected:
+  FLOAT2D GetCooldownTimeAndDuration(const CPlayer* player)
+  {
+    if (!player)
+      return FLOAT2D(1.0f, 1.0f);
+
+    return FLOAT2D(player->m_tmWhenStandTurnedPassive, 10.0f);
+  }
+
+  ABState DetermineState(const CPlayer* player)
+  {
+    if (!player)
+      return AB_Inactive;
+
+    if (!player->m_penTheWorld)
+      return AB_Inactive;
+
+    if (player->m_mode == STAND_ENGAGED)
+      return AB_Using;
+
+    if (_pTimer->CurrentTick() - player->m_tmWhenStandTurnedPassive <= 10.0f)
+      return AB_Cooldown;
+
+    return AB_Active;
+  }
+
+  BOOL IsVisible(const CPlayer*)
+  {
+    return TRUE;
+  }
+};
+
+/************************************************************/
+/************************************************************/
+class Ability_Leg : public AbilityButton
+{
+public:
+  Ability_Leg()
+    : AbilityButton(_toAbility_Leg, "Secondary Fire/Sniper Zoom")
+  {
+  }
+
+protected:
+  ABState DetermineState(const CPlayer* player)
+  {
+    if (player && player->m_penWeapons)
+    {
+      const CPlayerWeapons* weapons = (const CPlayerWeapons*)&*(player->m_penWeapons);
+      if (weapons->IsPlayerSwimming())
+        return AB_Inactive;
+      if (weapons->m_iCurrentWeapon != WEAPON_HANDS && weapons->m_bLegKickInProgress)
+        return AB_Using;
+      if (weapons->HoldingFire() && weapons->m_bSecondaryFire)
+        return AB_Using;
+    }
+
+    return AB_Active;
+  }
+
+  BOOL IsVisible(const CPlayer* player)
+  {
+    if (player && player->m_penWeapons)
+    {
+      const CPlayerWeapons* weapons = (const CPlayerWeapons*)&*(player->m_penWeapons);
+      return weapons->m_iCurrentWeapon != WEAPON_SNIPER && weapons->m_iCurrentWeapon != WEAPON_KNIFE;
+    }
+    return FALSE;
+  }
+};
+
+/************************************************************/
+/************************************************************/
+class Ability_Zoom : public AbilityButton
+{
+public:
+  Ability_Zoom()
+    : AbilityButton(_toAbility_Zoom, "Secondary Fire/Sniper Zoom")
+  {
+  }
+
+protected:
+  ABState DetermineState(const CPlayer* player)
+  {
+    if (player && player->m_penWeapons)
+    {
+      const CPlayerWeapons* weapons = (const CPlayerWeapons*)&*(player->m_penWeapons);
+      if (weapons->m_bSniping)
+        return AB_Using;
+    }
+
+    return AB_Active;
+  }
+
+  BOOL IsVisible(const CPlayer* player)
+  {
+    if (player && player->m_penWeapons)
+    {
+      const CPlayerWeapons* weapons = (const CPlayerWeapons*)&*(player->m_penWeapons);
+      return weapons->m_iCurrentWeapon == WEAPON_SNIPER;
+    }
+    return FALSE;
+  }
+};
+
+/************************************************************/
+/************************************************************/
+class Ability_Knives : public AbilityButton
+{
+public:
+  Ability_Knives()
+    : AbilityButton(_toAbility_Knives, "Secondary Fire/Sniper Zoom")
+  {
+  }
+
+protected:
+  ABState DetermineState(const CPlayer* player)
+  {
+    if (player && player->m_penWeapons)
+    {
+      const CPlayerWeapons* weapons = (const CPlayerWeapons*)&*(player->m_penWeapons);
+      if (weapons->HoldingFire() && weapons->m_bSecondaryFire)
+        return AB_Using;
+    }
+
+    return AB_Active;
+  }
+
+  BOOL IsVisible(const CPlayer* player)
+  {
+    if (player && player->m_penWeapons)
+    {
+      const CPlayerWeapons* weapons = (const CPlayerWeapons*)&*(player->m_penWeapons);
+      return weapons->m_iCurrentWeapon == WEAPON_KNIFE;
+    }
+    return FALSE;
+  }
+};
+
 // render interface (frontend) to drawport
-// (units are in pixels for 640x480 resolution - for other res HUD will be scalled automatically)
+// (units are in pixels for 1920x1080 resolution - for other res HUD will be scalled automatically)
 extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOOL bSnooping, const CPlayer *penPlayerOwner)
 {
   // no player - no info, sorry
@@ -1070,19 +1559,6 @@ ULTIMATE
   FLOAT ultimate_opacity = 0.0f;
   if (_penPlayer->m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
     ultimate_opacity = Clamp(2.0f * (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate), 0.0f, 1.0f);
-
-    if (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate < 5.0f) {
-      
-      CTString switch_to_stand_button = GetButtonName(_penPlayer, "Toggle stand");
-      if (switch_to_stand_button != "")
-      {
-        _pDP->SetFont(_pfdDisplayFont);
-        strValue.PrintF(TRANS("Press '%s' to toggle STAND"), switch_to_stand_button);
-        DIO_DrawText(ESP_Middle, 0, ESP_End, -300, strValue, 3.0f, ESP_Middle, C_WHITE, 1.0f, TRUE);
-        _pDP->SetFont(&_fdNumbersFont);
-      }
-    }
-
   }
   if (ultimate_opacity > 0.0f) {
     BOOL can_throw_rodarollada = const_cast<CPlayer*>(_penPlayer)->CanThrowRodaRollaDa();
@@ -1095,7 +1571,7 @@ ULTIMATE
 
     DIO_DrawIcon(ESP_Middle, 0, ESP_End, -120 - 32, _toFireTexture, 0.0f, C_WHITE, ultimate_opacity);
     DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltFlare, _pTimer->CurrentTick()*45.0f*PI/180.0f, C_WHITE, ultimate_opacity);
-    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (can_throw_rodarollada ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
+    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (mh.IsZaWarudo() ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
   }
   if (ultimate_opacity < 1.0f) {
     const FLOAT ult_percentage = (_penPlayer->m_ultimateCharge / static_cast<FLOAT>(MAX_ULTIMATE_CHARGE)) * 100.0f;
@@ -1106,18 +1582,7 @@ ULTIMATE
   }
 
 
-
-
-
-  CTString ultimate_button = GetButtonName(_penPlayer, "Ultimate");
-  if (ultimate_button != "")
-  {
-    _pDP->SetFont(_pfdDisplayFont);
-    DIO_DrawText(ESP_Middle, 0, ESP_End, -20, ultimate_button, 3.0f, ESP_Middle, C_WHITE);
-    _pDP->SetFont(&_fdNumbersFont);
-  }
-
-
+  DIO_DrawButton(_penPlayer, ESP_Middle, 0, ESP_End, -44, "Ultimate");
 
 
   /*
@@ -1166,6 +1631,25 @@ ULTIMATE
     DIO_DrawText(ESP_End, -82, ESP_End, -252, strValue, 0.75f, ESP_End, C_WHITE);
     DIO_DrawText(ESP_End, -82+7, ESP_End, -252-7, "/", 0.5f, ESP_Middle, additional_color);
     DIO_DrawText(ESP_End, -82+13, ESP_End, -252-7, "3", 0.5f, ESP_Start, C_WHITE);
+  }
+
+  /*
+  ABILITY DRAWING
+  */
+  if (TRUE)
+  {
+    static Ability_Stand ab_stand;
+    static Ability_Leg ab_leg;
+    static Ability_Knives ab_knives;
+    static Ability_Zoom ab_zoom;
+    typedef AbilityButton* AbilityPtr;
+    static AbilityPtr abilities[] = { &ab_stand, &ab_leg, &ab_zoom, &ab_knives };
+
+    INDEX shift = 0;
+    for (INDEX i = 0; i < sizeof(abilities) / sizeof(AbilityPtr); ++i)
+    {
+      shift += abilities[i]->Render(penPlayerCurrent, ESP_End, -300 - (77*shift), ESP_End, -121) ? 1 : 0;
+    }
   }
 
   // display all ammo infos
@@ -1647,6 +2131,22 @@ extern void InitHUD(void)
     _toZaWarudo.SetData_t(CTFILENAME("Textures\\HUD\\ZaWarudo.tex"));
     _toBarBcg.SetData_t(CTFILENAME("Textures\\HUD\\bar_bcg.tex"));
     _toBar.SetData_t(CTFILENAME("Textures\\HUD\\bar.tex"));
+    
+    _toMBLeft.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\lmb.tex"));
+    _toMBRight.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\rmb.tex"));
+    _toMB3.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\mb3.tex"));
+    _toMB4.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\mb4.tex"));
+    _toMB5.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\mb5.tex"));
+    _toMWUp.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\whup.tex"));
+    _toMWDown.SetData_t(CTFILENAME("Textures\\HUD\\Mouse\\whdn.tex"));
+    
+    _toAbilityFrame.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\frame.tex"));
+    _toAbilityCancel.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\cancel.tex"));
+    _toAbilityOverlay.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\overlay.tex"));
+    _toAbility_Stand.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\stand.tex"));
+    _toAbility_Leg.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\leg.tex"));
+    _toAbility_Zoom.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\zoom.tex"));
+    _toAbility_Knives.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\knives.tex"));
 
     // initialize status bar textures
     _toHealth.SetData_t(  CTFILENAME("TexturesMP\\Interface\\HSuper.tex"));
@@ -1714,6 +2214,22 @@ extern void InitHUD(void)
     ((CTextureData*)_toBarBcg.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toBar.GetData())->Force(TEX_CONSTANT);
 
+    ((CTextureData*)_toMBLeft.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMBRight.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMB3.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMB4.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMB5.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMWUp.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toMWDown.GetData())->Force(TEX_CONSTANT);
+
+    ((CTextureData*)_toAbilityFrame.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbilityCancel.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbilityOverlay.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbility_Stand.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbility_Leg.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbility_Zoom.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbility_Knives.GetData())->Force(TEX_CONSTANT);
+
     // set all textures as constant
     ((CTextureData*)_toHealth .GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toOxygen .GetData())->Force(TEX_CONSTANT);
@@ -1761,6 +2277,13 @@ extern void InitHUD(void)
     ((CTextureData*)_toSniperEye.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toSniperLed.GetData())->Force(TEX_CONSTANT);
 
+    if (!_owFont)
+    {
+      _owFont = new CFontData();
+      _owFont->Load_t(CTFILENAME("Fonts\\ow.fnt"));
+      _owFont->SetCharSpacing(-5);
+      _owFont->SetLineSpacing(+1);
+    }
   }
   catch( char *strError) {
     FatalError( strError);
@@ -1772,6 +2295,10 @@ extern void InitHUD(void)
 // clean up
 extern void EndHUD(void)
 {
-
+  if (_owFont)
+  {
+    delete _owFont;
+    _owFont = NULL;
+  }
 }
 

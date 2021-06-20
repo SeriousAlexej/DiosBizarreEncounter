@@ -992,13 +992,13 @@ functions:
 //    plan.m_fRecoilSpeed += wpn_fRecoilSpeed[m_iCurrentWeapon];
   }
 
-  BOOL IsPlayerSwimming()
+  BOOL IsPlayerSwimming() const
   {
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     return pl.m_pstState == PST_DIVE || pl.m_pstState == PST_SWIM;
   }
 
-  BOOL CurrentWeaponSupportsCurrentFireMode()
+  BOOL CurrentWeaponSupportsCurrentFireMode() const
   {
     if (!m_bSecondaryFire) {
       return TRUE;
@@ -1024,7 +1024,7 @@ functions:
   }
 
   // 
-  BOOL HoldingFire(void)
+  BOOL HoldingFire(void) const
   {
     return m_bFireWeapon && !m_bChangeWeapon && CurrentWeaponSupportsCurrentFireMode();
   }

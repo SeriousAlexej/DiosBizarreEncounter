@@ -116,6 +116,9 @@ extern CTString gam_strGameSpyExtras = "";
 extern INDEX gam_iBlood = 2;     // 0=none, 1=green, 2=red, 3=hippie
 extern INDEX gam_bGibs  = TRUE;   
 
+extern FLOAT gam_fRodaRollaCooldown = 1.0f;
+extern INDEX gam_iWarudoWarpEffect = 2;
+
 extern INDEX gam_bUseExtraEnemies = TRUE;
 
 static INDEX hud_iEnableStats = 1;
@@ -940,6 +943,9 @@ void CGame::InitInternal( void)
 
   _pShell->DeclareSymbol("persistent user INDEX gam_iBlood;", &gam_iBlood);
   _pShell->DeclareSymbol("persistent user INDEX gam_bGibs;",  &gam_bGibs);
+
+  _pShell->DeclareSymbol("persistent user FLOAT gam_fRodaRollaCooldown;", &gam_fRodaRollaCooldown);
+  _pShell->DeclareSymbol("persistent user INDEX gam_iWarudoWarpEffect;", &gam_iWarudoWarpEffect);
 
   _pShell->DeclareSymbol("persistent user INDEX gam_bUseExtraEnemies;",  &gam_bUseExtraEnemies);
 

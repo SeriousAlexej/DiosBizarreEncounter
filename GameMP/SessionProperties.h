@@ -60,6 +60,8 @@ public:
 
   INDEX sp_iBlood;         // blood/gibs type (0=none, 1=green, 2=red, 3=hippie)
   BOOL  sp_bGibs;          // enable/disable gibbing
+  FLOAT sp_fRodaRollaCooldown;
+  INDEX sp_iWarudoWarpEffect; // 0=invert, 1=noinvert, 2=random
 
   BOOL  sp_bEndOfGame;     // marked when dm game is finished (any of the limits reached)
 

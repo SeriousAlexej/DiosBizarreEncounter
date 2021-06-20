@@ -32,6 +32,8 @@ extern INDEX gam_iStartDifficulty;
 extern INDEX gam_iStartMode;
 extern INDEX gam_iBlood;
 extern INDEX gam_bGibs;
+extern FLOAT gam_fRodaRollaCooldown;
+extern INDEX gam_iWarudoWarpEffect;
 extern INDEX gam_bUseExtraEnemies;
 extern CTString gam_strGameSpyExtras;
 
@@ -150,6 +152,8 @@ void CGame::SetSinglePlayerSession(CSessionProperties &sp)
 
   sp.sp_iBlood = Clamp( gam_iBlood, 0L, 3L);
   sp.sp_bGibs  = gam_bGibs;
+  sp.sp_fRodaRollaCooldown = gam_fRodaRollaCooldown;
+  sp.sp_iWarudoWarpEffect = Clamp(gam_iWarudoWarpEffect, 0L, 2L);
 }
 
 // set properties for a quick start session
@@ -205,6 +209,8 @@ void CGame::SetMultiPlayerSession(CSessionProperties &sp)
 
   sp.sp_iBlood = Clamp( gam_iBlood, 0L, 3L);
   sp.sp_bGibs  = gam_bGibs;
+  sp.sp_fRodaRollaCooldown = gam_fRodaRollaCooldown;
+  sp.sp_iWarudoWarpEffect = Clamp(gam_iWarudoWarpEffect, 0L, 2L);
   sp.sp_tmSpawnInvulnerability = gam_tmSpawnInvulnerability;
 
   sp.sp_bUseExtraEnemies = gam_bUseExtraEnemies;
