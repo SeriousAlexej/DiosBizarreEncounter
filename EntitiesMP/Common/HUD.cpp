@@ -77,6 +77,9 @@ static CTextureObject _toDIO;
 static CTextureObject _toZaWarudo;
 static CTextureObject _toBarBcg;
 static CTextureObject _toBar;
+static CTextureObject _toWarudoTimer;
+static CTextureObject _toWarudoArrow;
+static CTextureObject _toWarudoBcg;
 
 static CTextureObject _toMBLeft;
 static CTextureObject _toMBRight;
@@ -972,6 +975,11 @@ public:
   {
   }
 
+  void Reinit()
+  {
+    m_stateChanged = 0;
+  }
+
   BOOL Render
   (
   const CPlayer* player,
@@ -1306,6 +1314,9 @@ protected:
   }
 };
 
+typedef AbilityButton* AbilityPtr;
+static AbilityPtr abilities[] = { NULL, NULL, NULL, NULL };
+
 // render interface (frontend) to drawport
 // (units are in pixels for 1920x1080 resolution - for other res HUD will be scalled automatically)
 extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOOL bSnooping, const CPlayer *penPlayerOwner)
@@ -1557,6 +1568,15 @@ HEALTH
 /*
 ULTIMATE
 */
+  CMusicHolder &mh = (CMusicHolder&)*_penPlayer->m_penMainMusicHolder;
+  const BOOL is_zawarudo = mh.IsZaWarudo();
+  if (is_zawarudo) {
+    FLOAT warudo_percentage = Clamp(1.0f - (_pTimer->GetLerpedCurrentTick() - mh.m_timeZaWarudoStart) / ZA_WARUDO_DURATION, 0.0f, 1.0f);
+    DIO_DrawIconCircle(ESP_Middle, 0, ESP_Start, 110, _toWarudoBcg, warudo_percentage*100.0f);
+    DIO_DrawIcon(ESP_Middle, 0, ESP_Start, 110, _toWarudoTimer);
+    DIO_DrawIcon(ESP_Middle, 0, ESP_Start, 110, _toWarudoArrow, RadAngle(warudo_percentage*360));
+  }
+
   FLOAT ultimate_opacity = 0.0f;
   if (_penPlayer->m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
     ultimate_opacity = Clamp(2.0f * (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate), 0.0f, 1.0f);
@@ -1565,14 +1585,13 @@ ULTIMATE
     BOOL can_throw_rodarollada = const_cast<CPlayer*>(_penPlayer)->CanThrowRodaRollaDa();
 
     COLOR ult_icon_color = C_WHITE;
-    CMusicHolder &mh = (CMusicHolder&)*_penPlayer->m_penMainMusicHolder;
-    if (mh.IsZaWarudo() && !can_throw_rodarollada) {
+    if (is_zawarudo && !can_throw_rodarollada) {
       ult_icon_color = C_GRAY;
     }
 
     DIO_DrawIcon(ESP_Middle, 0, ESP_End, -120 - 32, _toFireTexture, 0.0f, C_WHITE, ultimate_opacity);
     DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltFlare, _pTimer->CurrentTick()*45.0f*PI/180.0f, C_WHITE, ultimate_opacity);
-    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (mh.IsZaWarudo() ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
+    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (is_zawarudo ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
   }
   if (ultimate_opacity < 1.0f) {
     const FLOAT ult_percentage = (_penPlayer->m_ultimateCharge / static_cast<FLOAT>(MAX_ULTIMATE_CHARGE)) * 100.0f;
@@ -1639,13 +1658,6 @@ ULTIMATE
   */
   if (TRUE)
   {
-    static Ability_Stand ab_stand;
-    static Ability_Leg ab_leg;
-    static Ability_Knives ab_knives;
-    static Ability_Zoom ab_zoom;
-    typedef AbilityButton* AbilityPtr;
-    static AbilityPtr abilities[] = { &ab_stand, &ab_leg, &ab_zoom, &ab_knives };
-
     INDEX shift = 0;
     for (INDEX i = 0; i < sizeof(abilities) / sizeof(AbilityPtr); ++i)
     {
@@ -2120,6 +2132,9 @@ extern void InitHUD(void)
     _fdNumbersFont.Load_t(fnFont);
     _fdNumbersFont.fd_pixCharSpacing = -6.0f;
 
+    _toWarudoArrow.SetData_t(CTFILENAME("Textures\\HUD\\Warudo_Arrow.tex"));
+    _toWarudoBcg.SetData_t(CTFILENAME("Textures\\HUD\\Warudo_Bcg.tex"));
+    _toWarudoTimer.SetData_t(CTFILENAME("Textures\\HUD\\Warudo_Timer.tex"));
     _toUltBcg.SetData_t(CTFILENAME("Textures\\HUD\\ult_bcg.tex"));
     _toUltOverlay.SetData_t(CTFILENAME("Textures\\HUD\\ult_overlay.tex"));
     _toFireTexture.SetData_t(CTFILENAME("Textures\\UltimateFire\\UltimateFire.tex"));
@@ -2202,6 +2217,9 @@ extern void InitHUD(void)
     // initialize tile texture
     _toTile.SetData_t( CTFILENAME("Textures\\Interface\\Tile.tex"));
 
+    ((CTextureData*)_toWarudoTimer.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toWarudoArrow.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toWarudoBcg.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toUltBcg.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toUltOverlay.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toFireTexture.GetData())->Force(TEX_CONSTANT);
@@ -2285,11 +2303,27 @@ extern void InitHUD(void)
       _owFont->SetCharSpacing(-5);
       _owFont->SetLineSpacing(+1);
     }
+    
+    static Ability_Stand ab_stand;
+    static Ability_Leg ab_leg;
+    static Ability_Knives ab_knives;
+    static Ability_Zoom ab_zoom;
+    abilities[0] = &ab_stand;
+    abilities[1] = &ab_leg;
+    abilities[2] = &ab_zoom;
+    abilities[3] = &ab_knives;
   }
   catch( char *strError) {
     FatalError( strError);
   }
 
+}
+
+extern void ReinitAbilities()
+{
+  for (INDEX i = 0; i < sizeof(abilities) / sizeof(AbilityPtr); ++i)
+    if (abilities[i])
+      abilities[i]->Reinit();
 }
 
 

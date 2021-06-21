@@ -114,6 +114,7 @@ event EAutoAction {
 extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOOL bSnooping, const CPlayer *penPlayerOwner);
 extern void InitHUD(void);
 extern void EndHUD(void);
+extern void ReinitAbilities();
 
 static CTimerValue _tvProbingLast;
 
@@ -2060,6 +2061,7 @@ functions:
     m_ulFlags |= PLF_SYNCWEAPON;
     // setup light source
     SetupLightSource();
+    ReinitAbilities();
   };
 
   /* Get static light source information. */
@@ -6185,6 +6187,7 @@ procedures:
         m_penDioPosing->SendEvent(EStop());
         m_penDioPosing = NULL;
     }
+    m_ultimateCharge = 0;
     m_mode = STAND_PASSIVE;
     m_bInEmote = FALSE;
 
