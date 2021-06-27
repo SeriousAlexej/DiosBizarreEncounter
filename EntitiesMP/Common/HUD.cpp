@@ -260,6 +260,16 @@ static int qsort_CompareFrags( const void *ppPEN0, const void *ppPEN1) {
   else              return -qsort_CompareDeaths(ppPEN0, ppPEN1);
 }
 
+INDEX GetPlayerIndex(const CPlayer* penPlayer)
+{
+  if (penPlayer)
+    for (INDEX i = 0; i < NET_MAXGAMEPLAYERS; ++i)
+      if (static_cast<const CPlayer*>(penPlayer->GetPlayerEntity(i)) == penPlayer)
+        return i;
+
+  return 0;
+}
+
 // fill array with players' statistics (returns current number of players in game)
 extern INDEX SetAllPlayersStats( INDEX iSortKey)
 {
@@ -669,6 +679,14 @@ if (percentage > 87.5f)
 }
 
   _pDP->FlushRenderingQueue();
+}
+
+static FLOAT DIO_GetTextWidth(const CTString& strText, FLOAT textScale)
+{
+  _pDP->SetTextCharSpacing(textScale * _dioHUDScaling * _pDP->dp_FontData->fd_pixCharSpacing);
+  _pDP->SetTextScaling(textScale * _dioHUDScaling);
+
+  return _pDP->GetTextWidth(strText) / _dioHUDScaling;
 }
 
 static void DIO_DrawText
@@ -1314,7 +1332,7 @@ protected:
 };
 
 typedef AbilityButton* AbilityPtr;
-static AbilityPtr abilities[] = { NULL, NULL, NULL, NULL };
+static AbilityPtr abilities[NET_MAXGAMEPLAYERS][4] = { NULL };
 
 // render interface (frontend) to drawport
 // (units are in pixels for 1920x1080 resolution - for other res HUD will be scalled automatically)
@@ -1624,10 +1642,11 @@ ULTIMATE
   */
   if (TRUE)
   {
+    INDEX player_index = GetPlayerIndex(penPlayerCurrent);
     INDEX shift = 0;
-    for (INDEX i = 0; i < sizeof(abilities) / sizeof(AbilityPtr); ++i)
+    for (INDEX i = 0; i < 4; ++i)
     {
-      shift += abilities[i]->Render(penPlayerCurrent, ESP_End, -300 - (77*shift), ESP_End, -121) ? 1 : 0;
+      shift += abilities[player_index][i]->Render(penPlayerCurrent, ESP_End, -300 - (77*shift), ESP_End, -121) ? 1 : 0;
     }
   }
 
@@ -1863,18 +1882,6 @@ ULTIMATE
     }
   }
 
-
-
-  /*
-  // reduce icon sizes a bit
-  const FLOAT fUpperSize = ClampDn(_fCustomScaling*0.5f, 0.5f)/_fCustomScaling;
-  _fCustomScaling*=fUpperSize;
-  ASSERT( _fCustomScaling>=0.5f);
-  fChrUnit  *= fUpperSize;
-  fOneUnit  *= fUpperSize;
-  fHalfUnit *= fUpperSize;
-  fAdvUnit  *= fUpperSize;
-  fNextUnit *= fUpperSize;
   // determine scaling of normal text and play mode
   const FLOAT fTextScale  = (_fResolutionScaling+1) *0.5f;
   const BOOL bSinglePlay  =  GetSP()->sp_bSinglePlayer;
@@ -1892,7 +1899,7 @@ ULTIMATE
     _pfdDisplayFont->SetVariableWidth();
     _pDP->SetFont(_pfdDisplayFont);
 
-    FLOAT font_scale = 3.0f;
+    FLOAT font_scale = 2.0f;
     FLOAT line_height = _pDP->dp_FontData->fd_pixCharHeight * font_scale * 0.7f;
     // generate and sort by mana list of active players
     BOOL bMaxScore=TRUE, bMaxMana=TRUE, bMaxFrags=TRUE, bMaxDeaths=TRUE;
@@ -1939,22 +1946,45 @@ ULTIMATE
       // eventually print it out
       if( hud_iShowPlayers==1 || hud_iShowPlayers==-1 && !bSinglePlay) {
         // printout location and info aren't the same for deathmatch and coop play
-        const FLOAT fCharWidth = (PIX)((_pfdDisplayFont->GetWidth()-2) *fTextScale);
         if( bCooperative) {
-          DIO_DrawText(ESP_End, -100, ESP_Start, 20 + (i+1) * line_height, strName + ":", font_scale, ESP_End, colScore);
-          DIO_DrawText(ESP_End, -53, ESP_Start, 20 + (i+1) * line_height, strHealth,      font_scale, ESP_End, colHealth);
-          DIO_DrawText(ESP_End, -50, ESP_Start, 20 + (i+1) * line_height, "/",            font_scale, ESP_Middle, _colHUD);
-          DIO_DrawText(ESP_End, -47, ESP_Start, 20 + (i+1) * line_height, strArmor,       font_scale, ESP_Start, colArmor);
-        } else if( bScoreMatch) { 
-          _pDP->PutTextR( strName+":", _pixDPWidth-12*fCharWidth, line_height*i+fOneUnit*2, _colHUD |_ulAlphaHUD);
-          _pDP->PutText(  "/",         _pixDPWidth- 5*fCharWidth, line_height*i+fOneUnit*2, _colHUD |_ulAlphaHUD);
-          _pDP->PutTextC( strScore,    _pixDPWidth- 8*fCharWidth, line_height*i+fOneUnit*2, colScore|_ulAlphaHUD);
-          _pDP->PutTextC( strMana,     _pixDPWidth- 2*fCharWidth, line_height*i+fOneUnit*2, colMana |_ulAlphaHUD);
+          FLOAT armor_width = DIO_GetTextWidth(strArmor, font_scale);
+          FLOAT slash_width = DIO_GetTextWidth("/", font_scale);
+          FLOAT health_width = DIO_GetTextWidth(strHealth, font_scale);
+
+          FLOAT slash_offset = -armor_width;
+          FLOAT health_offset = -slash_width + slash_offset;
+          FLOAT name_offset = - health_width + health_offset;
+
+          DIO_DrawText(ESP_End, -10 + name_offset,   ESP_Start, 20 + (i+1) * line_height, strName + ":", font_scale, ESP_End, _colHUD);
+          DIO_DrawText(ESP_End, -10 + health_offset, ESP_Start, 20 + (i+1) * line_height, strHealth,     font_scale, ESP_End, colHealth);
+          DIO_DrawText(ESP_End, -10 + slash_offset,  ESP_Start, 20 + (i+1) * line_height, "/",           font_scale, ESP_End, _colHUD);
+          DIO_DrawText(ESP_End, -10,                 ESP_Start, 20 + (i+1) * line_height, strArmor,      font_scale, ESP_End, colArmor);
+        } else if( bScoreMatch) {
+          FLOAT armor_width = DIO_GetTextWidth(strMana, font_scale);
+          FLOAT slash_width = DIO_GetTextWidth("/", font_scale);
+          FLOAT health_width = DIO_GetTextWidth(strScore, font_scale);
+
+          FLOAT slash_offset = -armor_width;
+          FLOAT health_offset = -slash_width + slash_offset;
+          FLOAT name_offset = - health_width + health_offset;
+
+          DIO_DrawText(ESP_End, -10 + name_offset,   ESP_Start, 20 + (i+1) * line_height, strName + ":", font_scale, ESP_End, _colHUD);
+          DIO_DrawText(ESP_End, -10 + health_offset, ESP_Start, 20 + (i+1) * line_height, strScore,      font_scale, ESP_End, colScore);
+          DIO_DrawText(ESP_End, -10 + slash_offset,  ESP_Start, 20 + (i+1) * line_height, "/",           font_scale, ESP_End, _colHUD);
+          DIO_DrawText(ESP_End, -10,                 ESP_Start, 20 + (i+1) * line_height, strMana,       font_scale, ESP_End, colMana);
         } else { // fragmatch!
-          _pDP->PutTextR( strName+":", _pixDPWidth-8*fCharWidth, line_height*i+fOneUnit*2, _colHUD  |_ulAlphaHUD);
-          _pDP->PutText(  "/",         _pixDPWidth-4*fCharWidth, line_height*i+fOneUnit*2, _colHUD  |_ulAlphaHUD);
-          _pDP->PutTextC( strFrags,    _pixDPWidth-6*fCharWidth, line_height*i+fOneUnit*2, colFrags |_ulAlphaHUD);
-          _pDP->PutTextC( strDeaths,   _pixDPWidth-2*fCharWidth, line_height*i+fOneUnit*2, colDeaths|_ulAlphaHUD);
+          FLOAT armor_width = DIO_GetTextWidth(strDeaths, font_scale);
+          FLOAT slash_width = DIO_GetTextWidth("/", font_scale);
+          FLOAT health_width = DIO_GetTextWidth(strFrags, font_scale);
+
+          FLOAT slash_offset = -armor_width;
+          FLOAT health_offset = -slash_width + slash_offset;
+          FLOAT name_offset = - health_width + health_offset;
+
+          DIO_DrawText(ESP_End, -10 + name_offset,   ESP_Start, 20 + (i+1) * line_height, strName + ":", font_scale, ESP_End, _colHUD);
+          DIO_DrawText(ESP_End, -10 + health_offset, ESP_Start, 20 + (i+1) * line_height, strFrags,      font_scale, ESP_End, colFrags);
+          DIO_DrawText(ESP_End, -10 + slash_offset,  ESP_Start, 20 + (i+1) * line_height, "/",           font_scale, ESP_End, _colHUD);
+          DIO_DrawText(ESP_End, -10,                 ESP_Start, 20 + (i+1) * line_height, strDeaths,     font_scale, ESP_End, colDeaths);
         }
       }
       // calculate summ of scores (for coop mode)
@@ -1986,13 +2016,11 @@ ULTIMATE
         INDEX iScoreLeft = ClampDn(GetSP()->sp_iScoreLimit-iMaxScore, INDEX(0));
         strLimitsInfo.PrintF("%s^cFFFFFF%s: %d\n", strLimitsInfo, TRANS("SCORE LEFT"), iScoreLeft);
       }
-      _pfdDisplayFont->SetFixedWidth();
       _pDP->SetFont( _pfdDisplayFont);
-      _pDP->SetTextScaling( fTextScale*0.8f );
-      _pDP->SetTextCharSpacing( -2.0f*fTextScale);
-      _pDP->PutText( strLimitsInfo, 5.0f*_pixDPWidth/640.0f, 48.0f*_pixDPWidth/640.0f, C_WHITE|CT_OPAQUE);
+      CTextureData* deaths_data = (CTextureData*)_toDeaths.GetData();
+      CTextureData* frags_data = (CTextureData*)_toFrags.GetData();
+      DIO_DrawText(ESP_Start, 8, ESP_Start, 16 + deaths_data->GetPixHeight() + frags_data->GetPixHeight() + 40, strLimitsInfo, 2.0f, ESP_Start, C_WHITE | CT_OPAQUE);
     }
-        
 
     // prepare color for local player printouts
     bMaxScore  ? colScore  = C_WHITE : colScore  = C_lGRAY;
@@ -2000,34 +2028,30 @@ ULTIMATE
     bMaxFrags  ? colFrags  = C_WHITE : colFrags  = C_lGRAY;
     bMaxDeaths ? colDeaths = C_WHITE : colDeaths = C_lGRAY;
   }
-  */
 
-/*
   // printout player latency if needed
   if( hud_bShowLatency) {
     CTString strLatency;
     strLatency.PrintF( "%4.0fms", _penPlayer->m_tmLatency*1000.0f);
+    FLOAT fTextScale = ((FLOAT)_pixDPWidth /640.0f + 1) * 0.5f;
     PIX pixFontHeight = (PIX)(_pfdDisplayFont->GetHeight() *fTextScale +fTextScale+1);
     _pfdDisplayFont->SetFixedWidth();
     _pDP->SetFont( _pfdDisplayFont);
     _pDP->SetTextScaling( fTextScale);
     _pDP->SetTextCharSpacing( -2.0f*fTextScale);
     _pDP->PutTextR( strLatency, _pixDPWidth, _pixDPHeight-pixFontHeight, C_WHITE|CT_OPAQUE);
+    _pfdDisplayFont->SetVariableWidth();
   }
-  */
 
-/*
+
   // restore font defaults
-  _pfdDisplayFont->SetVariableWidth();
   _pDP->SetFont( &_fdNumbersFont);
   _pDP->SetTextCharSpacing(1);
 
   // prepare output strings and formats depending on game type
-  FLOAT fWidthAdj = 8;
   INDEX iScore = _penPlayer->m_psGameStats.ps_iScore;
   INDEX iMana  = _penPlayer->m_iMana;
   if( bFragMatch) {
-    if (!hud_bShowMatchInfo) { fWidthAdj = 4; }
     iScore = _penPlayer->m_psGameStats.ps_iKills;
     iMana  = _penPlayer->m_psGameStats.ps_iDeaths;
   } else if( bCooperative) {
@@ -2038,21 +2062,20 @@ ULTIMATE
   // eventually draw mana info 
   if( bScoreMatch || bFragMatch) {
     // prepare and draw score or frags info 
+    CTextureData* frags_data = (CTextureData*)_toFrags.GetData();
+    DIO_DrawIcon(ESP_Start, 8 + frags_data->GetPixWidth()*0.5f, ESP_Start, 8 + frags_data->GetPixHeight()*0.5f, _toFrags);
+    
     strValue.PrintF( "%d", iScore);
-    fRow = pixTopBound  +fHalfUnit;
-    fCol = pixLeftBound +fHalfUnit;
-    fAdv = fAdvUnit+ fChrUnit*fWidthAdj/2 -fHalfUnit;
-    HUD_DrawText(   fCol+fAdv, fRow, strValue, colScore, 1.0f);
-    HUD_DrawIcon(   fCol,      fRow, _toFrags, C_WHITE, 1.0f, FALSE);
+    DIO_DrawText(ESP_Start, 16 + frags_data->GetPixWidth(), ESP_Start, 8 + frags_data->GetPixHeight()*0.5 + 40, strValue, 1.0f, ESP_Start, C_WHITE);
+
+    CTextureData* deaths_data = (CTextureData*)_toDeaths.GetData();
+    FLOAT deaths_Y = 8 + deaths_data->GetPixHeight()*0.5f + 8 + frags_data->GetPixHeight();
+    DIO_DrawIcon(ESP_Start, 8 + deaths_data->GetPixWidth()*0.5f, ESP_Start, deaths_Y, _toDeaths);
 
     strValue.PrintF( "%d", iMana);
-    fRow = pixTopBound  + fNextUnit+fHalfUnit;
-    fCol = pixLeftBound + fHalfUnit;
-    fAdv = fAdvUnit+ fChrUnit*fWidthAdj/2 -fHalfUnit;
-    HUD_DrawText(   fCol+fAdv, fRow, strValue,  colMana, 1.0f);
-    HUD_DrawIcon(   fCol,      fRow, _toDeaths, C_WHITE, 1.0f, FALSE);
+    DIO_DrawText(ESP_Start, 16 + deaths_data->GetPixWidth(), ESP_Start, deaths_Y + 40, strValue, 1.0f, ESP_Start, C_WHITE);
   }
-  */
+
   // draw cheat modes
   if( GetSP()->sp_ctMaxPlayers==1) {
     INDEX iLine=1;
@@ -2071,7 +2094,6 @@ ULTIMATE
 
   // in the end, remember the current time so it can be used in the next frame
   _tmLast = _tmNow;
-
 }
 
 
@@ -2121,8 +2143,8 @@ extern void InitHUD(void)
     // initialize status bar textures
     _toHealth.SetData_t(  CTFILENAME("TexturesMP\\Interface\\HSuper.tex"));
     _toOxygen.SetData_t(  CTFILENAME("Textures\\HUD\\Oxygen.tex"));
-    _toFrags.SetData_t(   CTFILENAME("TexturesMP\\Interface\\IBead.tex"));
-    _toDeaths.SetData_t(  CTFILENAME("TexturesMP\\Interface\\ISkull.tex"));
+    _toFrags.SetData_t(   CTFILENAME("Textures\\HUD\\Score.tex"));
+    _toDeaths.SetData_t(  CTFILENAME("Textures\\HUD\\Skull.tex"));
     _toArmorSmall.SetData_t(  CTFILENAME("TexturesMP\\Interface\\ArSmall.tex"));
     _toArmorMedium.SetData_t(   CTFILENAME("TexturesMP\\Interface\\ArMedium.tex"));
     _toArmorLarge.SetData_t(   CTFILENAME("TexturesMP\\Interface\\ArStrong.tex"));
@@ -2258,14 +2280,17 @@ extern void InitHUD(void)
       _owFont->SetLineSpacing(+1);
     }
     
-    static Ability_Stand ab_stand;
-    static Ability_Leg ab_leg;
-    static Ability_Knives ab_knives;
-    static Ability_Zoom ab_zoom;
-    abilities[0] = &ab_stand;
-    abilities[1] = &ab_leg;
-    abilities[2] = &ab_zoom;
-    abilities[3] = &ab_knives;
+    static Ability_Stand ab_stand[NET_MAXGAMEPLAYERS];
+    static Ability_Leg ab_leg[NET_MAXGAMEPLAYERS];
+    static Ability_Knives ab_knives[NET_MAXGAMEPLAYERS];
+    static Ability_Zoom ab_zoom[NET_MAXGAMEPLAYERS];
+    for (INDEX i = 0; i < NET_MAXGAMEPLAYERS; ++i)
+    {
+      abilities[i][0] = &ab_stand[i];
+      abilities[i][1] = &ab_leg[i];
+      abilities[i][2] = &ab_zoom[i];
+      abilities[i][3] = &ab_knives[i];
+    }
   }
   catch( char *strError) {
     FatalError( strError);
@@ -2273,11 +2298,12 @@ extern void InitHUD(void)
 
 }
 
-extern void ReinitAbilities()
+extern void ReinitAbilities(const CPlayer* penPlayer)
 {
-  for (INDEX i = 0; i < sizeof(abilities) / sizeof(AbilityPtr); ++i)
-    if (abilities[i])
-      abilities[i]->Reinit();
+  INDEX player_index = GetPlayerIndex(penPlayer);
+  for (INDEX i = 0; i < 4; ++i)
+    if (abilities[player_index][i])
+      abilities[player_index][i]->Reinit();
 }
 
 

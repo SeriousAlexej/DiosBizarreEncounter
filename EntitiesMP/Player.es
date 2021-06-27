@@ -114,7 +114,7 @@ event EAutoAction {
 extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent);
 extern void InitHUD(void);
 extern void EndHUD(void);
-extern void ReinitAbilities();
+extern void ReinitAbilities(const CPlayer* penPlayer);
 
 static CTimerValue _tvProbingLast;
 
@@ -2064,7 +2064,7 @@ functions:
     m_ulFlags |= PLF_SYNCWEAPON;
     // setup light source
     SetupLightSource();
-    ReinitAbilities();
+    ReinitAbilities(this);
   };
 
   /* Get static light source information. */
