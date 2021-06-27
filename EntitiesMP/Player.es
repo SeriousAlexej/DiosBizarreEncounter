@@ -111,7 +111,7 @@ event EAutoAction {
 };
 
 %{
-extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOOL bSnooping, const CPlayer *penPlayerOwner);
+extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent);
 extern void InitHUD(void);
 extern void EndHUD(void);
 extern void ReinitAbilities();
@@ -1669,6 +1669,9 @@ functions:
 
   void AddUltimate(INDEX iUltimate)
   {
+    if (!(GetFlags()&ENF_ALIVE)) {
+      return;
+    }
     if (m_penTheWorld && m_ultimateCharge == 0) {
       return;
     }
@@ -5461,24 +5464,11 @@ functions:
 
     // render status info line (if needed)
     if( hud_bShowInfo) { 
-      // get player or its predictor
-      BOOL bSnooping = FALSE;
       CPlayer *penHUDPlayer = this;
-      CPlayer *penHUDOwner  = this;
-
       if (penHUDPlayer->IsPredicted()) {
         penHUDPlayer = (CPlayer *)penHUDPlayer->GetPredictor();
       }
-
-      // check if snooping is needed
-      CPlayerWeapons *pen = (CPlayerWeapons*)&*penHUDPlayer->m_penWeapons;
-      TIME tmDelta = _pTimer->CurrentTick() - pen->m_tmSnoopingStarted;
-      if( tmDelta<plr_tmSnoopingTime) {
-        ASSERT( pen->m_penTargeting!=NULL);
-        penHUDPlayer = (CPlayer*)&*pen->m_penTargeting;
-        bSnooping = TRUE;
-      }
-      DrawHUD( penHUDPlayer, pdp, bSnooping, penHUDOwner);
+      DrawHUD( penHUDPlayer, pdp);
     }
   }
 

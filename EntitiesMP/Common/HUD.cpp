@@ -51,7 +51,6 @@ static CPlayerWeapons *_penWeapons;
 static CDrawPort *_pDP;
 static PIX   _pixDPWidth, _pixDPHeight;
 static FLOAT _fResolutionScaling;
-static FLOAT _fCustomScaling;
 static ULONG _ulAlphaHUD;
 static COLOR _colHUD;
 static COLOR _colHUDText;
@@ -1319,14 +1318,11 @@ static AbilityPtr abilities[] = { NULL, NULL, NULL, NULL };
 
 // render interface (frontend) to drawport
 // (units are in pixels for 1920x1080 resolution - for other res HUD will be scalled automatically)
-extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOOL bSnooping, const CPlayer *penPlayerOwner)
+extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent)
 {
   // no player - no info, sorry
   if( penPlayerCurrent==NULL || (penPlayerCurrent->GetFlags()&ENF_DELETED)) return;
   
-  // if snooping and owner player ins NULL, return
-  if ( bSnooping && penPlayerOwner==NULL) return;
-
   // find last values in case of predictor
   CPlayer *penLast = (CPlayer*)penPlayerCurrent;
   if( penPlayerCurrent->IsPredictor()) penLast = (CPlayer*)(((CPlayer*)penPlayerCurrent)->GetPredicted());
@@ -1343,7 +1339,6 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
   _pDP        = pdpCurrent;
   _pixDPWidth   = _pDP->GetWidth();
   _pixDPHeight  = _pDP->GetHeight();
-  _fCustomScaling     = hud_fScaling;
   _fResolutionScaling = (FLOAT)_pixDPWidth /640.0f;
   _colHUD     = 0x4C80BB00;
   _colHUDText = SE_COL_ORANGE_LIGHT;
@@ -1352,26 +1347,9 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
 
   _dioHUDScaling = _pixDPHeight / 1080.0f;
 
-  // determine hud colorization;
-  COLOR colMax = SE_COL_BLUEGREEN_LT;
-  COLOR colTop = SE_COL_ORANGE_LIGHT;
-  COLOR colMid = LerpColor(colTop, C_RED, 0.5f);
-
-  // adjust borders color in case of spying mode
-  COLOR colBorder = _colHUD; 
-  
-  if( bSnooping) {
-    colBorder = SE_COL_ORANGE_NEUTRAL;
-    if( ((ULONG)(_tmNow*5))&1) {
-      //colBorder = (colBorder>>1) & 0x7F7F7F00; // darken flash and scale
-      colBorder = SE_COL_ORANGE_DARK;
-      _fCustomScaling *= 0.933f;
-    }
-  }
-
   // draw sniper mask (original mask even if snooping)
-  if (((CPlayerWeapons*)&*penPlayerOwner->m_penWeapons)->m_iCurrentWeapon==WEAPON_SNIPER
-    &&((CPlayerWeapons*)&*penPlayerOwner->m_penWeapons)->m_bSniping) {
+  if (((CPlayerWeapons*)&*penPlayerCurrent->m_penWeapons)->m_iCurrentWeapon==WEAPON_SNIPER
+    &&((CPlayerWeapons*)&*penPlayerCurrent->m_penWeapons)->m_bSniping) {
     HUD_DrawSniperMask();
   } 
 
@@ -1382,20 +1360,8 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent, BOO
    
   // prepare font and text dimensions
   CTString strValue;
-  PIX pixCharWidth;
-  FLOAT fValue, fNormValue, fCol, fRow;
+  FLOAT fValue, fNormValue;
   _pDP->SetFont( &_fdNumbersFont);
-  pixCharWidth = _fdNumbersFont.GetWidth() + _fdNumbersFont.GetCharSpacing() +1;
-  FLOAT fChrUnit = pixCharWidth * _fCustomScaling;
-
-  const PIX pixTopBound    = 6;
-  const PIX pixLeftBound   = 6;
-  const PIX pixBottomBound = (480 * _pDP->dp_fWideAdjustment) -pixTopBound;
-  const PIX pixRightBound  = 640-pixLeftBound;
-  FLOAT fOneUnit  = (32+0) * _fCustomScaling;  // unit size
-  FLOAT fAdvUnit  = (32+4) * _fCustomScaling;  // unit advancer
-  FLOAT fNextUnit = (32+8) * _fCustomScaling;  // unit advancer
-  FLOAT fHalfUnit = fOneUnit * 0.5f;
   
   // prepare and draw health info
   fValue = ClampDn( _penPlayer->GetHealth(), 0.0f);  // never show negative health
@@ -1668,17 +1634,6 @@ ULTIMATE
   // display all ammo infos
   INDEX i;
   COLOR colIcon;
-  // reduce the size of icon slightly
-  _fCustomScaling = ClampDn( _fCustomScaling*0.8f, 0.5f);
-  const FLOAT fOneUnitS  = fOneUnit  *0.8f;
-  const FLOAT fAdvUnitS  = fAdvUnit  *0.8f;
-  const FLOAT fNextUnitS = fNextUnit *0.8f;
-  const FLOAT fHalfUnitS = fHalfUnit *0.8f;
-
-  // prepare postition and ammo quantities
-  fRow = pixBottomBound-fHalfUnitS;
-  fCol = pixRightBound -fHalfUnitS;
-  const FLOAT fBarPos = fHalfUnitS*0.7f;
   FillWeaponAmmoTables();
 
   // draw powerup(s) if needed
@@ -1738,7 +1693,6 @@ ULTIMATE
 
 
   // if weapon change is in progress
-  _fCustomScaling = hud_fScaling;
   hud_tmWeaponsOnScreen = Clamp( hud_tmWeaponsOnScreen, 0.0f, 10.0f);   
   if( (_tmNow - _penWeapons->m_tmWeaponChangeRequired) < hud_tmWeaponsOnScreen) {
     // determine number of weapons that player has
