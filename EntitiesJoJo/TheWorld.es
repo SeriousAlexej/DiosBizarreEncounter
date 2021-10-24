@@ -15,6 +15,11 @@ event ESpawnStand
   BOOL wasTimeStopped,
 };
 
+event EPlayStartTimeSound
+{
+  INDEX soundIndex
+};
+
 enum StandMode
 {
   0 STAND_PASSIVE "", // follow player
@@ -68,7 +73,7 @@ void CTheWorld_Precache()
 
 #define ZAWARUDO_START 42
 #define ZAWARUDO_END   43
-#define ZAWARUDO_END_SOUND 44
+#define ZAWARUDO_END_SOUND (1 << 8)
 %}
 
 class CTheWorld : CMovableModelEntity
@@ -87,7 +92,7 @@ properties:
   7 BOOL           m_isTimeStopped    = FALSE,
   8 FLOAT          m_moveSpeed        = 1.0f,
   9 BOOL           m_isDying          = FALSE,
- 10 INDEX          m_startSoundIndex  = 0,
+ //10 INDEX          m_startSoundIndex  = 0,
  11 CSoundObject   m_soundChannel,
  12 FLOAT          m_tmParticlesActive    = 0.0f,
  13 FLOAT          m_particlesOpacityPrev = 0.0f,
@@ -400,13 +405,10 @@ procedures:
               CPlayer& player = (CPlayer&)*za_warudo.penDio.ep_pen;
               player.m_penMainMusicHolder->SendEvent(za_warudo);
 
-              m_startSoundIndex = SOUND_START_TIME_01 + IRnd()%3;
-              SpawnReminder(this, ZA_WARUDO_DURATION - GetSoundLength(m_startSoundIndex), ZAWARUDO_END_SOUND);
+              INDEX startSoundIndex = SOUND_START_TIME_01 + IRnd()%3;
+              // sending to m_penOwner as a workaround when TheWorld is recreated while time is still stopped :p
+              SpawnReminder(m_penOwner, ZA_WARUDO_DURATION - GetSoundLength(startSoundIndex), ZAWARUDO_END_SOUND | startSoundIndex);
               SpawnReminder(this, ZA_WARUDO_DURATION, ZAWARUDO_END);
-            }
-            else if (eReminder.iValue == ZAWARUDO_END_SOUND)
-            {
-              PlaySound(m_soundChannel, m_startSoundIndex, SOF_NONE);
             }
             else if (eReminder.iValue == ZAWARUDO_END)
             {
@@ -419,6 +421,17 @@ procedures:
               m_moveSpeed = 1.0f;
               RemoveAttachments(~0);
               GetModelObject()->PlayAnim(ZAWARUDO_ANIM_IDLE, AOF_LOOPING|AOF_NORESTART);
+            }
+          }
+          resume;
+        }
+        on (EPlayStartTimeSound eStartTimeSound) :
+        {
+          if (eStartTimeSound.soundIndex & ZAWARUDO_END_SOUND)
+          {
+            INDEX soundIndex = eStartTimeSound.soundIndex & (~ZAWARUDO_END_SOUND);
+            if (soundIndex >= SOUND_START_TIME_01 && soundIndex <= SOUND_START_TIME_03) {
+              PlaySound(m_soundChannel, soundIndex, SOF_NONE);
             }
           }
           resume;

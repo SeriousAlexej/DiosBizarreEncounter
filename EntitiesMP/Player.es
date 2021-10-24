@@ -7363,6 +7363,10 @@ procedures:
             m_penTheWorld->SendEvent(EStop());
             m_penTheWorld = NULL;
           }
+        } else if (m_penTheWorld) {
+          EPlayStartTimeSound startTimeEvent;
+          startTimeEvent.soundIndex = eReminder.iValue;
+          m_penTheWorld->SendEvent(startTimeEvent);
         }
         resume;
       }
