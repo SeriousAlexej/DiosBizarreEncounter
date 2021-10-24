@@ -111,7 +111,7 @@ event EAutoAction {
 };
 
 %{
-extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent);
+extern void DrawHUD(CPlayer* penPlayerCurrent, CDrawPort *pdpCurrent);
 extern void InitHUD(void);
 extern void EndHUD(void);
 extern void ReinitAbilities(const CPlayer* penPlayer);
@@ -1852,6 +1852,7 @@ functions:
 
   void CPlayer(void) 
   {
+    mp_buttonActionsListHead = NULL;
     // clear flying shells data array
     bUseButtonHeld = FALSE;
     ClearShellLaunchData();
@@ -2064,7 +2065,7 @@ functions:
     m_ulFlags |= PLF_SYNCWEAPON;
     // setup light source
     SetupLightSource();
-    ReinitAbilities(this);
+    ReinitAbilities((CPlayer*)GetPredictionTail());
   };
 
   /* Get static light source information. */
@@ -5468,7 +5469,7 @@ functions:
       if (penHUDPlayer->IsPredicted()) {
         penHUDPlayer = (CPlayer *)penHUDPlayer->GetPredictor();
       }
-      DrawHUD( penHUDPlayer, pdp);
+      DrawHUD(this, pdp);
     }
   }
 

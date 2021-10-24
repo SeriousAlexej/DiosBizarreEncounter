@@ -771,7 +771,7 @@ static void DrawAspectCorrectTextureCentered( class CTextureObject *_pTO, FLOAT 
 }
 
 // draw sniper mask
-static void HUD_DrawSniperMask( void )
+static void HUD_DrawSniperMask(CPlayerWeapons* pWeaponsForSniper)
 {
   // determine location
   const FLOAT fSizeI = _pixDPWidth;
@@ -800,8 +800,8 @@ static void HUD_DrawSniperMask( void )
 
   FLOAT _fYResolutionScaling = (FLOAT)_pixDPHeight/480.0f;
 
-  FLOAT fDistance = _penWeapons->m_fRayHitDistance;
-  FLOAT aFOV = Lerp(_penWeapons->m_fSniperFOVlast, _penWeapons->m_fSniperFOV,
+  FLOAT fDistance = pWeaponsForSniper->m_fRayHitDistance;
+  FLOAT aFOV = Lerp(pWeaponsForSniper->m_fSniperFOVlast, pWeaponsForSniper->m_fSniperFOV,
                     _pTimer->GetLerpFactor());
   CTString strTmp;
   
@@ -817,7 +817,7 @@ static void HUD_DrawSniperMask( void )
   FLOAT fTM = _pTimer->GetLerpedCurrentTick();
   
   COLOR colLED;
-  if (_penWeapons->m_tmLastSniperFire+1.25f<fTM) { // blinking
+  if (pWeaponsForSniper->m_tmLastSniperFire+1.25f<fTM) { // blinking
     colLED = 0x44FF22BB;
   } else {
     colLED = 0xFF4422DD;
@@ -1336,16 +1336,11 @@ static AbilityPtr abilities[NET_MAXGAMEPLAYERS][4] = { NULL };
 
 // render interface (frontend) to drawport
 // (units are in pixels for 1920x1080 resolution - for other res HUD will be scalled automatically)
-extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent)
+extern void DrawHUD(CPlayer* penPlayerMaybePredicted, CDrawPort *pdpCurrent)
 {
   // no player - no info, sorry
-  if( penPlayerCurrent==NULL || (penPlayerCurrent->GetFlags()&ENF_DELETED)) return;
-  
-  // find last values in case of predictor
-  CPlayer *penLast = (CPlayer*)penPlayerCurrent;
-  if( penPlayerCurrent->IsPredictor()) penLast = (CPlayer*)(((CPlayer*)penPlayerCurrent)->GetPredicted());
-  ASSERT( penLast!=NULL);
-  if( penLast==NULL) return; // !!!! just in case
+  if( penPlayerMaybePredicted==NULL || (penPlayerMaybePredicted->GetFlags()&ENF_DELETED)) return;
+  const CPlayer* penPlayerCurrent = (CPlayer*)penPlayerMaybePredicted->GetPredictionTail();
 
   FixupHiresFonts();
 
@@ -1366,10 +1361,9 @@ extern void DrawHUD( const CPlayer *penPlayerCurrent, CDrawPort *pdpCurrent)
   _dioHUDScaling = _pixDPHeight / 1080.0f;
 
   // draw sniper mask (original mask even if snooping)
-  if (((CPlayerWeapons*)&*penPlayerCurrent->m_penWeapons)->m_iCurrentWeapon==WEAPON_SNIPER
-    &&((CPlayerWeapons*)&*penPlayerCurrent->m_penWeapons)->m_bSniping) {
-    HUD_DrawSniperMask();
-  } 
+  CPlayerWeapons* pWeaponsForSniper = (CPlayerWeapons*)&*penPlayerMaybePredicted->m_penWeapons;
+  if (pWeaponsForSniper->m_iCurrentWeapon==WEAPON_SNIPER && pWeaponsForSniper->m_bSniping)
+    HUD_DrawSniperMask(pWeaponsForSniper);
 
   CTextureObject* p_portrait = &_toDIO;
   if (_penPlayer->m_mode == STAND_ENGAGED)
