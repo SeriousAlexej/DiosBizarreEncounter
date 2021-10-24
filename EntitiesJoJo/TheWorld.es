@@ -48,6 +48,12 @@ void CTheWorld_Precache()
   pdec->PrecacheTexture(TEXTURE_ZAWARUDO_OPAQUE);
   pdec->PrecacheTexture(TEXTURE_REFLECT);
   pdec->PrecacheTexture(TEXTURE_SPECULAR);
+  pdec->PrecacheSound(SOUND_START_TIME_01);
+  pdec->PrecacheSound(SOUND_START_TIME_02);
+  pdec->PrecacheSound(SOUND_START_TIME_03);
+  pdec->PrecacheSound(SOUND_STOP_TIME_01);
+  pdec->PrecacheSound(SOUND_STOP_TIME_02);
+  pdec->PrecacheSound(SOUND_STOP_TIME_03);
 }
 
 #define ECF_STAND ( \
@@ -62,6 +68,7 @@ void CTheWorld_Precache()
 
 #define ZAWARUDO_START 42
 #define ZAWARUDO_END   43
+#define ZAWARUDO_END_SOUND 44
 %}
 
 class CTheWorld : CMovableModelEntity
@@ -79,13 +86,15 @@ properties:
   6 INDEX          m_addedAttachments = 0x0,
   7 BOOL           m_isTimeStopped    = FALSE,
   8 FLOAT          m_moveSpeed        = 1.0f,
-  9 BOOL           m_isDying          = FALSE
+  9 BOOL           m_isDying          = FALSE,
+ 10 INDEX          m_startSoundIndex  = 0,
+ 11 CSoundObject   m_soundChannel,
+ 12 FLOAT          m_tmParticlesActive    = 0.0f,
+ 13 FLOAT          m_particlesOpacityPrev = 0.0f,
+ 14 FLOAT          m_particlesOpacity     = 0.0f,
 
 {
 CPlacement3D m_plLast;
-TIME         m_tmParticlesActive;
-FLOAT        m_particlesOpacityPrev;
-FLOAT        m_particlesOpacity;
 }
 
 components:
@@ -96,7 +105,13 @@ components:
   5 model   MODEL_LEFT_HAND         "Models\\ZAWARUDO\\ZaWarudoHand_Left.mdl",
   6 model   MODEL_RIGHT_HAND        "Models\\ZAWARUDO\\ZaWarudoHand_Right.mdl",
   7 model   MODEL_RIGHT_LEG         "Models\\ZAWARUDO\\ZaWarudoLeg_Right.mdl",
-  8 texture TEXTURE_ZAWARUDO_OPAQUE "Models\\ZAWARUDO\\ZaWarudo_Opaque.tex"
+  8 texture TEXTURE_ZAWARUDO_OPAQUE "Models\\ZAWARUDO\\ZaWarudo_Opaque.tex",
+  9 sound   SOUND_START_TIME_01     "Sounds\\Stand\\start_time_01.wav",
+ 10 sound   SOUND_START_TIME_02     "Sounds\\Stand\\start_time_02.wav",
+ 11 sound   SOUND_START_TIME_03     "Sounds\\Stand\\start_time_03.wav",
+ 12 sound   SOUND_STOP_TIME_01      "Sounds\\Stand\\stop_time_01.wav",
+ 13 sound   SOUND_STOP_TIME_02      "Sounds\\Stand\\stop_time_02.wav",
+ 14 sound   SOUND_STOP_TIME_03      "Sounds\\Stand\\stop_time_03.wav"
 
 functions:
 
@@ -209,11 +224,12 @@ functions:
     }
     else if (m_penOwner)
     {
-      const CPlayer& player = ((CPlayer&)*(m_penOwner.ep_pen->GetPredictionTail()));
+      CPlayer& player = ((CPlayer&)*(m_penOwner.ep_pen->GetPredictionTail()));
       if (player.m_mode == STAND_PASSIVE)
       {
-        CPlacement3D playerPlacement = player.en_plViewpoint;
-        playerPlacement.RelativeToAbsoluteSmooth(player.GetPlacement());
+        CPlayer* pred_player = player.IsPredicted() ? (CPlayer*)player.GetPredictor() : &player;
+        CPlacement3D playerPlacement = pred_player->en_plViewpoint;
+        playerPlacement.RelativeToAbsoluteSmooth(pred_player->GetPlacement());
         CPlacement3D thisPlacement = GetPlacement();
         thisPlacement.AbsoluteToRelativeSmooth(playerPlacement);
 
@@ -377,11 +393,20 @@ procedures:
               default:
                 break;
               }
+              PlaySound(m_soundChannel, SOUND_STOP_TIME_01 + IRnd()%3, SOF_NONE);
+
               EZaWarudo za_warudo;
               za_warudo.penDio = m_penOwner->GetPredictionTail();
               CPlayer& player = (CPlayer&)*za_warudo.penDio.ep_pen;
               player.m_penMainMusicHolder->SendEvent(za_warudo);
+
+              m_startSoundIndex = SOUND_START_TIME_01 + IRnd()%3;
+              SpawnReminder(this, ZA_WARUDO_DURATION - GetSoundLength(m_startSoundIndex), ZAWARUDO_END_SOUND);
               SpawnReminder(this, ZA_WARUDO_DURATION, ZAWARUDO_END);
+            }
+            else if (eReminder.iValue == ZAWARUDO_END_SOUND)
+            {
+              PlaySound(m_soundChannel, m_startSoundIndex, SOF_NONE);
             }
             else if (eReminder.iValue == ZAWARUDO_END)
             {
