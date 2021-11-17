@@ -65,7 +65,7 @@
 extern INDEX hud_bShowWeapon;
 
 const int index_remap[12] = { 0, 3, 5, 1, 4, 2, 6, 9, 11, 8, 10, 7 };
-extern const INDEX aiWeaponsRemap[19] = { 0, 15, 1,  10,  2,  3,  4,  5,  6,  7,
+extern const INDEX aiWeaponsRemap[19] = { 0, 15, 10,  1,  2,  3,  4,  5,  6,  7,
                                           8,  9,  11, 13, 12, 14, 16, 17, 18 };
 static void ClearToDefault(FLOATmatrix3D& m) { m = FLOATmatrix3D(); }
 %}
@@ -3546,7 +3546,7 @@ functions:
   // get weapon from selected number
   WeaponType GetStrongerWeapon(INDEX iWeapon) {
     switch(iWeapon) {
-      case 1: return WEAPON_CHAINSAW;
+      case 1: return WEAPON_KNIFE;
       case 2: return WEAPON_DOUBLECOLT;
       case 3: return WEAPON_DOUBLESHOTGUN;
       case 4: return WEAPON_MINIGUN;
@@ -3991,8 +3991,8 @@ functions:
   // get secondary weapon for a given primary weapon
   WeaponType PrimaryToSecondary(WeaponType wt)
   {
-    if (wt==WEAPON_CHAINSAW) {
-      return WEAPON_KNIFE;
+    if (wt==WEAPON_KNIFE) {
+      return WEAPON_CHAINSAW;
     } else if (wt==WEAPON_DOUBLECOLT) {
       return WEAPON_COLT;
     } else if (wt==WEAPON_DOUBLESHOTGUN) {
@@ -4010,8 +4010,8 @@ functions:
   // get primary weapon for a given secondary weapon
   WeaponType SecondaryToPrimary(WeaponType wt)
   {
-    if (wt==WEAPON_KNIFE) {
-      return WEAPON_CHAINSAW;
+    if (wt==WEAPON_CHAINSAW) {
+      return WEAPON_KNIFE;
     } else if (wt==WEAPON_COLT) {
       return WEAPON_DOUBLECOLT;
     } else if (wt==WEAPON_SINGLESHOTGUN) {
