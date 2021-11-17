@@ -63,6 +63,16 @@ extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 
 %}
 
+enum VoicePriority
+{
+  0 Voice_Silence "",
+  1 Voice_Bark "",
+  2 Voice_Damage "",
+  3 Voice_Talk "",
+  4 Voice_Wry "",
+  5 Voice_Death "",
+};
+
 enum PlayerViewType {
   0 PVT_PLAYEREYES      "",
   1 PVT_PLAYERAUTOVIEW  "",
@@ -77,6 +87,8 @@ enum PlayerState {
   3 PST_DIVE      "",
   4 PST_FALL      "",
 };
+
+
 
 event EDoEmote
 {
@@ -1053,6 +1065,11 @@ void CPlayer_Precache(void)
 //pdec->PrecacheSound(SOUND_F_HIGHSCORE          );
   pdec->PrecacheSound(SOUND_BLOWUP               );
 
+
+  pdec->PrecacheSound(SOUND_DIO_WRY1);
+  pdec->PrecacheSound(SOUND_DIO_WRY2);
+
+
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_TELEPORT);
   pdec->PrecacheClass(CLASS_SERIOUSBOMB);
   pdec->PrecacheClass(CLASS_THE_WORLD);
@@ -1427,7 +1444,7 @@ properties:
  75 CSoundObject m_soLocalAmbientOnce,  // local ambient that only this player hears
  76 CSoundObject m_soMessage,  // message sounds
  77 CSoundObject m_soHighScore, // high score sound
- 78 CSoundObject m_soSpeech,    // for quotes
+// 78 CSoundObject m_soSpeech,    // for quotes
  79 CSoundObject m_soSniperZoom, // for sniper zoom sound
 
  81 INDEX m_iMana    = 0,        // current score worth for killed player
@@ -1519,6 +1536,7 @@ properties:
  208 FLOAT m_tmLastRodaRollaThrew = 0.0f,
  209 INDEX m_myLife = 0,
  210 FLOAT m_tmWhenStandTurnedPassive = 0.0f,
+ 211 enum VoicePriority m_currVoicePriority = Voice_Silence,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1603,7 +1621,8 @@ components:
  90 sound SOUND_WALK_SNOW_L     "SoundsMP\\Player\\WalkSnowL.wav",
  91 sound SOUND_WALK_SNOW_R     "SoundsMP\\Player\\WalkSnowR.wav",
  92 sound SOUND_BLOWUP          "SoundsMP\\Player\\BlowUp.wav",
- 
+ 93 sound SOUND_DIO_WRY1        "Sounds\\Dio\\WRRRYYYYY.wav",
+ 94 sound SOUND_DIO_WRY2        "Sounds\\Dio\\WRYYYYYY2.wav",
 
 150 sound SOUND_F_WATER_ENTER   "SoundsMP\\Player\\Female\\WaterEnter.wav",
 151 sound SOUND_F_WATER_LEAVE   "SoundsMP\\Player\\Female\\WaterLeave.wav",
@@ -1666,6 +1685,41 @@ components:
 
 
 functions:
+
+  BOOL CanPlayVoice(VoicePriority priority)
+  {
+    return !m_soMouth.IsPlaying() || m_currVoicePriority <= priority;
+  }
+
+  void SetupVoice(VoicePriority priority)
+  {
+    m_currVoicePriority = priority;
+    if (priority == Voice_Talk || priority == Voice_Wry) {
+      SetSpeakMouthPitch();
+    } else if (priority == Voice_Damage) {
+      SetRandomMouthPitch(0.9f, 1.1f);
+    } else {
+      SetDefaultMouthPitch();
+    }
+  }
+
+  void PlayVoice(SLONG snd, VoicePriority priority, SLONG flgs)
+  {
+    if (CanPlayVoice(priority))
+    {
+      SetupVoice(priority);
+      PlaySound(m_soMouth, snd, flgs);
+    }
+  }
+  
+  void PlayVoice(const CTFileName& snd, VoicePriority priority, SLONG flgs)
+  {
+    if (CanPlayVoice(priority))
+    {
+      SetupVoice(priority);
+      PlaySound(m_soMouth, snd, flgs);
+    }
+  }
 
   void AddUltimate(INDEX iUltimate)
   {
@@ -2481,8 +2535,7 @@ functions:
     if (GetSettings()->ps_ulFlags&PSF_NOQUOTES) {
       return;
     }
-    SetSpeakMouthPitch();
-    PlaySound( m_soSpeech, fnmMessage, SOF_3D|SOF_VOLUMETRIC);
+    PlayVoice(fnmMessage, Voice_Talk, SOF_3D|SOF_VOLUMETRIC);
   }
 
   // receive all messages in one directory - cheat
@@ -2721,7 +2774,7 @@ functions:
   }
   void SetSpeakMouthPitch(void)
   {
-    m_soSpeech.Set3DParameters(50.0f, 10.0f, 2.0f, 1.0f);
+    m_soMouth.Set3DParameters(50.0f, 10.0f, 2.0f, 1.0f);
   }
 
   // added: also shake view because of chainsaw firing
@@ -3666,8 +3719,7 @@ functions:
 
     // play hurting sound
     if( dmtType==DMT_DROWNING) {
-      SetRandomMouthPitch( 0.9f, 1.1f);
-      PlaySound( m_soMouth, GenderSound(SOUND_DROWN), SOF_3D);
+      PlayVoice(GenderSound(SOUND_DROWN), Voice_Damage, SOF_3D);
       if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("WoundWater");}
       m_tmMouthSoundLast = _pTimer->CurrentTick();
       PlaySound( m_soLocalAmbientOnce, SOUND_WATERBUBBLES, SOF_3D|SOF_VOLUMETRIC|SOF_LOCAL);
@@ -3695,12 +3747,11 @@ functions:
           iSound = GenderSound(SOUND_WOUNDWATER);
           strIFeel = "WoundWater";
         } // override for diving
-        SetRandomMouthPitch( 0.9f, 1.1f);
         // give some pause inbetween screaming
         TIME tmNow = _pTimer->CurrentTick();
         if( (tmNow-m_tmScreamTime) > 1.0f) {
           m_tmScreamTime = tmNow;
-          PlaySound( m_soMouth, iSound, SOF_3D);
+          PlayVoice(iSound, Voice_Damage, SOF_3D);
           if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect(strIFeel);}
         }
       }
@@ -4705,8 +4756,7 @@ functions:
       if (en_tmJumped+_pTimer->TickQuantum>=_pTimer->CurrentTick() &&
           en_tmJumped<=_pTimer->CurrentTick() && en_penReference==NULL) {
         // play jump sound
-        SetDefaultMouthPitch();
-        PlaySound(m_soMouth, GenderSound(SOUND_JUMP), SOF_3D);
+        PlayVoice(GenderSound(SOUND_JUMP), Voice_Bark, SOF_3D);
 
         if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Jump");}
         // disallow jumping
@@ -4913,8 +4963,7 @@ functions:
         // play drowning sound once in a while
         if (m_tmMouthSoundLast+2.0f<tmNow) {
           m_tmMouthSoundLast = tmNow;
-          SetRandomMouthPitch(0.9f, 1.1f);
-          PlaySound(m_soMouth, GenderSound(SOUND_DROWN), SOF_3D);
+          PlayVoice(GenderSound(SOUND_DROWN), Voice_Damage, SOF_3D);
         }
       }
 
@@ -6126,6 +6175,8 @@ procedures:
 
   DoEmoteState()
   {
+    PlayVoice(SOUND_DIO_WRY1 + (IRnd()%2), Voice_Wry, SOF_3D);
+
     GetModelObject()->PlayAnim(PLAYER_ANIM_WRYYY_IN, 0);
     CModelObject& moBody = GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_BODY)->amo_moModelObject;
     moBody.PlayAnim(BODY_ANIM_WRYYY_IN, 0);
@@ -6352,12 +6403,10 @@ procedures:
 
     // play sound
     if (m_pstState==PST_DIVE) {
-      SetDefaultMouthPitch();
-      PlaySound(m_soMouth, GenderSound(SOUND_DEATHWATER), SOF_3D);
+      PlayVoice(GenderSound(SOUND_DEATHWATER), Voice_Death, SOF_3D);
       if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("DeathWater");}
     } else {
-      SetDefaultMouthPitch();
-      PlaySound(m_soMouth, GenderSound(SOUND_DEATH), SOF_3D);
+      PlayVoice(GenderSound(SOUND_DEATH), Voice_Death, SOF_3D);
       if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Death");}
     }
 
@@ -7324,13 +7373,12 @@ procedures:
         }
       }
       on (ETakingBreath eTakingBreath ) : {
-        SetDefaultMouthPitch();
         if (eTakingBreath.fBreathDelay<0.2f) {
-          PlaySound(m_soMouth, GenderSound(SOUND_INHALE0), SOF_3D);
+          PlayVoice(GenderSound(SOUND_INHALE0), Voice_Bark, SOF_3D);
         } else if (eTakingBreath.fBreathDelay<0.8f) {
-          PlaySound(m_soMouth, GenderSound(SOUND_INHALE1), SOF_3D);
+          PlayVoice(GenderSound(SOUND_INHALE1), Voice_Bark, SOF_3D);
         } else {
-          PlaySound(m_soMouth, GenderSound(SOUND_INHALE2), SOF_3D);
+          PlayVoice(GenderSound(SOUND_INHALE2), Voice_Bark, SOF_3D);
         }
         resume;
       }
@@ -7474,8 +7522,7 @@ procedures:
         if (IsOfClass(eTouch.penOther, "Bouncer")) {
           JumpFromBouncer(this, eTouch.penOther);
           // play jump sound
-          SetDefaultMouthPitch();
-          PlaySound(m_soMouth, GenderSound(SOUND_JUMP), SOF_3D);
+          PlayVoice(GenderSound(SOUND_JUMP), Voice_Bark, SOF_3D);
           if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Jump");}
         }
         resume;
