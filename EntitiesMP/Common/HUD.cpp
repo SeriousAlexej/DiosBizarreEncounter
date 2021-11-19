@@ -878,7 +878,7 @@ static void HUD_DrawSniperMask(CPlayerWeapons* pWeaponsForSniper)
 // helper functions
 
 // fill weapon and ammo table with current state
-static void FillWeaponAmmoTables(void)
+static void FillWeaponAmmoTables(const CPlayer* player)
 {
   // ammo quantities
   _aaiAmmo[0].ai_iAmmoAmmount    = _penWeapons->m_iShells;
@@ -897,7 +897,7 @@ static void FillWeaponAmmoTables(void)
   _aaiAmmo[6].ai_iMaxAmmoAmmount = _penWeapons->m_iMaxIronBalls;
   _aaiAmmo[7].ai_iAmmoAmmount    = _penWeapons->m_iSniperBullets;
   _aaiAmmo[7].ai_iMaxAmmoAmmount = _penWeapons->m_iMaxSniperBullets;
-
+  
   // prepare ammo table for weapon possesion
   INDEX i, iAvailableWeapons = _penWeapons->m_iAvailableWeapons;
   for( i=0; i<8; i++) _aaiAmmo[i].ai_bHasWeapon = FALSE;
@@ -911,6 +911,12 @@ static void FillWeaponAmmoTables(void)
       if( _awiWeapons[i].wi_paiAmmo!=NULL) _awiWeapons[i].wi_paiAmmo->ai_bHasWeapon |= _awiWeapons[i].wi_bHasWeapon;
     }
   }
+  
+  const BOOL usingStand = player->m_mode == STAND_ENGAGED;
+  if (usingStand)
+    for (i = WEAPON_NONE + 1; i < WEAPON_LAST; ++i)
+      if (_awiWeapons[i].wi_wtWeapon != WEAPON_NONE)
+        _awiWeapons[i].wi_bHasWeapon = (_awiWeapons[i].wi_wtWeapon == WEAPON_KNIFE) || (_awiWeapons[i].wi_wtWeapon == WEAPON_HANDS);
 }
 
 void HUD_SetEntityForStackDisplay(CRationalEntity *pren)
@@ -1647,7 +1653,7 @@ ULTIMATE
   // display all ammo infos
   INDEX i;
   COLOR colIcon;
-  FillWeaponAmmoTables();
+  FillWeaponAmmoTables(penPlayerCurrent);
 
   // draw powerup(s) if needed
   TIME *ptmPowerups = (TIME*)&_penPlayer->m_tmInvisibility;
