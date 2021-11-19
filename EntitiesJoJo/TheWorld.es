@@ -59,6 +59,9 @@ void CTheWorld_Precache()
   pdec->PrecacheSound(SOUND_STOP_TIME_01);
   pdec->PrecacheSound(SOUND_STOP_TIME_02);
   pdec->PrecacheSound(SOUND_STOP_TIME_03);
+  pdec->PrecacheSound(SOUND_SPAWN_01);
+  pdec->PrecacheSound(SOUND_SPAWN_02);
+  pdec->PrecacheSound(SOUND_SPAWN_03);
 }
 
 #define ECF_STAND ( \
@@ -92,7 +95,7 @@ properties:
   7 BOOL           m_isTimeStopped    = FALSE,
   8 FLOAT          m_moveSpeed        = 1.0f,
   9 BOOL           m_isDying          = FALSE,
- //10 INDEX          m_startSoundIndex  = 0,
+ 10 CSoundObject   m_soundSpawn,
  11 CSoundObject   m_soundChannel,
  12 FLOAT          m_tmParticlesActive    = 0.0f,
  13 FLOAT          m_particlesOpacityPrev = 0.0f,
@@ -116,7 +119,10 @@ components:
  11 sound   SOUND_START_TIME_03     "Sounds\\Stand\\start_time_03.wav",
  12 sound   SOUND_STOP_TIME_01      "Sounds\\Stand\\stop_time_01.wav",
  13 sound   SOUND_STOP_TIME_02      "Sounds\\Stand\\stop_time_02.wav",
- 14 sound   SOUND_STOP_TIME_03      "Sounds\\Stand\\stop_time_03.wav"
+ 14 sound   SOUND_STOP_TIME_03      "Sounds\\Stand\\stop_time_03.wav",
+ 15 sound   SOUND_SPAWN_01          "Sounds\\Stand\\spawn_1.wav",
+ 16 sound   SOUND_SPAWN_02          "Sounds\\Stand\\spawn_2.wav",
+ 17 sound   SOUND_SPAWN_03          "Sounds\\Stand\\spawn_3.wav",
 
 functions:
 
@@ -521,6 +527,8 @@ procedures:
       SpawnReminder(this, ZA_WARUDO_DURATION, ZAWARUDO_END);
     }
 
+    m_soundSpawn.Set3DParameters(50.0f, 10.0f, 3.0f, 1.0f);
+    PlaySound(m_soundSpawn, SOUND_SPAWN_01 + (IRnd()%3), SOF_3D);
     autocall Alive() EEnd;
 
     m_tmParticlesActive = 0.0f;

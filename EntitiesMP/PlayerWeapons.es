@@ -2199,7 +2199,9 @@ functions:
 
       BOOL isPlayer = IsDerivedFromClass(penClosest, "Player");
       BOOL isEnemy = !isPlayer && IsDerivedFromClass(penClosest, "Enemy Base");
-      if (isPlayer || isEnemy)
+      if (entity_cast(penClosest, CRodaRollaDa) != NULL) {
+        result = TRUE;
+      } else if (isPlayer || isEnemy)
       {
         CPlacement3D weaponPl;
         CalcWeaponPosition(FLOAT3D(0.0f, 0.0f, 0.0f), weaponPl, TRUE);
@@ -3001,7 +3003,10 @@ functions:
       damage *= 2.0f;
       kickForce *= 3.0f;
     }
-    DioPunch(damage, kickForce, theWorld && pl.m_mode == STAND_ENGAGED);
+    EPunchSound punchEvent;
+    punchEvent.hands = FALSE;
+    punchEvent.didHit = DioPunch(damage, kickForce, theWorld && pl.m_mode == STAND_ENGAGED);
+    GetPlayer()->SendEvent(punchEvent);
 
     CModelObject& moLeg = moLegs.GetAttachmentModel(m_iLastLeg)->amo_moModelObject;
     FLOAT waitTime = 0.5f * moLeg.GetAnimLength(LEG_ANIM_KICK);
@@ -3062,7 +3067,10 @@ functions:
       damage *= 5.0f;
       kickForce *= 4.0f;
     }
-    DioPunch(damage, kickForce, TRUE);
+    EPunchSound punchEvent;
+    punchEvent.hands = FALSE;
+    punchEvent.didHit = DioPunch(damage, kickForce, TRUE);
+    GetPlayer()->SendEvent(punchEvent);
   }
 
 
@@ -4700,7 +4708,10 @@ procedures:
       damage *= 6.0f;
       kickForce = 3.0f;
     }
-    DioPunch(damage, kickForce, TRUE);
+    EPunchSound punchEvent;
+    punchEvent.hands = TRUE;
+    punchEvent.didHit = DioPunch(damage, kickForce, TRUE);
+    GetPlayer()->SendEvent(punchEvent);
 
     return EEnd();
   }
@@ -4716,7 +4727,10 @@ procedures:
 
     FLOAT damage = 300.0f;
     FLOAT kickForce = 5.0f;
-    DioPunch(damage, kickForce, TRUE);
+    EPunchSound punchEvent;
+    punchEvent.hands = FALSE;
+    punchEvent.didHit = DioPunch(damage, kickForce, TRUE);
+    GetPlayer()->SendEvent(punchEvent);
 
     CEntity* theWorld = GetTheWorld();
     autowait(0.75f * theWorld->GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_HANDSFINALBLOW));
@@ -4755,7 +4769,10 @@ procedures:
 
     FLOAT damage = 300.0f;
     FLOAT kickForce = 5.0f;
-    DioPunch(damage, kickForce, TRUE);
+    EPunchSound punchEvent;
+    punchEvent.hands = FALSE;
+    punchEvent.didHit = DioPunch(damage, kickForce, TRUE);
+    GetPlayer()->SendEvent(punchEvent);
 
     CEntity* theWorld = GetTheWorld();
     autowait(0.75f * theWorld->GetModelObject()->GetAnimLength(ZAWARUDO_ANIM_LEGSFINALBLOW));

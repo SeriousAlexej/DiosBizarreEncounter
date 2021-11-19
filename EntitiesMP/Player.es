@@ -88,7 +88,11 @@ enum PlayerState {
   4 PST_FALL      "",
 };
 
-
+event EPunchSound
+{
+  BOOL hands,
+  BOOL didHit,
+};
 
 event EDoEmote
 {
@@ -1068,6 +1072,14 @@ void CPlayer_Precache(void)
 
   pdec->PrecacheSound(SOUND_DIO_WRY1);
   pdec->PrecacheSound(SOUND_DIO_WRY2);
+  pdec->PrecacheSound(SOUND_PUNCH_1);
+  pdec->PrecacheSound(SOUND_PUNCH_2);
+  pdec->PrecacheSound(SOUND_PUNCH_3);
+  pdec->PrecacheSound(SOUND_SHEER_ATTACK);
+  pdec->PrecacheSound(SOUND_AIR_ATTACK);
+  pdec->PrecacheSound(SOUND_PUNCH_1_TRIM);
+  pdec->PrecacheSound(SOUND_PUNCH_2_TRIM);
+  pdec->PrecacheSound(SOUND_PUNCH_3_TRIM);
 
 
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_TELEPORT);
@@ -1445,6 +1457,7 @@ properties:
  76 CSoundObject m_soMessage,  // message sounds
  77 CSoundObject m_soHighScore, // high score sound
 // 78 CSoundObject m_soSpeech,    // for quotes
+ 78 CSoundObject m_soWeaponSheerAttack,
  79 CSoundObject m_soSniperZoom, // for sniper zoom sound
 
  81 INDEX m_iMana    = 0,        // current score worth for killed player
@@ -1537,6 +1550,10 @@ properties:
  209 INDEX m_myLife = 0,
  210 FLOAT m_tmWhenStandTurnedPassive = 0.0f,
  211 enum VoicePriority m_currVoicePriority = Voice_Silence,
+ 212 FLOAT m_currVoiceLen = 0.0f,
+ 213 INDEX m_nextFreeWeaponSound = 0,
+ 214 INDEX m_punchIndex = 0,
+ 215 BOOL m_playingSheerAttack = FALSE,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1623,6 +1640,14 @@ components:
  92 sound SOUND_BLOWUP          "SoundsMP\\Player\\BlowUp.wav",
  93 sound SOUND_DIO_WRY1        "Sounds\\Dio\\WRRRYYYYY.wav",
  94 sound SOUND_DIO_WRY2        "Sounds\\Dio\\WRYYYYYY2.wav",
+ 95 sound SOUND_PUNCH_1         "Sounds\\Stand\\punch_1.wav",
+ 96 sound SOUND_PUNCH_2         "Sounds\\Stand\\punch_2.wav",
+ 97 sound SOUND_PUNCH_3         "Sounds\\Stand\\punch_3.wav",
+ 98 sound SOUND_AIR_ATTACK      "Sounds\\Stand\\air_attack.wav",
+ 99 sound SOUND_SHEER_ATTACK    "Sounds\\Stand\\sheer_attack.wav",
+100 sound SOUND_PUNCH_1_TRIM    "Sounds\\Stand\\punch_1_trim.wav",
+101 sound SOUND_PUNCH_2_TRIM    "Sounds\\Stand\\punch_2_trim.wav",
+102 sound SOUND_PUNCH_3_TRIM    "Sounds\\Stand\\punch_3_trim.wav",
 
 150 sound SOUND_F_WATER_ENTER   "SoundsMP\\Player\\Female\\WaterEnter.wav",
 151 sound SOUND_F_WATER_LEAVE   "SoundsMP\\Player\\Female\\WaterLeave.wav",
@@ -1685,10 +1710,55 @@ components:
 
 
 functions:
+ 
+ CSoundObject& GetFreeWeaponSound()
+ {
+   CSoundObject* soundObject = (&m_soWeapon0) + m_nextFreeWeaponSound;
+   m_nextFreeWeaponSound = (m_nextFreeWeaponSound + 1)%4;
+   return *soundObject;
+ }
+
+ void HandPunchSound(BOOL didHit)
+ {
+   if (!didHit) {
+     CSoundObject& soundObject = GetFreeWeaponSound();
+     soundObject.Set3DParameters(100.0f, 20.0f, 3.0f, 0.9f + (FRnd() / 5.0f));
+     PlaySound(soundObject, SOUND_AIR_ATTACK, SOF_3D|SOF_SMOOTHCHANGE);
+   } else{
+     m_punchIndex = (m_punchIndex + 1)%500;
+     SpawnReminder(this, 0.25f, 500 + m_punchIndex);
+     if (!m_playingSheerAttack) {
+       m_playingSheerAttack = TRUE;
+       m_soWeaponSheerAttack.Set3DParameters(100.0f, 20.0f, 3.5f, 1.0f);
+       PlaySound(m_soWeaponSheerAttack, SOUND_SHEER_ATTACK, SOF_3D|SOF_LOOP);
+     }
+   }
+ }
+
+ void PunchSound(BOOL didHit)
+ {
+   SLONG punchResource = SOUND_AIR_ATTACK;
+   FLOAT vol = 1.0f;
+   if (didHit) {
+     punchResource = SOUND_PUNCH_1 + (IRnd()%3);
+     m_soWeaponSheerAttack.Set3DParameters(100.0f, 20.0f, 3.0f * vol, 0.9f + (FRnd() / 5.0f));
+     PlaySound(m_soWeaponSheerAttack, punchResource, SOF_3D|SOF_SMOOTHCHANGE);
+   } else {
+     vol *= 0.7f;
+   }
+   CSoundObject& soundObject = GetFreeWeaponSound();
+   soundObject.Set3DParameters(100.0f, 20.0f, 3.0f * vol, 0.9f + (FRnd() / 5.0f));
+   PlaySound(soundObject, punchResource, SOF_3D|SOF_SMOOTHCHANGE);
+ }
+
+  BOOL IsMouthTalking() const
+  {
+    return _pTimer->CurrentTick() <= m_currVoiceLen;
+  }
 
   BOOL CanPlayVoice(VoicePriority priority)
   {
-    return !m_soMouth.IsPlaying() || m_currVoicePriority <= priority;
+    return !IsMouthTalking() || m_currVoicePriority <= priority;
   }
 
   void SetupVoice(VoicePriority priority)
@@ -1707,6 +1777,7 @@ functions:
   {
     if (CanPlayVoice(priority))
     {
+      m_currVoiceLen = _pTimer->CurrentTick() + GetSoundLength(snd);
       SetupVoice(priority);
       PlaySound(m_soMouth, snd, flgs);
     }
@@ -6136,8 +6207,10 @@ procedures:
     penWeapon->m_bSniping=FALSE;
     m_ulFlags&=~PLF_ISZOOMING;
 
-	// turn off possible chainsaw engine sound
-	PlaySound(m_soWeaponAmbient, SOUND_SILENCE, SOF_3D);
+    // turn off possible chainsaw engine sound
+    PlaySound(m_soWeaponAmbient, SOUND_SILENCE, SOF_3D);
+    PlaySound(m_soWeaponSheerAttack, SOUND_SILENCE, SOF_3D);
+    m_playingSheerAttack = FALSE;
 	
     // update per-level stats
     UpdateLevelStats();
@@ -6255,6 +6328,8 @@ procedures:
     // stop weapon sounds
     PlaySound(m_soSniperZoom, SOUND_SILENCE, SOF_3D);
     PlaySound(m_soWeaponAmbient, SOUND_SILENCE, SOF_3D);
+    PlaySound(m_soWeaponSheerAttack, SOUND_SILENCE, SOF_3D);
+    m_playingSheerAttack = FALSE;
 
 	// stop rotating minigun
 	penWeapon->m_aMiniGunLast = penWeapon->m_aMiniGun;
@@ -6579,6 +6654,7 @@ procedures:
 
     // restore last view
     m_iViewState = m_iLastViewState;
+    GetPlayerWeapons()->m_bLegKickInProgress = FALSE;
     // clear ammunition
     if (!(m_ulFlags&PLF_RESPAWNINPLACE)) {
       GetPlayerWeapons()->ClearWeapons();
@@ -7019,6 +7095,8 @@ procedures:
     ((CPlayerWeapons&)*m_penWeapons).m_iCurrentWeapon = WEAPON_NONE;
     ((CPlayerWeapons&)*m_penWeapons).m_iWantedWeapon = WEAPON_NONE;
     m_soWeaponAmbient.Stop();
+    m_soWeaponSheerAttack.Stop();
+    m_playingSheerAttack = FALSE;
 
     // sync apperances
     GetPlayerAnimator()->SyncWeapon();
@@ -7387,6 +7465,15 @@ procedures:
         GiveImpulseTranslationAbsolute(kickEvent.dir);
         resume;
       }
+      on (EPunchSound punchSound) :
+      {
+        if (punchSound.hands) {
+          HandPunchSound(punchSound.didHit);
+        } else {
+          PunchSound(punchSound.didHit);
+        }
+        resume;
+      }
       on (EDoEmote) :
       {
         if (!m_bInEmote) {
@@ -7411,6 +7498,9 @@ procedures:
             m_penTheWorld->SendEvent(EStop());
             m_penTheWorld = NULL;
           }
+        } else if (eReminder.iValue == 500 + m_punchIndex && m_playingSheerAttack) {
+          m_playingSheerAttack = FALSE;
+          PlaySound(m_soWeaponSheerAttack, SOUND_PUNCH_1_TRIM + (IRnd()%3), SOF_3D);
         } else if (m_penTheWorld) {
           EPlayStartTimeSound startTimeEvent;
           startTimeEvent.soundIndex = eReminder.iValue;
