@@ -73,6 +73,8 @@ void CRodaRollaDa_OnPrecache(CDLLEntityClass* pdec, INDEX iUser)
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_CANNONEXPLOSIONSTAIN);
   pdec->PrecacheClass(CLASS_BASIC_EFFECT, BET_CANNONSHOCKWAVE);
   pdec->PrecacheClass(CLASS_RODA_ROLLA_DEBRIS);
+  pdec->PrecacheSound(SOUND_IMPACT_1);
+  pdec->PrecacheSound(SOUND_IMPACT_2);
 }
 
 #define MAX_EXPLOSION_DAMAGE 6000.0f
@@ -94,6 +96,7 @@ properties:
   4 FLOAT3D        m_launchDir = FLOAT3D(0.0f, 0.0f, 0.0f),
   5 FLOAT          m_explosionTime = 0.0f,
   6 FLOAT          m_explosionAccumulatedDamage = BASE_EXPLOSION_DAMAGE,
+  7 CSoundObject   m_soundImpact,
 
 components:
   1 model   MODEL_RODA_ROLLA_DA       "Models\\RODAROLLADA\\RODAROLLADA.mdl",
@@ -105,6 +108,8 @@ components:
   7 texture TEX_REFL_LIGHTMETAL01     "Models\\ReflectionTextures\\LightMetal01.tex",
   8 class   CLASS_BASIC_EFFECT        "Classes\\BasicEffect.ecl",
   9 class   CLASS_RODA_ROLLA_DEBRIS   "Classes\\RodaRollaDebris.ecl",
+ 10 sound   SOUND_IMPACT_1            "Sounds\\RodaRolla\\impact_1.wav",
+ 11 sound   SOUND_IMPACT_2            "Sounds\\RodaRolla\\impact_2.wav",
 
 functions:
 
@@ -145,7 +150,7 @@ void DamageEntity(CEntity* to_damage)
     FLOAT3D vDir = en_vCurrentTranslationAbsolute;
     vDir.Normalize();
     FLOAT3D vHit = GetPlacement().pl_PositionVector;
-    InflictDirectDamage(to_damage, m_penOwner, DMT_IMPACT, 1000.0f, vHit, vDir);
+    InflictDirectDamage(to_damage, this, DMT_IMPACT, 1000.0f, vHit, vDir);
   }
 }
 
@@ -219,7 +224,8 @@ void SpawnEffect(const CPlacement3D& plEffect, const ESpawnEffect& eSpawnEffect)
 
 void HitSound()
 {
-  //CPrintF("BAAAAAM!\n");
+  m_soundImpact.Set3DParameters(200.0f, 50.0f, 3.0f, 1.0f + FRndRange(-0.2f, 0.2f));
+  PlaySound(m_soundImpact, SOUND_IMPACT_1 + (IRnd()%2), SOF_3D);
 }
 
 void RangeDamage()

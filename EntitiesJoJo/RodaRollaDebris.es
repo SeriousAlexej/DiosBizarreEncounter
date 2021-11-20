@@ -93,7 +93,7 @@ void DamageEntity(CEntity* to_damage)
     FLOAT3D vDir = en_vCurrentTranslationAbsolute;
     vDir.Normalize();
     FLOAT3D vHit = GetPlacement().pl_PositionVector;
-    InflictDirectDamage(to_damage, m_penOwner, DMT_IMPACT, 200.0f, vHit, vDir);
+    InflictDirectDamage(to_damage, this, DMT_IMPACT, 200.0f, vHit, vDir);
   }
 }
 

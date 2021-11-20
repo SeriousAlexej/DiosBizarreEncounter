@@ -3702,7 +3702,9 @@ functions:
 
     // check for friendly fire
     if (!GetSP()->sp_bFriendlyFire && GetSP()->sp_bCooperative) {
-      if ((IsOfClass(penInflictor, "Player") && penInflictor!=this) || entity_cast(penInflictor, CRodaRollaDa)) {
+      if ((IsOfClass(penInflictor, "Player") && penInflictor!=this) ||
+          entity_cast(penInflictor, CRodaRollaDa) ||
+          entity_cast(penInflictor, CRodaRollaDebris)) {
         return;
       }
     }
