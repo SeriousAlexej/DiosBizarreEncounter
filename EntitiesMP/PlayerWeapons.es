@@ -1363,6 +1363,7 @@ functions:
       GetWorld()->ContinueCast(crRay);
     }
 
+    BOOL hadTarget = (m_penRayHit != NULL && IsDerivedFromClass(m_penRayHit, "Enemy Base"));
     // store required cast ray results
     m_vRayHitLast = m_vRayHit;  // for lerping purposes
     m_vRayHit   = crRay.cr_vHit;
@@ -1406,6 +1407,9 @@ functions:
         }
         // keep enemy health for eventual crosshair coloring
         if( IsDerivedFromClass( pen, "Enemy Base")) {
+          if (!hadTarget) {
+            GetPlayer()->SendEvent(EEnemySpotted());
+          }
           m_fEnemyHealth = ((CEnemyBase*)pen)->GetHealth() / ((CEnemyBase*)pen)->m_fMaxHealth;
         }
          // cannot snoop while firing

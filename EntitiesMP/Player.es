@@ -6,7 +6,10 @@
 
 #include <Engine/Build.h>
 #include <Engine/Network/Network.h>
+#include <Engine/Templates/Stock_CSoundData.h>
 #include <locale.h>
+#include <string>
+#include <fstream>
 
 #include "ModelsMP/Player/SeriousSam/Player.h"
 #include "ModelsMP/Player/SeriousSam/Body.h"
@@ -63,6 +66,8 @@ extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 
 %}
 
+uses "EntitiesJoJo/dumb_ecc";
+
 enum VoicePriority
 {
   0 Voice_Silence "",
@@ -87,6 +92,8 @@ enum PlayerState {
   3 PST_DIVE      "",
   4 PST_FALL      "",
 };
+
+event EEnemySpotted {};
 
 event EPunchSound
 {
@@ -127,6 +134,105 @@ event EAutoAction {
 };
 
 %{
+struct VoiceLinesReader;
+inline void Clear(CSoundData*) {}
+inline void Clear(VoiceLinesReader*) {}
+
+struct VoiceLinesReader
+{
+public:
+  VoiceLinesReader(const char* listFilename)
+  {
+    prevLine = -1;
+    //myLstFilename = listFilename;
+    std::string fullPath = _fnmApplicationPath.str_String;
+    fullPath += _fnmMod.str_String;
+    fullPath += listFilename;
+    std::ifstream listFile(fullPath.c_str(), std::ios::in);
+    if (!listFile.is_open())
+      return;
+
+    std::string line;
+    while (std::getline(listFile, line))
+    {
+      if (line.empty())
+        continue;
+      voiceLines.Push() = CTString("Sounds\\Dio\\") + line.c_str();
+    }
+    listFile.close();
+    allVoiceLines.Push() = this;
+  }
+
+  const CTFileName& Random()
+  {
+    INDEX irnd = ((_pNetwork->ga_sesSessionState.Rnd()>>(31-16))&0xFFFF);
+    INDEX randomIndex = (irnd % voiceLines.Count());
+    //CPrintF("%s @ %s\n", myLstFilename, voiceLines[randomIndex]);
+    if (randomIndex == prevLine)
+      randomIndex = (randomIndex + 1)%voiceLines.Count();
+    prevLine = randomIndex;
+    return voiceLines[randomIndex];
+  }
+
+  static void Precache()
+  {
+    if (precachedVoices.Count() > 0)
+      return;
+
+    for (INDEX i = 0; i < allVoiceLines.Count(); ++i)
+    {
+      VoiceLinesReader* curr = allVoiceLines[i];
+      for (INDEX j = 0; j < curr->voiceLines.Count(); ++j)
+      {
+        try
+        {
+          CSoundData* snd = _pSoundStock->Obtain_t(curr->voiceLines[j]);
+          precachedVoices.Push() = snd;
+        } catch(char* strError)
+        {
+          CPrintF("%s\n", strError);
+        }
+      }
+    }
+  }
+/*
+  static void Uncache()
+  {
+    for (INDEX i = 0; i < precachedVoices.Count(); ++i)
+      _pSoundStock->Release(precachedVoices[i]);
+    precachedVoices.Clear();
+  }
+  */
+private:
+  //CTString myLstFilename;
+  INDEX prevLine;
+  CDynamicStackArray<CTFileName> voiceLines;
+  static CDynamicStackArray<VoiceLinesReader*> allVoiceLines;
+  static CDynamicStackArray<CSoundData*> precachedVoices;
+};
+CDynamicStackArray<VoiceLinesReader*> VoiceLinesReader::allVoiceLines;
+CDynamicStackArray<CSoundData*> VoiceLinesReader::precachedVoices;
+
+/* DIO VOICE LINES*/
+static VoiceLinesReader g_cooldownVoiceLines("Sounds\\Dio\\on_cooldown.lst");
+static VoiceLinesReader g_afterUltVoiceLines("Sounds\\Dio\\after_ult.lst");
+static VoiceLinesReader g_spawnStandVoiceLines("Sounds\\Dio\\on_spawn_stand.lst");
+static VoiceLinesReader g_stopTimeVoiceLines("Sounds\\Dio\\on_stop_time.lst");
+static VoiceLinesReader g_resumeTimeVoiceLines("Sounds\\Dio\\on_time_resume.lst");
+static VoiceLinesReader g_throwRodaRollaVoiceLines("Sounds\\Dio\\on_throw_rodarolla.lst");
+static VoiceLinesReader g_heavyPunchVoiceLines("Sounds\\Dio\\on_heavy_barrage.lst");
+static VoiceLinesReader g_spotEnemyVoiceLines("Sounds\\Dio\\on_spot_enemy.lst");
+static VoiceLinesReader g_ultReadyVoiceLines("Sounds\\Dio\\on_ult_ready.lst");
+
+
+double GetSoundLength(const CTFileName& filename)
+{
+  CSoundData* ptd = _pSoundStock->Obtain_t(filename);
+  double length = ptd->GetSecondsLength();
+  _pSoundStock->Release(ptd);
+  return length;
+}
+
 extern void DrawHUD(CPlayer* penPlayerCurrent, CDrawPort *pdpCurrent);
 extern void InitHUD(void);
 extern void EndHUD(void);
@@ -992,6 +1098,8 @@ void CPlayer_Precache(void)
   extern void CTheWorld_Precache();
   CTheWorld_Precache();
 
+  VoiceLinesReader::Precache();
+
   // precache all player sounds
   pdec->PrecacheSound(SOUND_WATER_ENTER        );
   pdec->PrecacheSound(SOUND_WATER_LEAVE        );
@@ -1258,6 +1366,7 @@ void CPlayer_OnInitClass(void)
 // clean up
 void CPlayer_OnEndClass(void)
 {
+  //VoiceLinesReader::Uncache();
   EndHUD();
 }
 
@@ -1554,6 +1663,9 @@ properties:
  213 INDEX m_nextFreeWeaponSound = 0,
  214 INDEX m_punchIndex = 0,
  215 BOOL m_playingSheerAttack = FALSE,
+ 216 FLOAT m_tmScreamRodaRolla = 0.0f,
+ 217 FLOAT m_tmLastHeavyPunch = 0.0f,
+ 218 FLOAT m_tmLastBarkOnEnemy = 0.0f,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1723,13 +1835,13 @@ functions:
    if (!didHit) {
      CSoundObject& soundObject = GetFreeWeaponSound();
      soundObject.Set3DParameters(100.0f, 20.0f, 3.0f, 0.9f + (FRnd() / 5.0f));
-     PlaySound(soundObject, SOUND_AIR_ATTACK, SOF_3D|SOF_SMOOTHCHANGE);
+     PlaySound(soundObject, SOUND_AIR_ATTACK, SOF_3D);
    } else{
      m_punchIndex = (m_punchIndex + 1)%500;
      SpawnReminder(this, 0.25f, 500 + m_punchIndex);
      if (!m_playingSheerAttack) {
        m_playingSheerAttack = TRUE;
-       m_soWeaponSheerAttack.Set3DParameters(100.0f, 20.0f, 3.5f, 1.0f);
+       m_soWeaponSheerAttack.Set3DParameters(100.0f, 20.0f, 3.0f, 1.0f);
        PlaySound(m_soWeaponSheerAttack, SOUND_SHEER_ATTACK, SOF_3D|SOF_LOOP);
      }
    }
@@ -1742,13 +1854,13 @@ functions:
    if (didHit) {
      punchResource = SOUND_PUNCH_1 + (IRnd()%3);
      m_soWeaponSheerAttack.Set3DParameters(100.0f, 20.0f, 3.0f * vol, 0.9f + (FRnd() / 5.0f));
-     PlaySound(m_soWeaponSheerAttack, punchResource, SOF_3D|SOF_SMOOTHCHANGE);
+     PlaySound(m_soWeaponSheerAttack, punchResource, SOF_3D);
    } else {
      vol *= 0.7f;
    }
    CSoundObject& soundObject = GetFreeWeaponSound();
    soundObject.Set3DParameters(100.0f, 20.0f, 3.0f * vol, 0.9f + (FRnd() / 5.0f));
-   PlaySound(soundObject, punchResource, SOF_3D|SOF_SMOOTHCHANGE);
+   PlaySound(soundObject, punchResource, SOF_3D);
  }
 
   BOOL IsMouthTalking() const
@@ -1758,7 +1870,7 @@ functions:
 
   BOOL CanPlayVoice(VoicePriority priority)
   {
-    return !IsMouthTalking() || m_currVoicePriority <= priority;
+    return !IsMouthTalking() || m_currVoicePriority < priority;
   }
 
   void SetupVoice(VoicePriority priority)
@@ -1773,23 +1885,36 @@ functions:
     }
   }
 
-  void PlayVoice(SLONG snd, VoicePriority priority, SLONG flgs)
+  BOOL PlayVoice(SLONG snd, VoicePriority priority, SLONG flgs)
   {
     if (CanPlayVoice(priority))
     {
       m_currVoiceLen = _pTimer->CurrentTick() + GetSoundLength(snd);
       SetupVoice(priority);
       PlaySound(m_soMouth, snd, flgs);
+      return TRUE;
     }
+    return FALSE;
   }
   
-  void PlayVoice(const CTFileName& snd, VoicePriority priority, SLONG flgs)
+  BOOL PlayVoice(const CTFileName& snd, VoicePriority priority, SLONG flgs)
   {
     if (CanPlayVoice(priority))
     {
+      m_currVoiceLen = _pTimer->CurrentTick() + ::GetSoundLength(snd);
       SetupVoice(priority);
       PlaySound(m_soMouth, snd, flgs);
+      return TRUE;
     }
+    return FALSE;
+  }
+
+  BOOL Talk(VoiceLinesReader& voiceLines, FLOAT probability)
+  {
+    if (FRnd() <= probability) {
+      return PlayVoice(voiceLines.Random(), Voice_Talk, SOF_3D);
+    }
+    return FALSE;
   }
 
   void AddUltimate(INDEX iUltimate)
@@ -1805,6 +1930,7 @@ functions:
     m_ultimateCharge = Clamp(m_ultimateCharge, INDEX(0), INDEX(MAX_ULTIMATE_CHARGE));
     if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE && was_incomplete) {
       m_tmGainedUltimate = _pTimer->CurrentTick();
+      Talk(g_ultReadyVoiceLines, 0.33f);
     }
 
     if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE / 2) {
@@ -1845,6 +1971,8 @@ functions:
         if ((_pTimer->CurrentTick() - m_tmWhenStandTurnedPassive) <= GetStandAbilityCooldown()) {
           return;
         }
+        Talk(g_spawnStandVoiceLines, 0.75f);
+
         // make old Warudo disappear
         m_penTheWorld->SwitchToEditorModel();
         m_penTheWorld->SendEvent(EStop());
@@ -2845,7 +2973,7 @@ functions:
   }
   void SetSpeakMouthPitch(void)
   {
-    m_soMouth.Set3DParameters(50.0f, 10.0f, 2.0f, 1.0f);
+    m_soMouth.Set3DParameters(50.0f, 10.0f, 2.5f, 1.0f);
   }
 
   // added: also shake view because of chainsaw firing
@@ -5192,11 +5320,19 @@ functions:
       if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
         if (CanThrowRodaRollaDa())
         {
+          if (_pTimer->CurrentTick() > m_tmScreamRodaRolla) {
+            m_currVoiceLen = 0.0f; // this voiceline is very important
+            Talk(g_throwRodaRollaVoiceLines, 1.0f);
+            m_tmScreamRodaRolla = _pTimer->CurrentTick() + 5.0f;
+          }
           penWeapon->FireRodaRollaDa();
           m_tmLastRodaRollaThrew = _pTimer->CurrentTick();
         }
 
-        if (m_penTheWorld) {
+        BOOL isZawarudo = ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo();
+        if (!isZawarudo && m_penTheWorld) {
+          m_tmLastHeavyPunch = 0.0f;
+          Talk(g_stopTimeVoiceLines, 0.8f);
           m_penTheWorld->SendEvent(EStart());
           SpawnReminder(this, ZA_WARUDO_DURATION + 3.0f, -(1900 + m_myLife));
         }
@@ -7467,12 +7603,29 @@ procedures:
         GiveImpulseTranslationAbsolute(kickEvent.dir);
         resume;
       }
+      on (EEnemySpotted) :
+      {
+        if (_pTimer->CurrentTick() > m_tmLastBarkOnEnemy && Talk(g_spotEnemyVoiceLines, 0.25f)) {
+          m_tmLastBarkOnEnemy = _pTimer->CurrentTick() + 30.0f;
+        }
+        resume;
+      }
       on (EPunchSound punchSound) :
       {
         if (punchSound.hands) {
           HandPunchSound(punchSound.didHit);
         } else {
           PunchSound(punchSound.didHit);
+        }
+        
+        if (punchSound.didHit) {
+          FLOAT probability = 0.5f;
+          if (((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) {
+            probability = 1.0f;
+          }
+          if (_pTimer->CurrentTick() > m_tmLastHeavyPunch && Talk(g_heavyPunchVoiceLines, probability)) {
+            m_tmLastHeavyPunch = _pTimer->CurrentTick() + 7.0f;
+          }
         }
         resume;
       }
@@ -7484,6 +7637,7 @@ procedures:
       }
       on (EZaWarudoEnd) : {
         m_ultimateCharge = 0;
+        Talk(g_afterUltVoiceLines, 1.0f);
         resume;
       }
       on (EReminder eReminder) :
@@ -7495,6 +7649,7 @@ procedures:
           if (m_mode == STAND_ENGAGED) {
             m_bInEmote = FALSE;
             DoSwitchStandMode();
+            Talk(g_cooldownVoiceLines, 0.66f);
           }
           if (eReminder.iValue < 0 && m_ultimateCharge < MAX_ULTIMATE_CHARGE / 2) {
             m_penTheWorld->SendEvent(EStop());
@@ -7508,6 +7663,11 @@ procedures:
           startTimeEvent.soundIndex = eReminder.iValue;
           m_penTheWorld->SendEvent(startTimeEvent);
         }
+        resume;
+      }
+      on (EPlayStartTimeSound) :
+      {
+        Talk(g_resumeTimeVoiceLines, 0.8f);
         resume;
       }
       on (ERodaRollaSaidFULLSTOP) :

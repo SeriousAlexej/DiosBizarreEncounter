@@ -76,7 +76,7 @@ void CTheWorld_Precache()
 
 #define ZAWARUDO_START 42
 #define ZAWARUDO_END   43
-#define ZAWARUDO_END_SOUND (1 << 8)
+#define ZAWARUDO_END_SOUND (1 << 29)
 %}
 
 class CTheWorld : CMovableModelEntity
@@ -411,9 +411,9 @@ procedures:
               CPlayer& player = (CPlayer&)*za_warudo.penDio.ep_pen;
               player.m_penMainMusicHolder->SendEvent(za_warudo);
 
-              INDEX startSoundIndex = SOUND_START_TIME_01 + IRnd()%3;
+              INDEX startSoundIndex = IRnd()%3;
               // sending to m_penOwner as a workaround when TheWorld is recreated while time is still stopped :p
-              SpawnReminder(m_penOwner, ZA_WARUDO_DURATION - GetSoundLength(startSoundIndex), ZAWARUDO_END_SOUND | startSoundIndex);
+              SpawnReminder(m_penOwner, ZA_WARUDO_DURATION - GetSoundLength(SOUND_START_TIME_01 + startSoundIndex), ZAWARUDO_END_SOUND | startSoundIndex);
               SpawnReminder(this, ZA_WARUDO_DURATION, ZAWARUDO_END);
             }
             else if (eReminder.iValue == ZAWARUDO_END)
@@ -436,8 +436,9 @@ procedures:
           if (eStartTimeSound.soundIndex & ZAWARUDO_END_SOUND)
           {
             INDEX soundIndex = eStartTimeSound.soundIndex & (~ZAWARUDO_END_SOUND);
-            if (soundIndex >= SOUND_START_TIME_01 && soundIndex <= SOUND_START_TIME_03) {
-              PlaySound(m_soundChannel, soundIndex, SOF_NONE);
+            if (soundIndex >= 0 && soundIndex < 3) {
+              PlaySound(m_soundChannel, soundIndex + SOUND_START_TIME_01, SOF_NONE);
+              m_penOwner->SendEvent(eStartTimeSound);
             }
           }
           resume;
