@@ -38,7 +38,7 @@ enum StandAnim
 
 event EStandAnim
 {
-  StandAnim anim,
+  enum StandAnim anim,
 };
 
 %{
@@ -83,7 +83,7 @@ class CTheWorld : CMovableModelEntity
 {
 name      "The World";
 thumbnail "";
-features "CanBePredictable";
+features "IsImportant";
 
 properties:
   1 CEntityPointer m_penOwner,

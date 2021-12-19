@@ -16,6 +16,10 @@
 #include "EntitiesJoJo/jojo_events.h"
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesJoJo/RodaRollaDa.h"
+#include "EntitiesJoJo/EventStorage.h"
+#include "EntitiesJoJo/EventEntity.h"
+#include "EntitiesJoJo/EventProperty.h"
+#include "EntitiesJoJo/EntityHashTable.h"
 #include <Engine/Templates/Stock_CTextureData.h>
 #include <vector>
 #include <utility>
@@ -23,12 +27,10 @@
 typedef std::pair<CBrushPolygonTexture*, UBYTE> TTextureScrollPair;
 typedef std::vector<TTextureScrollPair> TTexturesVector;
 static TTexturesVector all_textures;
-
-class CMusicHolder;
-extern CMusicHolder* g_musicHolder;
 extern TIME g_dioTime;
 %}
 
+uses "EntitiesJoJo/jojo_events";
 
 enum MusicType {
   0 MT_LIGHT  "light",
@@ -124,6 +126,8 @@ properties:
 
 230 CEntityPointer m_penDioPlayer,
 231 FLOAT m_timeZaWarudoStart = 0.0f,
+232 CEntityPointer m_penEventStorage,
+233 CEntityPointer m_penEntityHashTable,
 
   {
     // array of enemies that make fuss
@@ -133,30 +137,62 @@ properties:
 
 components:
   1 model   MODEL_MARKER     "Models\\Editor\\MusicHolder.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\MusicHolder.tex"
+  2 texture TEXTURE_MARKER   "Models\\Editor\\MusicHolder.tex",
+  3 class   CLASS_EVENT_STORAGE    "Classes\\EventStorage.ecl",
+  4 class   CLASS_EVENT_HASH_TABLE "Classes\\EntityHashTable.ecl",
 
 
 functions:
 
+  CEntity* HashTable()
+  {
+    if (!m_penEntityHashTable) {
+      m_penEntityHashTable = CreateEntity(GetPlacement(), CLASS_EVENT_HASH_TABLE);
+      m_penEntityHashTable->Initialize();
+    }
+    return m_penEntityHashTable.ep_pen;
+  }
+
+  BOOL IsEntityFrozen(CEntity* pen)
+  {
+    return ((EntityHashTable*)HashTable())->Contains(pen);
+  }
+
+  void FreezeEntity(const CEntityPointer& pen)
+  {
+    ((EntityHashTable*)HashTable())->Add(pen);
+  }
+
+  void ClearFrozenEntities()
+  {
+    ((EntityHashTable*)HashTable())->Clear();
+  }
+
+  void StoreEvent(CSentEvent& se)
+  {
+    if (!m_penEventStorage) {
+      m_penEventStorage = CreateEntity(GetPlacement(), CLASS_EVENT_STORAGE);
+      m_penEventStorage->Initialize();
+    }
+    ((EventStorage*)m_penEventStorage.ep_pen)->StoreEvent(se);
+  }
+
+  void PopStoredEvents()
+  {
+    if (m_penEventStorage) {
+      ((EventStorage*)m_penEventStorage.ep_pen)->PopEvents();
+    }
+  }
+
   void CMusicHolder()
   {
     all_textures.clear();
-
     m_visualsChanged = FALSE;
-    ClearBackupEvents();
-    ClearFrozenEntities();
-    if (g_musicHolder == NULL)
-    {
-      g_musicHolder = this;
-    }
   }
 
   void ~CMusicHolder()
   {
     all_textures.clear();
-    ClearBackupEvents();
-    ClearFrozenEntities();
-    g_musicHolder = NULL;
     if (m_visualsChanged == TRUE)
     {
       EnableDioVisuals(FALSE);
@@ -165,17 +201,7 @@ functions:
 
   void Read_t(CTStream* istr)
   {
-    BOOL contains_events = FALSE;
-    if (istr->PeekID_t()==CChunkID("JOJO"))
-    {
-      istr->ExpectID_t("JOJO");
-      contains_events = TRUE;
-    }
     CRationalEntity::Read_t(istr);
-    if (contains_events == TRUE)
-    {
-      ReadBackupEvents(istr);
-    }
 
     if (m_penDioPlayer != NULL)
     {
@@ -187,19 +213,6 @@ functions:
     if (m_visualsChanged)
     {
       EnableDioVisuals(m_visualsChanged);
-    }
-  }
-
-  void Write_t(CTStream* ostr)
-  {
-    if (g_musicHolder == this)
-    {
-      ostr->WriteID_t("JOJO");
-    }
-    CRationalEntity::Write_t(ostr);
-    if (g_musicHolder == this)
-    {
-      WriteBackupEvents(ostr);
     }
   }
 
@@ -437,48 +450,14 @@ functions:
     SetDio(penDio);
 
     SetBrushTexturesAnimated(FALSE);
-    // for each entity in the world
-    {FOREACHINDYNAMICCONTAINER(GetWorld()->wo_cenEntities, CEntity, iten)
-    {
-      CEntity* p_entity = iten;
-      p_entity = p_entity->GetPredictionTail();
-      if (IsDioOrRelated(p_entity))
-      {
-        continue;
-      }
-      CRationalEntity* p_rational = entity_cast(p_entity, CRationalEntity);
-      if (p_rational != NULL)
-      {
-        if (p_rational->en_timeTimer != THINKTIME_NEVER)
-        {
-          p_rational->SetTimerAt(p_rational->en_timeTimer += ZA_WARUDO_DURATION);
-        }
-      }
 
-      FreezeEntityInZaWarudo(p_entity);
-    }}
+    SendEvent(EHandleStopTime());
   }
   
   void TokiWaUgokiDasu()
   {
     SetBrushTexturesAnimated(TRUE);
-    // for each entity in the world
-    {FOREACHINDYNAMICCONTAINER(GetWorld()->wo_cenEntities, CEntity, iten)
-    {
-      CEntity* p_entity = iten;
-      p_entity = p_entity->GetPredictionTail();
-      if (IsDioOrRelated(p_entity))
-      {
-        continue;
-      }
-      if (p_entity->en_RenderType == CEntity::RT_MODEL)
-      {
-        p_entity->en_pmoModelObject->ContinueAnim();
-      }
-    }}
-
-    ClearFrozenEntities();
-    SetDio(NULL);
+    SendEvent(EHandleStartTime());
   }
 
   void SetDio(CEntityPointer penDioPlayer)
@@ -511,6 +490,9 @@ functions:
       return FALSE;
     }
     penSomething = penSomething->GetPredictionTail();
+    if (penSomething->en_ulFlags & ENF_DELETED) {
+      return FALSE;
+    }
 
     CPlayer* pDio = (CPlayer*)&*m_penDioPlayer;
     pDio = (CPlayer*)pDio->GetPredictionTail();
@@ -520,6 +502,10 @@ functions:
         penSomething == pDio->m_penAnimator.ep_pen ||
         penSomething == pDio->m_penView.ep_pen ||
         penSomething == pDio->m_pen3rdPersonView.ep_pen ||
+        entity_cast(penSomething, EntityHashTable) != NULL ||
+        entity_cast(penSomething, EventStorage) != NULL ||
+        entity_cast(penSomething, EventEntity) != NULL ||
+        entity_cast(penSomething, EventProperty) != NULL ||
         entity_cast(penSomething, CMovingBrush) != NULL ||
         entity_cast(penSomething, CMovingBrushMarker) != NULL ||
         entity_cast(penSomething, CCamera) != NULL ||

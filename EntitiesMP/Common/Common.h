@@ -140,6 +140,9 @@ struct DECL_DLL PlayerStats {
   }
 };
 
+class CMusicHolder;
+CMusicHolder* GetMusicHolder();
+
 // get info position for entity
 DECL_DLL void GetEntityInfoPosition(CEntity *pen, FLOAT *pf, FLOAT3D &vPos);
 // get source and target positions for ray cast

@@ -94,8 +94,6 @@ event EZaWarudoEnd
 
 event EZaWarudoRestore
 {
-  BOOL restore_mass,
-  FLOAT mass,
   BOOL restore_movement,
   FLOAT3D en_vDesiredTranslationRelative,
   FLOAT3D en_vCurrentTranslationAbsolute,
@@ -107,6 +105,8 @@ event EZaWarudoRestore
   ULONG physics_flags,
   ULONG collision_flags,
 };
+event EHandleStopTime {};
+event EHandleStartTime {};
 
 event EZaWarudoKick
 {

@@ -7,129 +7,20 @@
 #include "EntitiesMP/CannonBall.h"
 #include "EntitiesMP/DevilProjectile.h"
 #include "EntitiesMP/LarvaOffspring.h"
-extern BOOL g_shouldResolveEvents = FALSE;
-static CStaticStackArray<CSentEvent> _aseSentEventsBackup;
+ 
 CStaticStackArray<CSentEvent>* _paseSentEvents = NULL;
 
-extern CMusicHolder* g_musicHolder = NULL;
-
-/*
-Event is mandatory, if it passed the prediction check and must be executed
-During ZaWarudo on the other hand, event execution is postponed
-By marking event as mandatory, we make sure it will be executed
-Even after time restores its movement when prediction check is passed
-
-This is required in network game
-It appears, that events that fail prediction check, are not required for network game
-*/
-struct MandatoryEvent
+void FreezeEntityInZaWarudo(CMusicHolder* p_mh, const CEntityPointer& pen)
 {
-  ULONG p_event;
-  UT_hash_handle hh;
-};
-MandatoryEvent* g_mandatoryEvents = NULL;
-
-BOOL IsEventMandatory(CEntityEvent* p_event)
-{
-  if (p_event == NULL)
-    return FALSE;
-
-  MandatoryEvent* m = NULL;
-  HASH_FIND_INT(g_mandatoryEvents, (ULONG*)&p_event, m);
-  return m == NULL ? FALSE : TRUE;
-}
-
-void MarkEventMandatory(CEntityEvent* p_event)
-{
-  if (IsEventMandatory(p_event))
+  if (p_mh->IsEntityFrozen(pen) == TRUE)
     return;
 
-  MandatoryEvent* m = new MandatoryEvent();
-  m->p_event = (ULONG)p_event;
-  HASH_ADD_INT(g_mandatoryEvents, p_event, m);
-}
-
-void RemoveEventFromMandatory(CEntityEvent* p_event)
-{
-  MandatoryEvent* m = NULL;
-  HASH_FIND_INT(g_mandatoryEvents, (ULONG*)&p_event, m);
-  if (m != NULL)
-  {
-    HASH_DEL(g_mandatoryEvents, m);
-    delete m;
-  }
-}
-
-void ClearMandatoryEvents()
-{
-  MandatoryEvent* current;
-  MandatoryEvent* tmp;
-
-  HASH_ITER(hh, g_mandatoryEvents, current, tmp)
-  {
-    HASH_DEL(g_mandatoryEvents, current);
-    delete current;
-  }
-}
-
-/*
-Frozen actually, but nvm
-Entity is marked as frozen in ZaWarudo for optimization purposes
-If entity is already frozen, nothing is done to it
-*/
-struct FreezedEntity
-{
-  ULONG id;
-  CEntity* p_entity;
-  UT_hash_handle hh;
-};
-FreezedEntity* g_freezedEntities = NULL;
-
-void ClearFrozenEntities()
-{
-  FreezedEntity* current;
-  FreezedEntity* tmp;
-
-  HASH_ITER(hh, g_freezedEntities, current, tmp)
-  {
-    HASH_DEL(g_freezedEntities, current);
-    delete current;
-  }
-}
-
-BOOL IsEntityInZaWarudo(CEntity* p_entity)
-{
-  FreezedEntity* freezed = NULL;
-  HASH_FIND_INT(g_freezedEntities, &p_entity->en_ulID, freezed);
-  return freezed == NULL ? FALSE : TRUE;
-}
-
-void MarkEntityAsInZaWarudo(CEntity* p_entity, ULONG id)
-{
-  FreezedEntity* freezed = new FreezedEntity();
-  freezed->id = id;
-  freezed->p_entity = p_entity;
-  HASH_ADD_INT(g_freezedEntities, id, freezed);
-}
-
-void MarkEntityAsInZaWarudo(CEntity* p_entity)
-{
-  p_entity = p_entity->GetPredictionTail();
-  MarkEntityAsInZaWarudo(p_entity, p_entity->en_ulID);
-}
-
-void FreezeEntityInZaWarudo(CEntity* p_entity)
-{
-  p_entity = p_entity->GetPredictionTail();
-  if (IsEntityInZaWarudo(p_entity) == TRUE)
-    return;
-
-  MarkEntityAsInZaWarudo(p_entity);
+  p_mh->FreezeEntity(pen);
+  CEntity* p_entity = pen.ep_pen;
 
   EZaWarudoRestore restore_event;
   restore_event.restore_movement = FALSE;
   restore_event.restore_physics = FALSE;
-  restore_event.restore_mass = FALSE;
 
   if (p_entity->en_RenderType == CEntity::RT_MODEL)
     p_entity->en_pmoModelObject->PauseAnim();
@@ -145,13 +36,6 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
     restore_event.en_aCurrentRotationAbsolute = p_movable->en_aCurrentRotationAbsolute;
     restore_event.en_mAppliedRotation = p_movable->en_mAppliedRotation;
     p_movable->ForceFullStop();
-    EntityInfo* p_info = (EntityInfo*)p_movable->GetEntityInfo();
-    if (p_info != NULL)
-    {
-      restore_event.restore_mass = TRUE;
-      restore_event.mass = p_info->fMass;
-      p_info->fMass = 10000.0f;
-    }
   }
 
   if (entity_cast(p_entity, CEnemyBase) ||
@@ -160,7 +44,6 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
       entity_cast(p_entity, CCannonBall) ||
       entity_cast(p_entity, CDevilProjectile) ||
       entity_cast(p_entity, CLarvaOffspring) ||
-      //entity_cast(p_entity, CPlayer) ||
       entity_cast(p_entity, CDebris) ||
       entity_cast(p_entity, CRodaRollaDa))
   {
@@ -176,165 +59,84 @@ void FreezeEntityInZaWarudo(CEntity* p_entity)
       ULONG collision_flags = ECF_MODEL_HOLDER;
       if (restore_event.collision_flags & (IDENTIFY_AS_ENEMY | IDENTIFY_AS_PROJECTILE))
         collision_flags |= IDENTIFY_AS_ENEMY; //projectiles are treated as 'enemy' to make road roller pass through them
-      
+
       p_entity->SetCollisionFlags(collision_flags);
       restore_event.restore_physics = TRUE;
     }
   }
-
   if (restore_event.restore_physics == TRUE ||
       restore_event.restore_movement == TRUE)
   {
     p_entity->SendEvent(restore_event);
-
-    CEntityEvent* p_last_inserted_event = (*_paseSentEvents)[_paseSentEvents->Count()-1].se_peeEvent;
-    MarkEventMandatory(p_last_inserted_event);
   }
-}
-
-/*
-Save backup events to stream for Save/Load cycle
-*/
-void WriteBackupEvents(CTStream* strm)
-{
-  INDEX num_events = _aseSentEventsBackup.Count();
-  *strm<<num_events;
-  for (INDEX iee = 0; iee < num_events; iee++)
-  {
-    CSentEvent& se = _aseSentEventsBackup[iee];
-    BOOL is_mandatory = IsEventMandatory(se.se_peeEvent);
-    *strm<<is_mandatory;
-    WriteEventMember(strm, se.se_penEntity);
-    WriteSingleEvent(strm, se.se_peeEvent);
-  }
-
-  INDEX num_entities_in_za_warudo = HASH_COUNT(g_freezedEntities);
-  *strm<<num_entities_in_za_warudo;
-  FreezedEntity* current;
-  FreezedEntity* tmp;
-  HASH_ITER(hh, g_freezedEntities, current, tmp)
-  {
-    WriteEventMember(strm, current->p_entity);
-  }
-}
-
-/*
-Load backup events from stream for Save/Load cycle
-*/
-void ReadBackupEvents(CTStream* strm)
-{
-  ClearBackupEvents();
-
-  INDEX num_events;
-  *strm>>num_events;
-
-  INDEX allocated_size = (num_events / _paseSentEvents->sa_ctAllocationStep) * _paseSentEvents->sa_ctAllocationStep;
-  if (allocated_size < num_events)
-    allocated_size += _paseSentEvents->sa_ctAllocationStep;
-  if (_paseSentEvents->sa_Count > allocated_size)
-  {
-    allocated_size = _paseSentEvents->sa_Count;
-    _paseSentEvents->Delete();
-    _paseSentEvents->New(num_events);
-  }
-
-  _aseSentEventsBackup.Delete();
-  _aseSentEventsBackup.New(allocated_size);
-  for (INDEX iee = 0; iee < num_events; iee++)
-  {
-    CSentEvent& se = _aseSentEventsBackup.Push();
-    BOOL is_mandatory;
-    *strm>>is_mandatory;
-    ReadEventMember(strm, se.se_penEntity);
-    se.se_peeEvent = ReadSignleEvent(strm);
-    if (is_mandatory == TRUE)
-      MarkEventMandatory(se.se_peeEvent);
-  }
-
-  ClearFrozenEntities();
-  INDEX num_entities_in_za_warudo;
-  *strm>>num_entities_in_za_warudo;
-  for (INDEX ezw = 0; ezw < num_entities_in_za_warudo; ezw++)
-  {
-    CEntity* ent;
-    ReadEventMember(strm, ent);
-    MarkEntityAsInZaWarudo(ent, (ULONG)ent);
-  }
-  g_shouldResolveEvents = TRUE;
-}
-
-/*
-Resolving is required because pointers to entities always have different
-values. But entities that we point to, always have same unique ID. By that ID
-we can and must restore the pointer value. This is used in network game and
-during Save/Load cycle
-*/
-void ResolveJoJoEvents()
-{
-  for (INDEX iee = 0; iee < _aseSentEventsBackup.Count(); iee++)
-  {
-    CSentEvent& se = _aseSentEventsBackup[iee];
-    ResolveEntityPointer(se.se_penEntity);
-    ResolveSingleEvent(se.se_peeEvent);
-  }
-  FreezedEntity* current;
-  FreezedEntity* tmp;
-  HASH_ITER(hh, g_freezedEntities, current, tmp)
-  {
-    ResolveRawEntityPointer(current->p_entity);
-  }
-}
-
-void ClearBackupEvents()
-{
-  ClearMandatoryEvents();
-
-  for (INDEX iee = 0; iee < _aseSentEventsBackup.Count(); iee++)
-  {
-    CSentEvent& se = _aseSentEventsBackup[iee];
-    se.se_penEntity = NULL;
-    if (se.se_peeEvent != NULL)
-      delete se.se_peeEvent;
-    se.se_peeEvent = NULL;
-  }
-  _aseSentEventsBackup.PopAll();
-  
-  CStaticStackArray<CSentEvent>& _aseSentEvents = *_paseSentEvents;
-  for (INDEX iee2 = 0; iee2 < _aseSentEvents.Count(); iee2++)
-  {
-    CSentEvent& se = _aseSentEvents[iee2];
-    se.se_penEntity = NULL;
-    if (se.se_peeEvent != NULL)
-      delete se.se_peeEvent;
-    se.se_peeEvent = NULL;
-  }
-  _aseSentEvents.PopAll();
 }
 
 /******************************/
 /* Handle all sent events.    */
 /******************************/
+void PopAllEvents()
+{
+  CStaticStackArray<CSentEvent>& _aseSentEvents = *_paseSentEvents;
+  for (INDEX iee = 0; iee < _aseSentEvents.Count(); iee++) {
+    CSentEvent& se = _aseSentEvents[iee];
+    se.se_penEntity = NULL;
+    delete se.se_peeEvent;
+    se.se_peeEvent = NULL;
+  }
+  _aseSentEvents.PopAll();
+}
+
+void HandleStopTime(CMusicHolder* p_mh)
+{
+  {FOREACHINDYNAMICCONTAINER(p_mh->GetWorld()->wo_cenEntities, CEntity, iten)
+  {
+    CEntity* p_entity = iten;
+    p_entity = p_entity->GetPredictionTail();
+    if (p_entity->en_ulFlags & ENF_DELETED)
+      continue;
+    if (p_mh->IsDioOrRelated(p_entity))
+      continue;
+
+    CRationalEntity* p_rational = entity_cast(p_entity, CRationalEntity);
+    if (p_rational != NULL)
+      if (p_rational->en_timeTimer != THINKTIME_NEVER)
+        p_rational->SetTimerAt(p_rational->en_timeTimer + ZA_WARUDO_DURATION);
+
+    FreezeEntityInZaWarudo(p_mh, p_entity);
+  }}
+}
+
+void HandleStartTime(CMusicHolder* p_mh)
+{
+  // for each entity in the world
+  {FOREACHINDYNAMICCONTAINER(p_mh->GetWorld()->wo_cenEntities, CEntity, iten)
+  {
+    CEntity* p_entity = iten;
+    p_entity = p_entity->GetPredictionTail();
+    if (p_mh->IsDioOrRelated(p_entity))
+      continue;
+
+    if (p_entity->en_RenderType == CEntity::RT_MODEL)
+      p_entity->en_pmoModelObject->ContinueAnim();
+  }}
+
+  p_mh->ClearFrozenEntities();
+  p_mh->SetDio(NULL);
+  p_mh->PopStoredEvents();
+}
+
 void JoJoHandleSentEvents()
 {
-  if (g_shouldResolveEvents == TRUE)
+  CMusicHolder* p_mh = GetMusicHolder();
+  if (p_mh != NULL && p_mh->IsZaWarudo() && _pNetwork->IsPredicting())
   {
-    ResolveJoJoEvents();
-    g_shouldResolveEvents = FALSE;
+    PopAllEvents();
+    return;
   }
-
-  CStaticStackArray<CSentEvent>& _aseSentEvents = *_paseSentEvents;
-  for (INDEX i = 0; i < _aseSentEventsBackup.Count(); ++i)
-  {
-    CSentEvent& se = _aseSentEvents.Push();
-    CSentEvent& seBackup = _aseSentEventsBackup[i];
-    se.se_penEntity.ep_pen = seBackup.se_penEntity.ep_pen;
-    seBackup.se_penEntity.ep_pen = NULL;
-    se.se_peeEvent = seBackup.se_peeEvent;
-    seBackup.se_peeEvent = NULL;
-  }
-  _aseSentEventsBackup.PopAll();
 
   CSetFPUPrecision FPUPrecision(FPT_24BIT);
+
+  CStaticStackArray<CSentEvent>& _aseSentEvents = *_paseSentEvents;
 
   // while there are any unhandled events
   INDEX iFirstEvent = 0;
@@ -349,37 +151,32 @@ void JoJoHandleSentEvents()
       iFirstEvent++;
       continue;
     }
-    // if the entity is not destroyed
+
     if (!(se.se_penEntity->en_ulFlags&ENF_DELETED))
     {
-      if (g_musicHolder != NULL &&
-          g_musicHolder->IsZaWarudo() &&
-          !g_musicHolder->IsDioOrRelated(se.se_penEntity.ep_pen) &&
+      if (p_mh != NULL &&
+          p_mh->IsZaWarudo() &&
+          !p_mh->IsDioOrRelated(se.se_penEntity.ep_pen) &&
           entity_cast(se.se_penEntity.ep_pen, CItem) == NULL)
       {
         if (se.se_peeEvent->ee_slEvent != EVENTCODE_ETouch ||
             entity_cast(se.se_penEntity.ep_pen, CProjectile) == NULL ||
-            !g_musicHolder->IsDioOrRelated(((ETouch*)se.se_peeEvent)->penOther))
+            !p_mh->IsDioOrRelated(((ETouch*)se.se_peeEvent)->penOther))
         {
-          CSentEvent& seBackup = _aseSentEventsBackup.Push();
-          seBackup.se_penEntity.ep_pen = se.se_penEntity.ep_pen;
-          se.se_penEntity.ep_pen = NULL;
-          seBackup.se_peeEvent = se.se_peeEvent;
-          se.se_peeEvent = NULL;
-
-          if (seBackup.se_penEntity.ep_pen != NULL)
-            FreezeEntityInZaWarudo(seBackup.se_penEntity.ep_pen);
-
-          MarkEventMandatory(seBackup.se_peeEvent);
+          p_mh->StoreEvent(se);
+          FreezeEntityInZaWarudo(p_mh, se.se_penEntity);
         }
-        iFirstEvent++;
-        continue;
       } else {
-        // handle the current event
-        CEntityEvent* peeEventWeirdBackup = se.se_peeEvent;
-        if (se.se_peeEvent->ee_slEvent == EVENTCODE_EZaWarudoRestore)
+        if (se.se_peeEvent->ee_slEvent == EVENTCODE_EHandleStopTime)
         {
-          // this event is purely custom, so handle it manually
+          HandleStopTime(p_mh);
+        }
+        else if (se.se_peeEvent->ee_slEvent == EVENTCODE_EHandleStartTime)
+        {
+          HandleStartTime(p_mh);
+        }
+        else if (se.se_peeEvent->ee_slEvent == EVENTCODE_EZaWarudoRestore)
+        {
           EZaWarudoRestore* p_restore = (EZaWarudoRestore*)se.se_peeEvent;
           if (p_restore->restore_movement == TRUE)
           {
@@ -391,51 +188,22 @@ void JoJoHandleSentEvents()
             p_movable->en_aCurrentRotationAbsolute = p_restore->en_aCurrentRotationAbsolute;
             p_movable->en_mAppliedRotation = p_restore->en_mAppliedRotation;
             p_movable->AddToMovers();
-            if (p_restore->restore_mass == TRUE)
-            {
-              EntityInfo* p_info = (EntityInfo*)p_movable->GetEntityInfo();
-              p_info->fMass = p_restore->mass;
-            }
           }
           if (p_restore->restore_physics == TRUE)
           {
             se.se_penEntity->SetPhysicsFlags(p_restore->physics_flags);
             se.se_penEntity->SetCollisionFlags(p_restore->collision_flags);
           }
-        } else {
+        }
+        else
+        {
           se.se_penEntity->HandleEvent(*se.se_peeEvent);
         }
-        se.se_peeEvent = peeEventWeirdBackup;
-        RemoveEventFromMandatory(se.se_peeEvent);
       }
     }
     // go to next event
     iFirstEvent++;
   }
 
-  // for each event
-  for(INDEX iee=0; iee<_aseSentEvents.Count(); iee++)
-  {
-    CSentEvent &se = _aseSentEvents[iee];
-
-    // if event is mandatory (i.e. it passed prediction check at some point)
-    // but was not handled, leave it for the next tick and do not delete it
-    if (IsEventMandatory(se.se_peeEvent))
-    {
-      CSentEvent& seBackup = _aseSentEventsBackup.Push();      
-      seBackup.se_penEntity.ep_pen = se.se_penEntity.ep_pen;
-      se.se_penEntity.ep_pen = NULL;
-      seBackup.se_peeEvent = se.se_peeEvent;
-      se.se_peeEvent = NULL;
-    }
-
-    // release the entity and destroy the event
-    se.se_penEntity = NULL;
-    if (se.se_peeEvent != NULL)
-      delete se.se_peeEvent;
-    se.se_peeEvent = NULL;
-  }
-
-  // flush all events
-  _aseSentEvents.PopAll();
+  PopAllEvents();
 }

@@ -687,6 +687,10 @@ functions:
     FLOAT fNewRootLen = Sqrt(fNewLen);
 
     FLOAT fMassFactor = 300.0f/((EntityInfo*)GetEntityInfo())->fMass;
+    CMusicHolder* pmh = GetMusicHolder();
+    if (pmh != NULL && pmh->IsZaWarudo()) {
+      fMassFactor = 0.0f;
+    }
     
     if( !(en_ulFlags & ENF_ALIVE))
     {

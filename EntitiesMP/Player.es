@@ -55,7 +55,6 @@
 #include "EntitiesJoJo/entitycast.h"
 #include "EntitiesJoJo/jojo_events.h"
 
-extern CMusicHolder* g_musicHolder;
 extern void JumpFromBouncer(CEntity *penToBounce, CEntity *penBouncer);
 // from game
 #define GRV_SHOWEXTRAS  (1L<<0)   // add extra stuff like console, weapon, pause
@@ -143,8 +142,6 @@ struct VoiceLinesReader
 public:
   VoiceLinesReader(const char* listFilename)
   {
-    prevLine = -1;
-    //myLstFilename = listFilename;
     std::string fullPath = _fnmApplicationPath.str_String;
     fullPath += _fnmMod.str_String;
     fullPath += listFilename;
@@ -163,14 +160,13 @@ public:
     allVoiceLines.Push() = this;
   }
 
-  const CTFileName& Random()
+  const CTFileName& Random(INDEX& prevIndex) const
   {
     INDEX irnd = ((_pNetwork->ga_sesSessionState.Rnd()>>(31-16))&0xFFFF);
     INDEX randomIndex = (irnd % voiceLines.Count());
-    //CPrintF("%s @ %s\n", myLstFilename, voiceLines[randomIndex]);
-    if (randomIndex == prevLine)
+    if (randomIndex == prevIndex)
       randomIndex = (randomIndex + 1)%voiceLines.Count();
-    prevLine = randomIndex;
+    prevIndex = randomIndex;
     return voiceLines[randomIndex];
   }
 
@@ -204,8 +200,6 @@ public:
   }
   */
 private:
-  //CTString myLstFilename;
-  INDEX prevLine;
   CDynamicStackArray<CTFileName> voiceLines;
   static CDynamicStackArray<VoiceLinesReader*> allVoiceLines;
   static CDynamicStackArray<CSoundData*> precachedVoices;
@@ -297,7 +291,7 @@ static CTString MakeEmptyString(INDEX ctLen, char ch=' ')
 }
 
 // take a two line string and align into one line of minimum given length
-static _ctAlignWidth = 20;
+static INDEX _ctAlignWidth = 20;
 static CTString AlignString(const CTString &strOrg)
 {
   // split into two lines
@@ -1083,7 +1077,7 @@ void ZaWarudoEffect(CDrawPort* pdp, TIME zaWarudoStartTime)
     }
     graphicsFlushQuads();
 
-	  glBlendEquation((GLenum)prevBlendFunc_OGL);
+    glBlendEquation((GLenum)prevBlendFunc_OGL);
   }
 }
 
@@ -1194,6 +1188,10 @@ void CPlayer_Precache(void)
   pdec->PrecacheClass(CLASS_SERIOUSBOMB);
   pdec->PrecacheClass(CLASS_THE_WORLD);
   pdec->PrecacheClass(CLASS_DIO_POSING);
+  pdec->PrecacheClass(CLASS_EVENT_PROPERTY);
+  pdec->PrecacheClass(CLASS_EVENT_ENTITY);
+  pdec->PrecacheClass(CLASS_EVENT_STORAGE);
+  pdec->PrecacheClass(CLASS_EVENT_HASH_TABLE);
 
   pdec->PrecacheModel(MODEL_FLESH);
   pdec->PrecacheModel(MODEL_FLESH_APPLE);
@@ -1667,6 +1665,16 @@ properties:
  217 FLOAT m_tmLastHeavyPunch = 0.0f,
  218 FLOAT m_tmLastBarkOnEnemy = 0.0f,
 
+ 219 INDEX m_cooldownVoiceLine = -1,
+ 220 INDEX m_afterUltVoiceLine = -1,
+ 221 INDEX m_spawnStandVoiceLine = -1,
+ 222 INDEX m_stopTimeVoiceLine = -1,
+ 223 INDEX m_resumeTimeVoiceLine = -1,
+ 224 INDEX m_throwRodaRollaVoiceLine = -1,
+ 225 INDEX m_heavyPunchVoiceLine = -1,
+ 226 INDEX m_spotEnemyVoiceLine = -1,
+ 227 INDEX m_ultReadyVoiceLine = -1,
+
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
   INDEX m_iFirstEmptySLD;                         // index of last added empty shell
@@ -1714,6 +1722,10 @@ components:
   6 class   CLASS_SERIOUSBOMB     "Classes\\SeriousBomb.ecl",
   7 class   CLASS_THE_WORLD       "Classes\\TheWorld.ecl",
   8 class   CLASS_DIO_POSING      "Classes\\DioPosing.ecl",
+  9 class   CLASS_EVENT_PROPERTY  "Classes\\EventProperty.ecl",
+ 10 class   CLASS_EVENT_ENTITY    "Classes\\EventEntity.ecl",
+ 11 class   CLASS_EVENT_STORAGE   "Classes\\EventStorage.ecl",
+ 12 class   CLASS_EVENT_HASH_TABLE "Classes\\EntityHashTable.ecl",
 
 // gender specific sounds - make sure that offset is exactly 100 
  50 sound SOUND_WATER_ENTER     "Sounds\\Player\\WaterEnter.wav",
@@ -1909,10 +1921,31 @@ functions:
     return FALSE;
   }
 
-  BOOL Talk(VoiceLinesReader& voiceLines, FLOAT probability)
+  BOOL Talk(const VoiceLinesReader& voiceLines, FLOAT probability)
   {
     if (FRnd() <= probability) {
-      return PlayVoice(voiceLines.Random(), Voice_Talk, SOF_3D);
+      INDEX dummy = -1;
+      INDEX* prevLinePtr = &dummy;
+      if (&voiceLines == &g_cooldownVoiceLines) {
+        prevLinePtr = &m_cooldownVoiceLine;
+      } else if (&voiceLines == &g_afterUltVoiceLines) {
+        prevLinePtr = &m_afterUltVoiceLine;
+      } else if (&voiceLines == &g_spawnStandVoiceLines) {
+        prevLinePtr = &m_spawnStandVoiceLine;
+      } else if (&voiceLines == &g_stopTimeVoiceLines) {
+        prevLinePtr = &m_stopTimeVoiceLine;
+      } else if (&voiceLines == &g_resumeTimeVoiceLines) {
+        prevLinePtr = &m_resumeTimeVoiceLine;
+      } else if (&voiceLines == &g_throwRodaRollaVoiceLines) {
+        prevLinePtr = &m_throwRodaRollaVoiceLine;
+      } else if (&voiceLines == &g_heavyPunchVoiceLines) {
+        prevLinePtr = &m_heavyPunchVoiceLine;
+      } else if (&voiceLines == &g_spotEnemyVoiceLines) {
+        prevLinePtr = &m_spotEnemyVoiceLine;
+      } else if (&voiceLines == &g_ultReadyVoiceLines) {
+        prevLinePtr = &m_ultReadyVoiceLine;
+      }
+      return PlayVoice(voiceLines.Random(*prevLinePtr), Voice_Talk, SOF_3D);
     }
     return FALSE;
   }
@@ -2965,11 +2998,11 @@ functions:
 
   void SetDefaultMouthPitch(void)
   {
-    m_soMouth.Set3DParameters(50.0f, 10.0f, 1.0f, 1.0f);
+    m_soMouth.Set3DParameters(50.0f, 10.0f, 2.5f, 1.0f);
   }
   void SetRandomMouthPitch(FLOAT fMin, FLOAT fMax)
   {
-    m_soMouth.Set3DParameters(50.0f, 10.0f, 1.0f, Lerp(fMin, fMax, FRnd()));
+    m_soMouth.Set3DParameters(50.0f, 10.0f, 2.5f, Lerp(fMin, fMax, FRnd()));
   }
   void SetSpeakMouthPitch(void)
   {
@@ -3692,6 +3725,10 @@ functions:
     FLOAT fNewRootLen = Sqrt(fNewLen);
 
     FLOAT fMassFactor = 200.0f/((EntityInfo*)GetEntityInfo())->fMass;
+    CMusicHolder* pmh = GetMusicHolder();
+    if (pmh != NULL && pmh->IsZaWarudo()) {
+      fMassFactor = 0.0f;
+    }
     
     if( !(en_ulFlags & ENF_ALIVE))
     {
@@ -7588,14 +7625,8 @@ procedures:
           call WorldChangeDead(); 
         }
       }
-      on (ETakingBreath eTakingBreath ) : {
-        if (eTakingBreath.fBreathDelay<0.2f) {
+      on (ETakingBreath) : {
           PlayVoice(GenderSound(SOUND_INHALE0), Voice_Bark, SOF_3D);
-        } else if (eTakingBreath.fBreathDelay<0.8f) {
-          PlayVoice(GenderSound(SOUND_INHALE1), Voice_Bark, SOF_3D);
-        } else {
-          PlayVoice(GenderSound(SOUND_INHALE2), Voice_Bark, SOF_3D);
-        }
         resume;
       }
       on (EDioInstantKick kickEvent) :

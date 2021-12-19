@@ -46,6 +46,19 @@ FLOAT TopHealth(void)
   }
 }
 
+CMusicHolder* GetMusicHolder()
+{
+  for (INDEX i = 0; i < CEntity::GetMaxPlayers(); ++i)
+  {
+    CEntity* player = CEntity::GetPlayerEntity(i);
+    if (!player)
+      continue;
+    player = player->GetPredictionTail();
+    return (CMusicHolder*)((CPlayer*)player)->m_penMainMusicHolder.ep_pen;
+  }
+  return NULL;
+}
+
 void CCompMessageID::Clear(void)
 {
   cmi_fnmFileName.Clear();
@@ -475,6 +488,10 @@ void KickEntity(CEntity *penTarget, FLOAT3D vSpeed) {
   if (penTarget->GetPhysicsFlags()&EPF_MOVABLE && peiTarget!=NULL) {
     // calc new speed acording to target mass
     vSpeed *= 100.0f/peiTarget->fMass;
+    CMusicHolder* pmh = GetMusicHolder();
+    if (pmh != NULL && pmh->IsZaWarudo()) {
+      vSpeed *= 0.0f;
+    }
     ((CMovableEntity&)*penTarget).en_vCurrentTranslationAbsolute = vSpeed;
     ((CMovableEntity&)*penTarget).AddToMovers();
   }
@@ -1339,8 +1356,8 @@ void SpawnRangeSound( CEntity *penPlayer, CEntity *penPos, enum SoundType st, FL
     // do nothing
     return;
   }
-  extern CMusicHolder* g_musicHolder;
-  if (g_musicHolder == NULL || !g_musicHolder->IsZaWarudo())
+  CMusicHolder* p_mh = GetMusicHolder();
+  if (p_mh == NULL || !p_mh->IsZaWarudo())
   {
     // sound event
     ESound eSound;

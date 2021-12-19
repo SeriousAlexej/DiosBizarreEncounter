@@ -7,12 +7,17 @@ class DECL_DLL CJoJoEvent : public CEntityEvent
 public:
   CJoJoEvent(SLONG event_code)
     : CEntityEvent(event_code)
+    , m_numProps(0)
   {
+    memset(m_properties, NULL, sizeof(PropPtr) * 30);
+    memset(m_propTypes, 0, sizeof(INDEX) * 30);
   }
   virtual ~CJoJoEvent() {}
-  virtual void Write(CTStream* strm) = 0;
-  virtual void Read(CTStream* strm) = 0;
-  virtual void ResolvePointers() = 0;
+  virtual void SetupProperties() = 0;
+  typedef void* PropPtr;
+  PropPtr m_properties[30];
+  INDEX m_propTypes[30];
+  INDEX m_numProps;
 };
 
 typedef CEntityEvent*(*TEntityCreator)(void);
@@ -26,38 +31,6 @@ extern EventFactoryItem* g_eventFactory;
 
 extern void ClearEventFactory();
 extern void AddToFactory(SLONG event_code, TEntityCreator p_creator);
-
-extern void WriteSingleEvent(CTStream* strm, CEntityEvent* event);
-extern CEntityEvent* ReadSignleEvent(CTStream* strm);
-extern void ResolveSingleEvent(CEntityEvent* event);
-
-extern void ResolveEntityPointer(CEntityPointer& pen);
-extern void ResolveRawEntityPointer(CEntity*& pen);
-
-extern void WriteEventMember(CTStream* strm, FLOAT &f);
-extern void WriteEventMember(CTStream* strm, INDEX &i);
-extern void WriteEventMember(CTStream* strm, BOOL &b);
-extern void WriteEventMember(CTStream* strm, CEntity* pen);
-extern void WriteEventMember(CTStream* strm, CEntityPointer &pen);
-extern void WriteEventMember(CTStream* strm, CTString &str);
-extern void WriteEventMember(CTStream* strm, FLOATplane3D &pl);
-extern void WriteEventMember(CTStream* strm, FLOAT3D &v);
-extern void WriteEventMember(CTStream* strm, COLOR &c);
-extern void WriteEventMember(CTStream* strm, CModelData *&pmd);
-extern void WriteEventMember(CTStream* strm, CTextureData *&pmt);
-extern void WriteEventMember(CTStream* strm, FLOATmatrix3D& m);
-
-extern void ReadEventMember(CTStream* strm, FLOAT &f);
-extern void ReadEventMember(CTStream* strm, INDEX &i);
-extern void ReadEventMember(CTStream* strm, BOOL &b);
-extern void ReadEventMember(CTStream* strm, CEntity*& pen);
-extern void ReadEventMember(CTStream* strm, CEntityPointer &pen);
-extern void ReadEventMember(CTStream* strm, CTString &str);
-extern void ReadEventMember(CTStream* strm, FLOATplane3D &pl);
-extern void ReadEventMember(CTStream* strm, FLOAT3D &v);
-extern void ReadEventMember(CTStream* strm, COLOR &c);
-extern void ReadEventMember(CTStream* strm, CModelData *&pmd);
-extern void ReadEventMember(CTStream* strm, CTextureData *&pmt);
-extern void ReadEventMember(CTStream* strm, FLOATmatrix3D& m);
+extern CEntityEvent* CreateFromFactory(SLONG event_code);
 
 #endif

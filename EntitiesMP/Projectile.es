@@ -25,9 +25,6 @@
 
 #define DEVIL_LASER_SPEED 100.0f
 #define DEVIL_ROCKET_SPEED 60.0f
-  
-class CMusicHolder;
-extern CMusicHolder* g_musicHolder;
 %}
 
 uses "EntitiesMP/BasicEffects";
@@ -3866,7 +3863,8 @@ procedures:
       default: ASSERTALWAYS("Unknown projectile type");
     }
 
-    if (g_musicHolder != NULL && g_musicHolder->IsZaWarudo())
+    CMusicHolder* p_mh = GetMusicHolder();
+    if (p_mh != NULL && p_mh->IsZaWarudo())
     {
       m_fFlyTime += ZA_WARUDO_DURATION;
     }

@@ -315,8 +315,6 @@ enum_declaration
     fprintf(_fTables, "EP_ENUMEND(%s);\n\n", _strCurrentEnum);
     fprintf(_fDeclaration, "};\n");
     fprintf(_fDeclaration, "DECL_DLL inline void ClearToDefault(%s &e) { e = (%s)0; } ;\n", _strCurrentEnum, _strCurrentEnum);
-    fprintf(_fDeclaration, "inline void WriteEventMember(CTStream* strm, %s &e) { INDEX ei = e; WriteEventMember(strm, ei); };\n", _strCurrentEnum);
-    fprintf(_fDeclaration, "inline void ReadEventMember(CTStream* strm, %s &e) { INDEX ei; ReadEventMember(strm, ei); e = (%s)ei; };\n", _strCurrentEnum, _strCurrentEnum);
   }
   ;
 opt_comma : /*null*/ | ',';
@@ -340,52 +338,92 @@ event_declaration
     _strCurrentEvent = $2.strString;
     int iID = CreateID();
     fprintf(_fDeclaration, "#define EVENTCODE_%s 0x%08x\n", _strCurrentEvent, iID);
+
+    static bool declaredPropTypes = false;
+    if (!declaredPropTypes)
+    {
+      declaredPropTypes = true;
+      fprintf(_fDeclaration, "#ifndef EVENTPROP_Unknown\n#define EVENTPROP_Unknown 0\n#endif\n");
+      int prop_id = 0;
+      auto declare_prop = [&prop_id](const char* propName)
+      {
+        fprintf(_fDeclaration, "#ifndef EVENTPROP_%s\n#define EVENTPROP_%s (1<<%d)\n#endif\n", propName, propName, prop_id++);
+      };
+      declare_prop("FLOAT");
+      declare_prop("INDEX");
+      declare_prop("BOOL");
+      declare_prop("CEntity_PTR");
+      declare_prop("CEntityPointer");
+      declare_prop("CTString");
+      declare_prop("CTFileName");
+      declare_prop("FLOATplane3D");
+      declare_prop("FLOAT3D");
+      declare_prop("COLOR");
+      declare_prop("CModelData_PTR");
+      declare_prop("CTextureData_PTR");
+      declare_prop("FLOATmatrix3D");
+    }
+
     fprintf(_fDeclaration, "class DECL_DLL %s : public CJoJoEvent {\npublic:\n",
       _strCurrentEvent);
     fprintf(_fDeclaration, "%s();\n", _strCurrentEvent );
     fprintf(_fDeclaration, "CEntityEvent *MakeCopy(void);\n");
-    fprintf(_fDeclaration, "virtual void Write(CTStream* strm);\n");
-    fprintf(_fDeclaration, "virtual void Read(CTStream* strm);\n");
-    fprintf(_fDeclaration, "virtual void ResolvePointers();\n");
+    fprintf(_fDeclaration, "void SetupProperties();\n");
     fprintf(_fImplementation, 
-      "CEntityEvent *%s::MakeCopy(void) { "
-      "CEntityEvent *peeCopy = new %s(*this); "
+      "CEntityEvent *%s::MakeCopy(void) {\n"
+      "CJoJoEvent *peeCopy = new %s(*this);\n"
+      "peeCopy->SetupProperties();\n"
       "return peeCopy;}\n",
       _strCurrentEvent, _strCurrentEvent);
-   fprintf(_fImplementation, "%s::%s() : CJoJoEvent(EVENTCODE_%s) {;\n", 
+   fprintf(_fImplementation, "%s::%s() : CJoJoEvent(EVENTCODE_%s) {\n", 
       _strCurrentEvent, _strCurrentEvent, _strCurrentEvent);
   } '{' event_members_list opt_comma '}' ';' {
+
+    fprintf(_fImplementation, "SetupProperties();\n");
     fprintf(_fImplementation, "};\n");
 
-    fprintf(_fImplementation,
-      "void %s::Write(CTStream* strm) {\n",
-      _strCurrentEvent);
-    for (const auto& event_member : event_members)
+    fprintf(_fImplementation, "void %s::SetupProperties() {\n", _strCurrentEvent);
+    if (
+      strcmp(_strCurrentEvent, "EInternal") != 0 &&
+      strcmp(_strCurrentEvent, "EVoid") != 0 &&
+      strcmp(_strCurrentEvent, "EReturn") != 0 &&
+      strcmp(_strCurrentEvent, "EBegin") != 0 &&
+      strcmp(_strCurrentEvent, "ETimer") != 0 &&
+      strcmp(_strCurrentEvent, "EWouldFall") != 0 &&
+      strcmp(_strCurrentEvent, "ETeleport") != 0 &&
+      strcmp(_strCurrentEvent, "EFirstWorldBase") != 0 &&
+      strcmp(_strCurrentEvent, "ETouch") != 0 &&
+      strcmp(_strCurrentEvent, "EPass") != 0 &&
+      strcmp(_strCurrentEvent, "EBlock") != 0 &&
+      strcmp(_strCurrentEvent, "EPreLevelChange") != 0 &&
+      strcmp(_strCurrentEvent, "EPostLevelChange") != 0 &&
+      strcmp(_strCurrentEvent, "EDamage") != 0 &&
+      strcmp(_strCurrentEvent, "EDeath") != 0 &&
+      strcmp(_strCurrentEvent, "ETakingBreath") != 0
+      )
     {
-      fprintf(_fImplementation, "WriteEventMember(strm, %s);\n", event_member.second.c_str());
-    }
-    fprintf(_fImplementation, "};\n");
-
-    fprintf(_fImplementation,
-      "void %s::Read(CTStream* strm) {\n",
-      _strCurrentEvent);
-    for (const auto& event_member : event_members)
-    {
-      fprintf(_fImplementation, "ReadEventMember(strm, %s);\n", event_member.second.c_str());
-    }
-    fprintf(_fImplementation, "};\n");
-
-    fprintf(_fImplementation,
-      "void %s::ResolvePointers() {\n",
-      _strCurrentEvent);
-    for (const auto& event_member : event_members)
-    {
-      if (event_member.first == "CEntityPointer")
+      if (event_members.size() > 30)
+        fprintf(_fImplementation, "#error Too many properties in event %s\n", _strCurrentEvent);
+      fprintf(_fImplementation, "m_numProps = %d;\n", event_members.size());
+      int propIndex = 0;
+      for (const auto& event_member : event_members)
       {
-        fprintf(_fImplementation, "ResolveEntityPointer(%s);\n", event_member.second.c_str());
+        std::string propType = event_member.first;
+        if (propType.find("enum ") == 0 || propType == "ULONG")
+          propType = "INDEX";
+        else if (propType == "ANGLE3D")
+          propType = "FLOAT3D";
+        else if (propType == "TIME")
+          propType = "FLOAT";
+        else if (propType[propType.size() - 1] == '*')
+          propType = propType.substr(0, propType.size() - 1) + "_PTR";
+
+        fprintf(_fImplementation, "m_properties[%d] = &%s;\n", propIndex, event_member.second.c_str());
+        fprintf(_fImplementation, "m_propTypes[%d] = EVENTPROP_%s;\n", propIndex++, propType.c_str());
       }
     }
     fprintf(_fImplementation, "};\n");
+
     event_members.clear();
 
     fprintf(_fImplementation,
@@ -997,9 +1035,9 @@ any_type
   : type_keyword
   | identifier
   | k_enum identifier { $$=$1+" "+$2; }
-  | any_type '*' { $$=$1+" "+$2; }
-  | any_type '&' { $$=$1+" "+$2; }
-  | k_void '*' { $$=$1+" "+$2; }
+  | any_type '*' { $$=$1+$2; }
+  | any_type '&' { $$=$1+$2; }
+  | k_void '*' { $$=$1+$2; }
   | k_const any_type { $$=$1+" "+$2; }
   | k_inline any_type { $$=$1+" "+$2; }
   | k_static any_type { $$=$1+" "+$2; }

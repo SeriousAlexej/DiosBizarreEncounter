@@ -424,8 +424,8 @@ procedures:
     Explosion(FLOAT3D(-2.0f,1.0f,-1.5f), STRETCH_3, STRETCH_3, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
     Explosion(FLOAT3D(-1.0f,0.5f,1.0f),  STRETCH_4, STRETCH_4, STRETCH_4, TRUE, FALSE, FALSE, FALSE);
 
-    extern CMusicHolder* g_musicHolder;
-    if (g_musicHolder == NULL || !g_musicHolder->IsZaWarudo())
+    CMusicHolder* p_mh = GetMusicHolder();
+    if (p_mh == NULL || !p_mh->IsZaWarudo())
     {
       SpawnDebris();
       ShakeIt();

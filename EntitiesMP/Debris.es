@@ -16,7 +16,7 @@ enum DebrisParticlesType {
 
 // input parameter for spawning a debris
 event ESpawnDebris {
-  EntityInfoBodyType Eeibt,       // body type
+  enum EntityInfoBodyType Eeibt,       // body type
   CModelData *pmd,                // model for this debris
   FLOAT fSize,                    // stretch factor
   CTextureData *ptd,              // texture for this debris

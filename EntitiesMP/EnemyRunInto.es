@@ -38,7 +38,8 @@ functions:
  ************************************************************/
   void IncreaseKickedMass(CEntity *pen) {
     EntityInfo *peiTarget = (EntityInfo*) (pen->GetEntityInfo());
-    if (peiTarget!=NULL) {
+    CMusicHolder* pmh = GetMusicHolder();
+    if (peiTarget!=NULL && pmh != NULL && pmh->IsZaWarudo()) {
       m_fMassKicked += peiTarget->fMass;
     }
   };
