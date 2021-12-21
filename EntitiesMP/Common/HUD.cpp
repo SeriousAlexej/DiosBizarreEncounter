@@ -95,6 +95,7 @@ static CTextureObject _toAbility_Stand;
 static CTextureObject _toAbility_Leg;
 static CTextureObject _toAbility_Zoom;
 static CTextureObject _toAbility_Knives;
+static CTextureObject _toAbility_Menacing;
 
 static CFontData* _owFont = NULL;
 
@@ -1337,8 +1338,38 @@ protected:
   }
 };
 
+/************************************************************/
+/************************************************************/
+class Ability_Menacing : public AbilityButton
+{
+public:
+  Ability_Menacing()
+    : AbilityButton(_toAbility_Menacing, "Emote")
+  {
+  }
+
+protected:
+  ABState DetermineState(const CPlayer* player)
+  {
+    if (player)
+    {
+      if (player->m_bInEmote)
+        return AB_Using;
+    }
+
+    return AB_Active;
+  }
+
+  BOOL IsVisible(const CPlayer* player)
+  {
+    if (player)
+      return TRUE;
+    return FALSE;
+  }
+};
+
 typedef AbilityButton* AbilityPtr;
-static AbilityPtr abilities[NET_MAXGAMEPLAYERS][4] = { NULL };
+static AbilityPtr abilities[NET_MAXGAMEPLAYERS][5] = { NULL };
 
 // render interface (frontend) to drawport
 // (units are in pixels for 1920x1080 resolution - for other res HUD will be scalled automatically)
@@ -1644,7 +1675,7 @@ ULTIMATE
   {
     INDEX player_index = GetPlayerIndex(penPlayerCurrent);
     INDEX shift = 0;
-    for (INDEX i = 0; i < 4; ++i)
+    for (INDEX i = 0; i < 5; ++i)
     {
       shift += abilities[player_index][i]->Render(penPlayerCurrent, ESP_End, -300 - (77*shift), ESP_End, -121) ? 1 : 0;
     }
@@ -2139,6 +2170,7 @@ extern void InitHUD(void)
     _toAbility_Leg.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\leg.tex"));
     _toAbility_Zoom.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\zoom.tex"));
     _toAbility_Knives.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\knives.tex"));
+    _toAbility_Menacing.SetData_t(CTFILENAME("Textures\\HUD\\Abilities\\menacing.tex"));
 
     // initialize status bar textures
     _toHealth.SetData_t(  CTFILENAME("TexturesMP\\Interface\\HSuper.tex"));
@@ -2224,6 +2256,7 @@ extern void InitHUD(void)
     ((CTextureData*)_toAbility_Leg.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toAbility_Zoom.GetData())->Force(TEX_CONSTANT);
     ((CTextureData*)_toAbility_Knives.GetData())->Force(TEX_CONSTANT);
+    ((CTextureData*)_toAbility_Menacing.GetData())->Force(TEX_CONSTANT);
 
     // set all textures as constant
     ((CTextureData*)_toHealth .GetData())->Force(TEX_CONSTANT);
@@ -2284,12 +2317,14 @@ extern void InitHUD(void)
     static Ability_Leg ab_leg[NET_MAXGAMEPLAYERS];
     static Ability_Knives ab_knives[NET_MAXGAMEPLAYERS];
     static Ability_Zoom ab_zoom[NET_MAXGAMEPLAYERS];
+    static Ability_Menacing ab_menacing[NET_MAXGAMEPLAYERS];
     for (INDEX i = 0; i < NET_MAXGAMEPLAYERS; ++i)
     {
       abilities[i][0] = &ab_stand[i];
-      abilities[i][1] = &ab_leg[i];
-      abilities[i][2] = &ab_zoom[i];
-      abilities[i][3] = &ab_knives[i];
+      abilities[i][1] = &ab_menacing[i];
+      abilities[i][2] = &ab_leg[i];
+      abilities[i][3] = &ab_zoom[i];
+      abilities[i][4] = &ab_knives[i];
     }
   }
   catch( char *strError) {
@@ -2301,7 +2336,7 @@ extern void InitHUD(void)
 extern void ReinitAbilities(const CPlayer* penPlayer)
 {
   INDEX player_index = GetPlayerIndex(penPlayer);
-  for (INDEX i = 0; i < 4; ++i)
+  for (INDEX i = 0; i < 5; ++i)
     if (abilities[player_index][i])
       abilities[player_index][i]->Reinit();
 }
