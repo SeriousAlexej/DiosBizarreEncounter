@@ -217,6 +217,14 @@ static VoiceLinesReader g_throwRodaRollaVoiceLines("Sounds\\Dio\\on_throw_rodaro
 static VoiceLinesReader g_heavyPunchVoiceLines("Sounds\\Dio\\on_heavy_barrage.lst");
 static VoiceLinesReader g_spotEnemyVoiceLines("Sounds\\Dio\\on_spot_enemy.lst");
 static VoiceLinesReader g_ultReadyVoiceLines("Sounds\\Dio\\on_ult_ready.lst");
+static VoiceLinesReader g_deathVoiceLines("Sounds\\Dio\\on_death.lst");
+static VoiceLinesReader g_diveVoiceLines("Sounds\\Dio\\on_divein.lst");
+static VoiceLinesReader g_inhaleVoiceLines("Sounds\\Dio\\on_inhale.lst");
+static VoiceLinesReader g_jumpVoiceLines("Sounds\\Dio\\on_jump.lst");
+static VoiceLinesReader g_woundMediumVoiceLines("Sounds\\Dio\\on_wound_medium.lst");
+static VoiceLinesReader g_woundStrongVoiceLines("Sounds\\Dio\\on_wound_strong.lst");
+static VoiceLinesReader g_woundWaterVoiceLines("Sounds\\Dio\\on_wound_water.lst");
+static VoiceLinesReader g_woundWeakVoiceLines("Sounds\\Dio\\on_wound_weak.lst");
 
 
 double GetSoundLength(const CTFileName& filename)
@@ -1109,7 +1117,7 @@ void CPlayer_Precache(void)
   pdec->PrecacheSound(SOUND_DIVEOUT            );
   pdec->PrecacheSound(SOUND_DROWN              );
   pdec->PrecacheSound(SOUND_INHALE0            );
-  pdec->PrecacheSound(SOUND_JUMP               );
+  pdec->PrecacheSound(SOUND_PUNCHED            );
   pdec->PrecacheSound(SOUND_LAND               );
   pdec->PrecacheSound(SOUND_WOUNDWEAK          );
   pdec->PrecacheSound(SOUND_WOUNDMEDIUM        );
@@ -1674,6 +1682,14 @@ properties:
  225 INDEX m_heavyPunchVoiceLine = -1,
  226 INDEX m_spotEnemyVoiceLine = -1,
  227 INDEX m_ultReadyVoiceLine = -1,
+ 228 INDEX m_deathVoiceLine = -1,
+ 229 INDEX m_diveVoiceLine = -1,
+ 230 INDEX m_inhaleVoiceLine = -1,
+ 231 INDEX m_jumpVoiceLine = -1,
+ 232 INDEX m_woundMediumVoiceLine = -1,
+ 233 INDEX m_woundStrongVoiceLine = -1,
+ 234 INDEX m_woundWaterVoiceLine = -1,
+ 235 INDEX m_woundWeakVoiceLine = -1,
 
 {
   ShellLaunchData ShellLaunchData_array;  // array of data describing flying empty shells
@@ -1740,7 +1756,7 @@ components:
  59 sound SOUND_DIVEOUT         "Sounds\\Player\\DiveOut.wav",
  60 sound SOUND_DROWN           "Sounds\\Player\\Drown.wav",
  61 sound SOUND_INHALE0         "Sounds\\Player\\Inhale00.wav",
- 62 sound SOUND_JUMP            "Sounds\\Player\\Jump.wav",
+ 62 sound SOUND_PUNCHED         "Sounds\\Dio\\Punched.wav",
  63 sound SOUND_LAND            "Sounds\\Player\\Land.wav",
  66 sound SOUND_DEATH           "Sounds\\Player\\Death.wav",
  67 sound SOUND_DEATHWATER      "Sounds\\Player\\DeathWater.wav",
@@ -1924,6 +1940,7 @@ functions:
   BOOL Talk(const VoiceLinesReader& voiceLines, FLOAT probability)
   {
     if (FRnd() <= probability) {
+      VoicePriority priority = Voice_Talk;
       INDEX dummy = -1;
       INDEX* prevLinePtr = &dummy;
       if (&voiceLines == &g_cooldownVoiceLines) {
@@ -1933,8 +1950,10 @@ functions:
       } else if (&voiceLines == &g_spawnStandVoiceLines) {
         prevLinePtr = &m_spawnStandVoiceLine;
       } else if (&voiceLines == &g_stopTimeVoiceLines) {
+        priority = Voice_Wry;
         prevLinePtr = &m_stopTimeVoiceLine;
       } else if (&voiceLines == &g_resumeTimeVoiceLines) {
+        priority = Voice_Wry;
         prevLinePtr = &m_resumeTimeVoiceLine;
       } else if (&voiceLines == &g_throwRodaRollaVoiceLines) {
         prevLinePtr = &m_throwRodaRollaVoiceLine;
@@ -1944,8 +1963,32 @@ functions:
         prevLinePtr = &m_spotEnemyVoiceLine;
       } else if (&voiceLines == &g_ultReadyVoiceLines) {
         prevLinePtr = &m_ultReadyVoiceLine;
+      } else if (&voiceLines == &g_deathVoiceLines) {
+        priority = Voice_Death;
+        prevLinePtr = &m_deathVoiceLine;
+      } else if (&voiceLines == &g_diveVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_diveVoiceLine;
+      } else if (&voiceLines == &g_inhaleVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_inhaleVoiceLine;
+      } else if (&voiceLines == &g_jumpVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_jumpVoiceLine;
+      } else if (&voiceLines == &g_woundMediumVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_woundMediumVoiceLine;
+      } else if (&voiceLines == &g_woundStrongVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_woundStrongVoiceLine;
+      } else if (&voiceLines == &g_woundWaterVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_woundWaterVoiceLine;
+      } else if (&voiceLines == &g_woundWeakVoiceLines) {
+        priority = Voice_Bark;
+        prevLinePtr = &m_woundWeakVoiceLine;
       }
-      return PlayVoice(voiceLines.Random(*prevLinePtr), Voice_Talk, SOF_3D);
+      return PlayVoice(voiceLines.Random(*prevLinePtr), priority, SOF_3D | SOF_VOLUMETRIC);
     }
     return FALSE;
   }
@@ -3967,29 +4010,29 @@ functions:
       // if not dead
       if (GetFlags()&ENF_ALIVE) {
         // determine corresponding sound
-        INDEX iSound;
+        VoiceLinesReader* vlr = NULL;
         char *strIFeel = NULL;
         if( m_fDamageAmmount<5.0f) {
-          iSound = GenderSound(SOUND_WOUNDWEAK);
+          vlr = &g_woundWeakVoiceLines;
           strIFeel = "WoundWeak";
         }
         else if( m_fDamageAmmount<25.0f) {
-          iSound = GenderSound(SOUND_WOUNDMEDIUM);
+          vlr = &g_woundMediumVoiceLines;
           strIFeel = "WoundMedium";
         }
         else {
-          iSound = GenderSound(SOUND_WOUNDSTRONG);
+          vlr = &g_woundStrongVoiceLines;
           strIFeel = "WoundStrong";
         }
         if( m_pstState==PST_DIVE) {
-          iSound = GenderSound(SOUND_WOUNDWATER);
+          vlr = &g_woundWaterVoiceLines;
           strIFeel = "WoundWater";
         } // override for diving
         // give some pause inbetween screaming
         TIME tmNow = _pTimer->CurrentTick();
         if( (tmNow-m_tmScreamTime) > 1.0f) {
           m_tmScreamTime = tmNow;
-          PlayVoice(iSound, Voice_Damage, SOF_3D);
+          Talk(*vlr, 1.0f);
           if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect(strIFeel);}
         }
       }
@@ -4965,7 +5008,7 @@ functions:
         } else if (bIsInWater) {
           // if dived in
           if (pstOld==PST_SWIM && m_pstState == PST_DIVE) {
-            PlaySound(m_soFootL, GenderSound(SOUND_DIVEIN), SOF_3D);
+            Talk(g_diveVoiceLines, 1.0f);
             if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("DiveIn");}
             m_bMoveSoundLeft = TRUE;
             m_tmMoveSound = _pTimer->CurrentTick();
@@ -4994,7 +5037,7 @@ functions:
       if (en_tmJumped+_pTimer->TickQuantum>=_pTimer->CurrentTick() &&
           en_tmJumped<=_pTimer->CurrentTick() && en_penReference==NULL) {
         // play jump sound
-        PlayVoice(GenderSound(SOUND_JUMP), Voice_Bark, SOF_3D);
+        Talk(g_jumpVoiceLines, 1.0f);
 
         if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Jump");}
         // disallow jumping
@@ -6656,7 +6699,7 @@ procedures:
       PlayVoice(GenderSound(SOUND_DEATHWATER), Voice_Death, SOF_3D);
       if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("DeathWater");}
     } else {
-      PlayVoice(GenderSound(SOUND_DEATH), Voice_Death, SOF_3D);
+      Talk(g_deathVoiceLines, 1.0f);
       if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Death");}
     }
 
@@ -7626,12 +7669,15 @@ procedures:
         }
       }
       on (ETakingBreath) : {
-          PlayVoice(GenderSound(SOUND_INHALE0), Voice_Bark, SOF_3D);
+        Talk(g_inhaleVoiceLines, 1.0f);
         resume;
       }
       on (EDioInstantKick kickEvent) :
       {
         GiveImpulseTranslationAbsolute(kickEvent.dir);
+        if (kickEvent.dir.Length() > 45.0f) {
+          PlayVoice(SOUND_PUNCHED, Voice_Wry, SOF_3D | SOF_VOLUMETRIC);
+        }
         resume;
       }
       on (EEnemySpotted) :
@@ -7805,7 +7851,7 @@ procedures:
         if (IsOfClass(eTouch.penOther, "Bouncer")) {
           JumpFromBouncer(this, eTouch.penOther);
           // play jump sound
-          PlayVoice(GenderSound(SOUND_JUMP), Voice_Bark, SOF_3D);
+          Talk(g_jumpVoiceLines, 1.0f);
           if(_pNetwork->IsPlayerLocal(this)) {IFeel_PlayEffect("Jump");}
         }
         resume;
