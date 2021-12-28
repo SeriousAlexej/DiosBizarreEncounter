@@ -489,6 +489,7 @@ extern INDEX hud_bShowMessages = TRUE;
 extern INDEX hud_bShowInfo    = TRUE;
 extern INDEX hud_bShowLatency = FALSE;
 extern INDEX hud_iShowPlayers = -1;   // auto
+extern INDEX hud_iShowPlayersList = 0;
 extern INDEX hud_iSortPlayers = -1;   // auto
 extern FLOAT hud_fOpacity     = 0.9f;
 extern FLOAT hud_fScaling     = 1.0f;
@@ -1270,6 +1271,7 @@ void CPlayer_OnInitClass(void)
   _pShell->DeclareSymbol("user INDEX ctl_bSniperZoomOut;",        &pctlCurrent.bSniperZoomOut);
   _pShell->DeclareSymbol("user INDEX ctl_bFireBomb;",             &pctlCurrent.bFireBomb);
 
+  _pShell->DeclareSymbol("user INDEX hud_iShowPlayersList;", &hud_iShowPlayersList);
   _pShell->DeclareSymbol("user FLOAT plr_fSwimSoundDelay;", &plr_fSwimSoundDelay);
   _pShell->DeclareSymbol("user FLOAT plr_fDiveSoundDelay;", &plr_fDiveSoundDelay);
   _pShell->DeclareSymbol("user FLOAT plr_fWalkSoundDelay;", &plr_fWalkSoundDelay);
@@ -1976,16 +1978,16 @@ functions:
         priority = Voice_Bark;
         prevLinePtr = &m_jumpVoiceLine;
       } else if (&voiceLines == &g_woundMediumVoiceLines) {
-        priority = Voice_Bark;
+        priority = Voice_Damage;
         prevLinePtr = &m_woundMediumVoiceLine;
       } else if (&voiceLines == &g_woundStrongVoiceLines) {
-        priority = Voice_Bark;
+        priority = Voice_Damage;
         prevLinePtr = &m_woundStrongVoiceLine;
       } else if (&voiceLines == &g_woundWaterVoiceLines) {
-        priority = Voice_Bark;
+        priority = Voice_Damage;
         prevLinePtr = &m_woundWaterVoiceLine;
       } else if (&voiceLines == &g_woundWeakVoiceLines) {
-        priority = Voice_Bark;
+        priority = Voice_Damage;
         prevLinePtr = &m_woundWeakVoiceLine;
       }
       return PlayVoice(voiceLines.Random(*prevLinePtr), priority, SOF_3D | SOF_VOLUMETRIC);
@@ -7675,7 +7677,7 @@ procedures:
       on (EDioInstantKick kickEvent) :
       {
         GiveImpulseTranslationAbsolute(kickEvent.dir);
-        if (kickEvent.dir.Length() > 45.0f) {
+        if (kickEvent.allowScream == TRUE && kickEvent.dir.Length() > 45.0f) {
           PlayVoice(SOUND_PUNCHED, Voice_Wry, SOF_3D | SOF_VOLUMETRIC);
         }
         resume;

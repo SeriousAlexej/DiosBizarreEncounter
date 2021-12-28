@@ -116,6 +116,7 @@ event EZaWarudoKick
 
 event EDioInstantKick
 {
+  BOOL allowScream,
   FLOAT3D dir,
 };
 
@@ -2228,6 +2229,7 @@ functions:
               dioKickDir *= 5.0f;
             }
             EDioInstantKick kickEvent;
+            kickEvent.allowScream = TRUE;
             kickEvent.dir = dioKickDir * 10.0f;
             penClosest->SendEvent(kickEvent);
           }

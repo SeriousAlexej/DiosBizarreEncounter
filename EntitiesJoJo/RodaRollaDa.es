@@ -317,6 +317,7 @@ procedures:
             m_penOwner->SendEvent(ERodaRollaSaidFULLSTOP());
           } else if (m_loopProtectionCounter == 1) {
             EDioInstantKick e;
+            e.allowScream = FALSE;
             e.dir = m_launchDir;
             m_penOwner->SendEvent(e);
           } else if (m_loopProtectionCounter > 120 || HasStopped()) {
