@@ -5551,6 +5551,7 @@ functions:
     // cheat
     if (cht_bGiveAll) {
       cht_bGiveAll = FALSE;
+      AddUltimate(MAX_ULTIMATE_CHARGE);
       ((CPlayerWeapons&)*m_penWeapons).CheatGiveAll();
     }
 
