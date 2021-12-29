@@ -2014,7 +2014,7 @@ functions:
     if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE / 2) {
       if (!m_penTheWorld)
       {
-        m_tmWhenStandTurnedPassive = _pTimer->CurrentTick();
+        m_tmWhenStandTurnedPassive = _pTimer->CurrentTick() - GetStandAbilityCooldown() + 1.0f;
         ESpawnStand ess;
         ess.penOwner = this;
         m_penTheWorld = CreateEntity(GetPlacement(), CLASS_THE_WORLD);
