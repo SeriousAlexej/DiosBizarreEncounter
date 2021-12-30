@@ -37,6 +37,7 @@
 //#include "Models/Weapons/GhostBuster/GhostBusterItem.h"
 //#include "Models/Weapons/GhostBuster/Effect01.h"
 #include "Models/Weapons/Cannon/Cannon.h"
+
 %}
 
 uses "EntitiesMP/Player";
@@ -100,6 +101,13 @@ void CPlayerAnimator_Precache(ULONG ulAvailable)
   // precache shells that drop when firing
   extern void CPlayerWeaponsEffects_Precache(void);
   CPlayerWeaponsEffects_Precache();
+
+  pdec->PrecacheModel(MODEL_HAND_LEFT);
+  pdec->PrecacheModel(MODEL_HAND_RIGHT);
+  pdec->PrecacheModel(MODEL_HAND_LEFT_S);
+  pdec->PrecacheModel(MODEL_HAND_RIGHT_S);
+  pdec->PrecacheTexture(TEXTURE_DIO);
+  pdec->PrecacheTexture(TEXTURE_DIO_S);
 
   // precache weapons player has
   if ( ulAvailable&(1<<(WEAPON_KNIFE-1)) ) {
@@ -289,6 +297,8 @@ properties:
 
 {
   CModelObject *pmoModel;
+  FLOAT handsTransparency;
+  TIME lastHandsTransparencyTime;
 }
 
 components:
@@ -296,6 +306,13 @@ components:
 // ************** KNIFE **************
  20 model   MODEL_KNIFE                 "Models\\Weapons\\Knife\\KnifeItem.mdl",
  22 texture TEXTURE_KNIFE               "Models\\Weapons\\Knife\\KnifeItem.tex",
+
+ 23 model MODEL_HAND_LEFT               "ModelsMP\\Weapons\\Hands\\LeftHand_tp.mdl",
+ 24 model MODEL_HAND_RIGHT              "ModelsMP\\Weapons\\Hands\\RightHand_tp.mdl",
+ 25 model MODEL_HAND_LEFT_S             "Models\\ZAWARUDO\\ZaWarudoHand_Left_tp.mdl",
+ 26 model MODEL_HAND_RIGHT_S            "Models\\ZAWARUDO\\ZaWarudoHand_Right_tp.mdl",
+ 27 texture TEXTURE_DIO                 "ModelsMP\\Weapons\\Hands\\DioHand.tex",
+ 28 texture TEXTURE_DIO_S               "Models\\ZAWARUDO\\ZaWarudo.tex",
  
 // ************** COLT **************
  30 model   MODEL_COLT                  "Models\\Weapons\\Colt\\ColtItem.mdl",
@@ -436,7 +453,6 @@ components:
 250 model   MODEL_FLARE02               "Models\\Effects\\Weapons\\Flare02\\Flare.mdl",
 251 texture TEXTURE_FLARE02             "Models\\Effects\\Weapons\\Flare02\\Flare.tex",
 
-
 functions:
   
   /* Read from stream. */
@@ -530,7 +546,7 @@ functions:
     CModelObject *pmoBodyRen = GetBodyRen();
     CModelObject *pmoBodyDef = GetBody();
     // for each weapon attachment
-    for (INDEX iWeapon = BODY_ATTACHMENT_COLT_RIGHT; iWeapon<=BODY_ATTACHMENT_ITEM; iWeapon++) {
+    for (INDEX iWeapon = BODY_ATTACHMENT_COLT_RIGHT; iWeapon<=BODY_ATTACHMENT_RHS_03; iWeapon++) {
       CAttachmentModelObject *pamoWeapDef = pmoBodyDef->GetAttachmentModel(iWeapon);
       CAttachmentModelObject *pamoWeapRen = pmoBodyRen->GetAttachmentModel(iWeapon);
       // if it doesn't exist in either
@@ -559,6 +575,54 @@ functions:
     }
   }
 
+  void AdjustHandShading()
+  {
+    CPlayer& pl = (CPlayer&)*m_penPlayer;
+    CModelObject& moBody = pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject;
+    if (!moBody.GetAttachmentModel(BODY_ATTACHMENT_LH_01)) {
+      return;
+    }
+    INDEX dioHands[6];
+    dioHands[0] = BODY_ATTACHMENT_LH_01;
+    dioHands[1] = BODY_ATTACHMENT_LH_02;
+    dioHands[2] = BODY_ATTACHMENT_LH_03;
+    dioHands[3] = BODY_ATTACHMENT_RH_01;
+    dioHands[4] = BODY_ATTACHMENT_RH_02;
+    dioHands[5] = BODY_ATTACHMENT_RH_03;
+    INDEX standHands[6];
+    standHands[0] = BODY_ATTACHMENT_LHS_01;
+    standHands[1] = BODY_ATTACHMENT_LHS_02;
+    standHands[2] = BODY_ATTACHMENT_LHS_03;
+    standHands[3] = BODY_ATTACHMENT_RHS_01;
+    standHands[4] = BODY_ATTACHMENT_RHS_02;
+    standHands[5] = BODY_ATTACHMENT_RHS_03;
+
+    const CPlayerWeapons* wp = (const CPlayerWeapons*)&*(pl.m_penWeapons);
+    const BOOL attacking = wp->HoldingFire() && !wp->m_bSecondaryFire;//moBody.GetAnim() == BODY_ANIM_HANDS_ATTACK;
+    const TIME now = _pTimer->GetLerpedCurrentTick();
+    FLOAT diff = now - lastHandsTransparencyTime;
+    lastHandsTransparencyTime = now;
+    if (!attacking) {
+      handsTransparency = 0.0f;
+    } else {
+      handsTransparency = Clamp(handsTransparency + diff, 0.0f, 1.0f);
+    }
+    
+    for (INDEX i = 0; i < 6; ++i) {
+      CModelObject& moHand = moBody.GetAttachmentModel(dioHands[i])->amo_moModelObject;
+      COLOR newCol = moHand.mo_colBlendColor | UBYTE(255);
+      if (!attacking) {
+        newCol &= ~255;
+      }
+      moHand.mo_colBlendColor = newCol;
+
+      CModelObject& moStandHand = moBody.GetAttachmentModel(standHands[i])->amo_moModelObject;
+      newCol = moStandHand.mo_colBlendColor & ~255;
+      const FLOAT thisHandTransparency = ((sin(now*i*0.3f + i*1.337f) + 1.0f) * 0.5f * 155.0f + 100.0f)* handsTransparency;
+      moStandHand.mo_colBlendColor = newCol | UBYTE(Clamp(INDEX(thisHandTransparency), INDEX(0), INDEX(255)));
+    }
+  }
+
   // set weapon
   void SetWeapon(void) {
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
@@ -570,7 +634,27 @@ functions:
     pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
     switch (iWeapon) {
     case WEAPON_HANDS:
+      {
+      AddWeaponAttachment(BODY_ATTACHMENT_LH_01, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_LH_02, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_LH_03, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_RH_01, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_RH_02, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_RH_03, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_LHS_01, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_LHS_02, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_LHS_03, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_RHS_01, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_RHS_02, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+      AddWeaponAttachment(BODY_ATTACHMENT_RHS_03, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+      for (INDEX i = BODY_ATTACHMENT_LH_01; i <= BODY_ATTACHMENT_RHS_03; ++i) {
+        CModelObject& pmo = pmoModel->GetAttachmentModel(i)->amo_moModelObject;
+        pmo.mo_colBlendColor &= ~255;
+      }
+      handsTransparency = 0.0f;
+      lastHandsTransparencyTime = _pTimer->GetLerpedCurrentTick();
       break;
+      }
     // *********** KNIFE ***********
       case WEAPON_KNIFE:
         AddWeaponAttachment(BODY_ATTACHMENT_KNIFE, MODEL_KNIFE,
@@ -807,6 +891,8 @@ functions:
  *                      INITIALIZE                          *
  ************************************************************/
   void Initialize(void) {
+    handsTransparency = 0.0f;
+    lastHandsTransparencyTime = _pTimer->GetLerpedCurrentTick();
     // set internal properties
     m_bReference = TRUE;
     m_bWaitJumpAnim = FALSE;
@@ -1405,10 +1491,23 @@ functions:
     pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
     switch (m_iWeaponLast) {
       case WEAPON_NONE:
-      case WEAPON_KNIFE:
-        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_KNIFE);
         break;
       case WEAPON_HANDS:
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LH_01);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LH_02);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LH_03);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_RH_01);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_RH_02);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_RH_03);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LHS_01);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LHS_02);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LHS_03);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_RHS_01);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_RHS_02);
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_RHS_03);
+        break;
+      case WEAPON_KNIFE:
+        pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_KNIFE);
         break;
       case WEAPON_DOUBLECOLT:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_COLT_LEFT);

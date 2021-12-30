@@ -2906,6 +2906,10 @@ functions:
         ubAR, ubAG, ubAB, ubCR, ubCG, ubCB, a3dHPB(1), a3dHPB(2), a3dHPB(3));
     }
 
+    if (m_penAnimator) {
+      ((CPlayerAnimator&)*m_penAnimator).AdjustHandShading();
+    }
+
     // make models at least a bit bright in deathmatch
     if (!GetSP()->sp_bCooperative) {
       UBYTE ubH, ubS, ubV;
@@ -5911,6 +5915,7 @@ functions:
     ((CPlayerAnimator&)*m_penAnimator).Initialize();
     // restart weapons if needed
     GetPlayerWeapons()->SendEvent(EStart());
+    PlaySound(m_soWeaponSheerAttack, SOUND_SILENCE, SOF_3D);
 
     // initialise last positions for particles
     Particles_AfterBurner_Prepare(this);
@@ -7692,19 +7697,22 @@ procedures:
       }
       on (EPunchSound punchSound) :
       {
-        if (punchSound.hands) {
-          HandPunchSound(punchSound.didHit);
-        } else {
-          PunchSound(punchSound.didHit);
-        }
-        
-        if (punchSound.didHit) {
-          FLOAT probability = 0.5f;
-          if (((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) {
-            probability = 1.0f;
+        if (GetFlags()&ENF_ALIVE)
+        {
+          if (punchSound.hands) {
+            HandPunchSound(punchSound.didHit);
+          } else {
+            PunchSound(punchSound.didHit);
           }
-          if (_pTimer->CurrentTick() > m_tmLastHeavyPunch && Talk(g_heavyPunchVoiceLines, probability)) {
-            m_tmLastHeavyPunch = _pTimer->CurrentTick() + 7.0f;
+        
+          if (punchSound.didHit) {
+            FLOAT probability = 0.5f;
+            if (((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) {
+              probability = 1.0f;
+            }
+            if (_pTimer->CurrentTick() > m_tmLastHeavyPunch && Talk(g_heavyPunchVoiceLines, probability)) {
+              m_tmLastHeavyPunch = _pTimer->CurrentTick() + 7.0f;
+            }
           }
         }
         resume;
