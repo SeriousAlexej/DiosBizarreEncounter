@@ -299,6 +299,7 @@ properties:
   CModelObject *pmoModel;
   FLOAT handsTransparency;
   TIME lastHandsTransparencyTime;
+  TIME handAttackStartTime;
 }
 
 components:
@@ -601,7 +602,7 @@ functions:
     const TIME now = _pTimer->GetLerpedCurrentTick();
     FLOAT diff = now - lastHandsTransparencyTime;
     lastHandsTransparencyTime = now;
-    if (!attacking) {
+    if (!attacking || (now - handAttackStartTime) < 1.0f) {
       handsTransparency = 0.0f;
     } else {
       handsTransparency = Clamp(handsTransparency + diff, 0.0f, 1.0f);

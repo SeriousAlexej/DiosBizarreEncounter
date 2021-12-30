@@ -4569,6 +4569,7 @@ procedures:
     // reset laser barrel (to start shooting always from left up barrel)
     m_iLaserBarrel = 0;
 
+    GetAnimator()->handAttackStartTime = -1.0f;
     while (HoldingFire() && m_bHasAmmo) {
       // boring animation
       ((CPlayerAnimator&)*((CPlayer&)*m_penPlayer).m_penAnimator).m_fLastActionTime = _pTimer->CurrentTick();
@@ -4692,8 +4693,12 @@ procedures:
 
   HitWithHands()
   {
-    GetAnimator()->FireAnimation(BODY_ANIM_HANDS_ATTACK, AOF_LOOPING|AOF_NORESTART);
-    GetAnimator()->m_bDisableAnimating = FALSE;
+    CPlayerAnimator* panim = GetAnimator();
+    panim->FireAnimation(BODY_ANIM_HANDS_ATTACK, AOF_LOOPING|AOF_NORESTART);
+    panim->m_bDisableAnimating = FALSE;
+    if (panim->handAttackStartTime < 0.0f) {
+      panim->handAttackStartTime = _pTimer->GetLerpedCurrentTick();
+    }
     CModelObject& moHandsWeapon = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_HANDS)->amo_moModelObject;
     moHandsWeapon.PlayAnim(HANDSWEAPON_ANIM_ATTACK, AOF_LOOPING|AOF_NORESTART);
     CPlayer &pl = *GetPlayer();
