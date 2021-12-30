@@ -597,8 +597,7 @@ functions:
     standHands[4] = BODY_ATTACHMENT_RHS_02;
     standHands[5] = BODY_ATTACHMENT_RHS_03;
 
-    const CPlayerWeapons* wp = (const CPlayerWeapons*)&*(pl.m_penWeapons);
-    const BOOL attacking = wp->HoldingFire() && !wp->m_bSecondaryFire;//moBody.GetAnim() == BODY_ANIM_HANDS_ATTACK;
+    const BOOL attacking = moBody.GetAnim() == BODY_ANIM_HANDS_ATTACK;
     const TIME now = _pTimer->GetLerpedCurrentTick();
     FLOAT diff = now - lastHandsTransparencyTime;
     lastHandsTransparencyTime = now;
@@ -635,18 +634,20 @@ functions:
     switch (iWeapon) {
     case WEAPON_HANDS:
       {
-      AddWeaponAttachment(BODY_ATTACHMENT_LH_01, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_LH_02, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_LH_03, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_RH_01, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_RH_02, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_RH_03, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_LHS_01, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_LHS_02, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_LHS_03, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_RHS_01, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_RHS_02, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
-      AddWeaponAttachment(BODY_ATTACHMENT_RHS_03, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+        if (!pmoModel->GetAttachmentModel(BODY_ATTACHMENT_LH_01)) {
+          AddWeaponAttachment(BODY_ATTACHMENT_LH_01, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_LH_02, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_LH_03, MODEL_HAND_LEFT, TEXTURE_DIO, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_RH_01, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_RH_02, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_RH_03, MODEL_HAND_RIGHT, TEXTURE_DIO, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_LHS_01, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_LHS_02, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_LHS_03, MODEL_HAND_LEFT_S, TEXTURE_DIO_S, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_RHS_01, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_RHS_02, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+          AddWeaponAttachment(BODY_ATTACHMENT_RHS_03, MODEL_HAND_RIGHT_S, TEXTURE_DIO_S, 0, 0, 0);
+        }
       for (INDEX i = BODY_ATTACHMENT_LH_01; i <= BODY_ATTACHMENT_RHS_03; ++i) {
         CModelObject& pmo = pmoModel->GetAttachmentModel(i)->amo_moModelObject;
         pmo.mo_colBlendColor &= ~255;
