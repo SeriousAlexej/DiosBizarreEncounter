@@ -5402,7 +5402,7 @@ functions:
       SendEvent(EDoEmote());
     }
 
-    if (ulNewButtons&PLACT_ULTIMATE) {
+    if (ulNewButtons&PLACT_ULTIMATE && m_penMainMusicHolder) {
       if (m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
         if (CanThrowRodaRollaDa())
         {
@@ -7707,7 +7707,7 @@ procedures:
         
           if (punchSound.didHit) {
             FLOAT probability = 0.5f;
-            if (((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) {
+            if (m_penMainMusicHolder && ((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) {
               probability = 1.0f;
             }
             if (_pTimer->CurrentTick() > m_tmLastHeavyPunch && Talk(g_heavyPunchVoiceLines, probability)) {
@@ -7730,7 +7730,7 @@ procedures:
       }
       on (EReminder eReminder) :
       {
-        if (!((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo() &&
+        if ((!m_penMainMusicHolder || !((CMusicHolder*)&*m_penMainMusicHolder)->IsZaWarudo()) &&
             m_penTheWorld &&
             1900 + m_myLife == abs(eReminder.iValue))
         {

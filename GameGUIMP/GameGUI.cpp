@@ -4,9 +4,9 @@
 #include "stdafx.h"
 
 #ifdef _DEBUG
-  #define GAMEGUI_DLL_NAME "GameGUIMPD.dll"
+  #define GAMEGUI_DLL_NAME "GameGUIJoJoD.dll"
 #else
-  #define GAMEGUI_DLL_NAME "GameGUIMP.dll"
+  #define GAMEGUI_DLL_NAME "GameGUIJoJo.dll"
 #endif
 
 extern CGame *_pGame = NULL;
@@ -20,9 +20,9 @@ void Initialize(const CTFileName &fnGameSettings)
 {
   try {
     #ifndef NDEBUG 
-      #define GAMEDLL "Bin\\Debug\\GameMPD.dll"
+      #define GAMEDLL "Bin\\Debug\\GameJoJoD.dll"
     #else
-      #define GAMEDLL "Bin\\GameMP.dll"
+      #define GAMEDLL "Bin\\GameJoJo.dll"
     #endif
     CTFileName fnmExpanded;
     ExpandFilePath(EFP_READ, CTString(GAMEDLL), fnmExpanded);

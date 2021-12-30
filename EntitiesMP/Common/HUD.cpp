@@ -1693,43 +1693,43 @@ HEALTH
 /*
 ULTIMATE
 */
-  CMusicHolder &mh = (CMusicHolder&)*_penPlayer->m_penMainMusicHolder;
-  const BOOL is_zawarudo = mh.IsZaWarudo();
-  if (is_zawarudo) {
-    FLOAT warudo_percentage = Clamp(1.0f - (_pTimer->GetLerpedCurrentTick() - mh.m_timeZaWarudoStart) / ZA_WARUDO_DURATION, 0.0f, 1.0f);
-    DIO_DrawIconCircle(ESP_Middle, 0, ESP_Start, 110, _toWarudoBcg, warudo_percentage*100.0f);
-    DIO_DrawIcon(ESP_Middle, 0, ESP_Start, 110, _toWarudoTimer);
-    DIO_DrawIcon(ESP_Middle, 0, ESP_Start, 110, _toWarudoArrow, RadAngle(warudo_percentage*360));
-  }
-
-  FLOAT ultimate_opacity = 0.0f;
-  if (_penPlayer->m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
-    ultimate_opacity = Clamp(2.0f * (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate), 0.0f, 1.0f);
-  }
-  if (ultimate_opacity > 0.0f) {
-    BOOL can_throw_rodarollada = const_cast<CPlayer*>(_penPlayer)->CanThrowRodaRollaDa();
-
-    COLOR ult_icon_color = C_WHITE;
-    if (is_zawarudo && !can_throw_rodarollada) {
-      ult_icon_color = C_GRAY;
+  if (_penPlayer->m_penMainMusicHolder!=NULL) {
+    CMusicHolder &mh = (CMusicHolder&)*_penPlayer->m_penMainMusicHolder;
+    const BOOL is_zawarudo = mh.IsZaWarudo();
+    if (is_zawarudo) {
+      FLOAT warudo_percentage = Clamp(1.0f - (_pTimer->GetLerpedCurrentTick() - mh.m_timeZaWarudoStart) / ZA_WARUDO_DURATION, 0.0f, 1.0f);
+      DIO_DrawIconCircle(ESP_Middle, 0, ESP_Start, 110, _toWarudoBcg, warudo_percentage*100.0f);
+      DIO_DrawIcon(ESP_Middle, 0, ESP_Start, 110, _toWarudoTimer);
+      DIO_DrawIcon(ESP_Middle, 0, ESP_Start, 110, _toWarudoArrow, RadAngle(warudo_percentage*360));
     }
 
-    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -120 - 32, _toFireTexture, 0.0f, C_WHITE, ultimate_opacity);
-    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltFlare, _pTimer->CurrentTick()*45.0f*PI/180.0f, C_WHITE, ultimate_opacity);
-    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (is_zawarudo ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
+    FLOAT ultimate_opacity = 0.0f;
+    if (_penPlayer->m_ultimateCharge >= MAX_ULTIMATE_CHARGE) {
+      ultimate_opacity = Clamp(2.0f * (_pTimer->CurrentTick() - _penPlayer->m_tmGainedUltimate), 0.0f, 1.0f);
+    }
+    if (ultimate_opacity > 0.0f) {
+      BOOL can_throw_rodarollada = const_cast<CPlayer*>(_penPlayer)->CanThrowRodaRollaDa();
+
+      COLOR ult_icon_color = C_WHITE;
+      if (is_zawarudo && !can_throw_rodarollada) {
+        ult_icon_color = C_GRAY;
+      }
+
+      DIO_DrawIcon(ESP_Middle, 0, ESP_End, -120 - 32, _toFireTexture, 0.0f, C_WHITE, ultimate_opacity);
+      DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltFlare, _pTimer->CurrentTick()*45.0f*PI/180.0f, C_WHITE, ultimate_opacity);
+      DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, (is_zawarudo ? _toUltRodarollada : _toUlt), 0.0f, ult_icon_color, ultimate_opacity);
+    }
+    if (ultimate_opacity < 1.0f) {
+      const FLOAT ult_percentage = (_penPlayer->m_ultimateCharge / static_cast<FLOAT>(MAX_ULTIMATE_CHARGE)) * 100.0f;
+      DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltBcg, 0.0f, C_WHITE, 1.0f - ultimate_opacity);
+      DIO_DrawIconCircle(ESP_Middle, 0, ESP_End, -90 - 32, _toUltOverlay, ult_percentage, C_WHITE, 1.0f - ultimate_opacity);
+      strValue.PrintF("%d", int(ult_percentage));
+      DIO_DrawText(ESP_Middle, -4, ESP_End, -53 -32, strValue, 1.0f, ESP_Middle, C_WHITE, 1.0f - ultimate_opacity);
+    }
+
+
+    DIO_DrawButton(_penPlayer, ESP_Middle, 0, ESP_End, -44, "Ultimate");
   }
-  if (ultimate_opacity < 1.0f) {
-    const FLOAT ult_percentage = (_penPlayer->m_ultimateCharge / static_cast<FLOAT>(MAX_ULTIMATE_CHARGE)) * 100.0f;
-    DIO_DrawIcon(ESP_Middle, 0, ESP_End, -90 - 32, _toUltBcg, 0.0f, C_WHITE, 1.0f - ultimate_opacity);
-    DIO_DrawIconCircle(ESP_Middle, 0, ESP_End, -90 - 32, _toUltOverlay, ult_percentage, C_WHITE, 1.0f - ultimate_opacity);
-    strValue.PrintF("%d", int(ult_percentage));
-    DIO_DrawText(ESP_Middle, -4, ESP_End, -53 -32, strValue, 1.0f, ESP_Middle, C_WHITE, 1.0f - ultimate_opacity);
-  }
-
-
-  DIO_DrawButton(_penPlayer, ESP_Middle, 0, ESP_End, -44, "Ultimate");
-
-
   /*
   CURRENT WEAPON DRAWING
   */

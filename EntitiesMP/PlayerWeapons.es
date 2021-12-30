@@ -2105,7 +2105,7 @@ functions:
     FLOAT fWide = 2.0f;
     FLOAT fThickness = 0.5f;
 
-    BOOL zaWarudoActive = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+    BOOL zaWarudoActive = GetPlayer()->m_penMainMusicHolder && ((CMusicHolder&)*(GetPlayer()->m_penMainMusicHolder)).IsZaWarudo();
 
     if (zaWarudoActive) {
       fDamage *= 2.0f;
@@ -4595,7 +4595,7 @@ procedures:
                   CModelObject& moLeg3 = m_moWeapon.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
                   moHandsWeapon.StretchModel(FLOAT3D(0.0f, 0.0f, 0.0f));
                   
-                  BOOL zaWarudoActive = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+                  BOOL zaWarudoActive = GetPlayer()->m_penMainMusicHolder && ((CMusicHolder&)*(GetPlayer()->m_penMainMusicHolder)).IsZaWarudo();
 
                   if (zaWarudoActive) {
                     moLeg1.StretchModel(FLOAT3D(1.0f, 1.0f, 1.0f));
@@ -6354,7 +6354,7 @@ procedures:
           CModelObject& moLeg1 = m_moWeaponLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG01)->amo_moModelObject;
           CModelObject& moLeg2 = m_moWeaponLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG02)->amo_moModelObject;
           CModelObject& moLeg3 = m_moWeaponLegs.GetAttachmentModel(ROOT_ATTACHMENT_LEG03)->amo_moModelObject;
-          BOOL zaWarudoActive = ((CMusicHolder&)*((CPlayer&)*m_penPlayer).m_penMainMusicHolder).IsZaWarudo();
+          BOOL zaWarudoActive = GetPlayer()->m_penMainMusicHolder && ((CMusicHolder&)*(GetPlayer()->m_penMainMusicHolder)).IsZaWarudo();
           
           m_bLegKickInProgress = TRUE;
           if (zaWarudoActive) {
