@@ -66,6 +66,7 @@ enum BasicEffectType {
  53 BET_DUST_FALL               "Dust fall",
  54 BET_BULLETSTAINSNOW         "Bullet stain snow", 
  55 BET_BULLETSTAINSNOWNOSOUND  "Bullet stain snow", 
+ 56 BET_MENACING                "Menacing",
 };
 
 
@@ -462,7 +463,11 @@ functions:
     if(m_betType==BET_DUST_FALL)
     {
       Particles_DustFall(this, m_tmSpawn, m_vStretch);
-    }    
+    }
+    if (m_betType == BET_MENACING)
+    {
+      Particles_Menacing(this, Clamp((_pTimer->GetLerpedCurrentTick() - m_tmSpawn)/10.0f, 0.0f, 1.0f));
+    }
   }
 
 
@@ -953,6 +958,16 @@ functions:
     Stretch();
   };
 
+  void Menacing()
+  {
+    SetModel(MODEL_BULLET_HIT);
+    SetModelMainTexture(TEXTURE_BULLET_HIT);
+    m_vStretch = FLOAT3D(0.0f, 0.0f, 0.0f);
+    Stretch();
+    m_fWaitTime=10.0f;
+    m_tmWaitAfterDeath = 10.0f;
+  }
+
   /************************************************************
  *                   BULLET HIT / STAIN                     *
  ************************************************************/
@@ -1418,6 +1433,7 @@ procedures:
       case BET_DUST_FALL: DustFall(); break;
       case BET_BULLETSTAINSNOW: BulletStainSnow(TRUE); break;
       case BET_BULLETSTAINSNOWNOSOUND: BulletStainSnow(FALSE); break;
+      case BET_MENACING: Menacing(); break;
       default:
         ASSERTALWAYS("Unknown effect type");
     }
