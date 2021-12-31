@@ -7800,7 +7800,7 @@ procedures:
         resume;
       }
       on (EVoiceMessage eMsg) : {
-        SayVoiceMessage(eMsg.fnmMessage);
+        //SayVoiceMessage(eMsg.fnmMessage);
         resume;
       }
       on (EAutoAction eAutoAction) : {
